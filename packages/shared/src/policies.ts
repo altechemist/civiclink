@@ -48,11 +48,11 @@ export const DuplicatePolicy = {
     );
   },
 
-  findParent(
+  findParent<T extends DuplicateCandidate>(
     newReport: { categoryId: string; location: LatLng },
-    candidates: DuplicateCandidate[],
+    candidates: T[],
     now: number,
-  ): DuplicateCandidate | null {
+  ): T | null {
     const matches = candidates
       .filter((c) => DuplicatePolicy.isMatch(newReport, c, now))
       .map((c) => ({ c, d: distanceMetres(newReport.location, c.location) }))
