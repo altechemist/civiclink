@@ -148,7 +148,7 @@ export function StaffLayout() {
         <nav aria-label="Main" className="flex gap-1 overflow-x-auto px-3 pb-3 lg:block lg:flex-1 lg:space-y-5 lg:overflow-visible">
           {sections.map((s) => (
             <div key={s.title} className="flex gap-1 lg:block lg:space-y-1">
-              <p className="hidden px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400 lg:block">{s.title}</p>
+              <p className="hidden px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 lg:block">{s.title}</p>
               {s.items.map((n) => (
                 <NavLink
                   key={n.to}

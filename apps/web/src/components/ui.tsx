@@ -110,7 +110,7 @@ export function Field({ label, error, hint, children, htmlFor }: FieldProps) {
 }
 
 const inputBase =
-  'block w-full rounded-lg border-0 bg-white px-3 py-2 text-slate-900 shadow-sm ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 text-base sm:text-sm';
+  'block w-full rounded-lg border-0 bg-white px-3 py-2 text-slate-900 shadow-sm ring-1 ring-inset placeholder:text-slate-500 focus:ring-2 focus:ring-inset focus:ring-brand-600 text-base sm:text-sm';
 const ring = (invalid?: boolean) => (invalid ? 'ring-red-400' : 'ring-slate-300');
 
 export function Input({ invalid, className, ...rest }: InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }) {
@@ -213,7 +213,7 @@ export function Tabs<T extends string>({ value, onChange, options }: { value: T;
           )}
         >
           {o.label}
-          {o.count != null && <span className="ml-1.5 text-xs text-slate-500">{o.count}</span>}
+          {o.count != null && <span className="ml-1.5 text-xs text-slate-600">{o.count}</span>}
         </button>
       ))}
     </div>
