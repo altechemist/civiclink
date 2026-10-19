@@ -20,8 +20,11 @@ export function NewAlertPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const toggle = (s: string) =>
+  const clear = (field: string) => setErrors(({ [field]: _, ...rest }) => rest);
+  const toggle = (s: string) => {
+    clear('targetSuburbs');
     setTargets((t) => (s === ALL_SUBURBS ? (t.includes(ALL_SUBURBS) ? [] : [ALL_SUBURBS]) : t.includes(s) ? t.filter((x) => x !== s) : [...t.filter((x) => x !== ALL_SUBURBS), s]));
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -79,14 +82,14 @@ export function NewAlertPage() {
                 </Select>
               </Field>
               <Field label="Expires" htmlFor="expires" error={errors.expiresAt} hint={`Within ${LIMITS.alertMaxDays} days`}>
-                <Input id="expires" type="datetime-local" value={expires} onChange={(e) => setExpires(e.target.value)} invalid={!!errors.expiresAt} />
+                <Input id="expires" type="datetime-local" value={expires} onChange={(e) => { setExpires(e.target.value); clear('expiresAt'); }} invalid={!!errors.expiresAt} />
               </Field>
             </div>
             <Field label="Title" htmlFor="title" error={errors.title} hint={`${title.length}/${LIMITS.alertTitleMax}`}>
-              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} invalid={!!errors.title} placeholder="e.g. Strike: road closures in the CBD" />
+              <Input id="title" value={title} onChange={(e) => { setTitle(e.target.value); clear('title'); }} invalid={!!errors.title} placeholder="e.g. Strike: road closures in the CBD" />
             </Field>
             <Field label="Message" htmlFor="message" error={errors.message} hint={`${message.length}/${LIMITS.alertMessageMax}`}>
-              <Textarea id="message" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} invalid={!!errors.message} placeholder="What is happening, where, and what residents should do." />
+              <Textarea id="message" rows={4} value={message} onChange={(e) => { setMessage(e.target.value); clear('message'); }} invalid={!!errors.message} placeholder="What is happening, where, and what residents should do." />
             </Field>
             <fieldset>
               <legend className="mb-1.5 text-sm font-medium text-slate-800">Target areas</legend>

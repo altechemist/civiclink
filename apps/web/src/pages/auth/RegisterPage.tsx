@@ -16,7 +16,10 @@ export function RegisterPage() {
   const [busy, setBusy] = useState(false);
 
   if (session) return <Navigate to={HOME[session.claims.role]} replace />;
-  const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set = (k: keyof typeof form) => (e: { target: { value: string } }) => {
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+    setErrors(({ [k]: _, ...rest }) => rest);
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();

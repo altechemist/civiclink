@@ -63,8 +63,8 @@ export default function AnalyticsPage() {
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="submitted" name="Submitted" stroke="#136a93" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="resolved" name="Resolved" stroke="#059669" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="submitted" name="Submitted" stroke="#136a93" strokeWidth={2} dot={false} isAnimationActive={false} />
+                  <Line type="monotone" dataKey="resolved" name="Resolved" stroke="#059669" strokeWidth={2} dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -79,7 +79,7 @@ export default function AnalyticsPage() {
                     <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={110} />
                     <Tooltip />
-                    <Bar dataKey="n" name="Reports" fill="#136a93" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="n" name="Reports" fill="#136a93" radius={[0, 4, 4, 0]} isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

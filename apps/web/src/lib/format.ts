@@ -58,4 +58,5 @@ export function timeAgo(t: TimestampLike | number | null | undefined, now = Date
   return `${d} day${d === 1 ? '' : 's'} ago`;
 }
 
-export const hours = (n: number | null | undefined) => (n == null ? '—' : n < 48 ? `${n} h` : `${Math.round((n / 24) * 10) / 10} days`);
+export const hours = (n: number | null | undefined) =>
+  n == null ? '—' : n < 1 ? 'under 1 h' : n < 48 ? `${n} h` : `${Math.round((n / 24) * 10) / 10} days`;
