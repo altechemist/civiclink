@@ -1,5 +1,9 @@
 import {
+  KIMBERLEY_CENTRE,
   LIMITS,
+  MUNICIPAL_BOUNDS,
+  SUBURB_CENTRES,
+  type Suburb,
   OPEN_REPORT_STATUSES,
   PUBLIC_LOCATION_DECIMALS,
   type ReportStatus,
@@ -94,3 +98,19 @@ export function approximateLocation({ lat, lng }: LatLng): LatLng {
   const f = 10 ** PUBLIC_LOCATION_DECIMALS;
   return { lat: Math.round(lat * f) / f, lng: Math.round(lng * f) / f };
 }
+
+export function insideMunicipality({ lat, lng }: LatLng): boolean {
+  return lat >= MUNICIPAL_BOUNDS.minLat && lat <= MUNICIPAL_BOUNDS.maxLat && lng >= MUNICIPAL_BOUNDS.minLng && lng <= MUNICIPAL_BOUNDS.maxLng;
+}
+
+/** Nearest suburb centre within `maxMetres` (default 6 km), used to pre-fill the suburb from a map pin. */
+export function nearestSuburb(p: LatLng, maxMetres = 6000): Suburb | null {
+  let best: { s: Suburb; d: number } | null = null;
+  for (const [s, c] of Object.entries(SUBURB_CENTRES) as [Suburb, LatLng][]) {
+    const d = distanceMetres(p, c);
+    if (!best || d < best.d) best = { s, d };
+  }
+  return best && best.d <= maxMetres ? best.s : null;
+}
+
+export const distanceFromKimberley = (p: LatLng) => distanceMetres(p, KIMBERLEY_CENTRE);

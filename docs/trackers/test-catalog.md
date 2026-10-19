@@ -2,9 +2,9 @@
 
 Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cited in the report appears in a test title, so `grep -r "<ID>"` finds the test. Results for the submitted commit are in its GitHub Actions run.
 
-**Total: 119 automated tests.**
+**Total: 121 automated tests.**
 
-## Unit (Vitest): 28 tests
+## Unit (Vitest): 29 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -26,6 +26,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | UT-ANL-01 | metrics on a fixture | `packages/shared/test/domain.test.ts` |
 | UT-ANL-02 | empty input yields nulls, not NaN | `packages/shared/test/domain.test.ts` |
 | UT-CSV-01 | CSV quoting | `packages/shared/test/domain.test.ts` |
+| UT-LOC-01 | municipal bounds and nearest suburb | `packages/shared/test/domain.test.ts` |
 | UT-SCH-01 | description boundaries 9/10/300/301 | `packages/shared/test/schemas.test.ts` |
 | UT-SCH-02 | photo count 0/3/4 and file size and type | `packages/shared/test/schemas.test.ts` |
 | UT-SCH-03 | location inside / outside municipal bounding box | `packages/shared/test/schemas.test.ts` |
@@ -129,7 +130,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-RES-05 | confirming an unresolved report is refused | `functions/test/reports.test.ts` |
 | IT-CMT-01 | staff with access can comment; residents and other departments cannot | `functions/test/reports.test.ts` |
 
-## End-to-end and non-functional (Playwright): 9 tests
+## End-to-end and non-functional (Playwright): 10 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -139,6 +140,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | E2E-04 | each role is denied other roles’ areas (NFR-01) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-05 | invalid report input is rejected with field messages (BR-02, NFR-03) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-06 | wrong password shows a generic error (FR-02) | `tests/e2e/lifecycle.spec.ts` |
+| E2E-07 | GPS outside Sol Plaatje is explained, not used; tapping the map sets the pin and suburb (FR-03, BR-02) | `tests/e2e/lifecycle.spec.ts` |
 | NFT-07 | mobile layouts fit a 360 px screen | `tests/e2e/mobile.spec.ts` |
 | NFT-08 | accessibility of login, report form, my reports and queue | `tests/e2e/quality.spec.ts` |
 | NFT-06 | responsiveness: screens interactive < 3 s, p95 command < 2 s | `tests/e2e/quality.spec.ts` |

@@ -15,6 +15,7 @@ import {
   type ReportStatus,
   type Severity,
   type TaskDoc,
+  SUBURB_CENTRES as SHARED_CENTRES,
 } from '@civiclink/shared';
 import { geohashForLocation } from 'geofire-common';
 import {
@@ -43,27 +44,7 @@ const rand = () => {
 const pick = <T>(xs: readonly T[]): T => xs[Math.floor(rand() * xs.length)]!;
 const between = (a: number, b: number) => a + rand() * (b - a);
 
-/** Approximate suburb centres (for realistic pins). */
-const SUBURB_CENTRES: Record<string, { lat: number; lng: number }> = {
-  'Kimberley CBD': { lat: -28.7382, lng: 24.7638 },
-  Galeshewe: { lat: -28.718, lng: 24.733 },
-  Roodepan: { lat: -28.698, lng: 24.723 },
-  Homestead: { lat: -28.746, lng: 24.709 },
-  'Hadison Park': { lat: -28.765, lng: 24.79 },
-  Beaconsfield: { lat: -28.757, lng: 24.774 },
-  Royldene: { lat: -28.772, lng: 24.76 },
-  Belgravia: { lat: -28.747, lng: 24.778 },
-  Cassandra: { lat: -28.742, lng: 24.803 },
-  Greenpoint: { lat: -28.726, lng: 24.752 },
-  Herlear: { lat: -28.757, lng: 24.759 },
-  Kenilworth: { lat: -28.718, lng: 24.79 },
-  'Monument Heights': { lat: -28.766, lng: 24.748 },
-  Newton: { lat: -28.741, lng: 24.752 },
-  Platfontein: { lat: -28.66, lng: 24.74 },
-  Ritchie: { lat: -29.035, lng: 24.6 },
-  'West End': { lat: -28.735, lng: 24.748 },
-  Southridge: { lat: -28.77, lng: 24.736 },
-};
+const SUBURB_CENTRES: Record<string, { lat: number; lng: number }> = SHARED_CENTRES;
 const SUBURB_WEIGHTS = ['Galeshewe', 'Galeshewe', 'Galeshewe', 'Roodepan', 'Roodepan', 'Kimberley CBD', 'Kimberley CBD', 'Homestead', 'Homestead', ...Object.keys(SUBURB_CENTRES)];
 
 const DESCRIPTIONS: Record<string, string[]> = {

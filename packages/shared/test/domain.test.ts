@@ -182,3 +182,15 @@ describe('analytics (FR-19)', () => {
     expect(toCsv([{ a: 'x,y', b: 'say "hi"', c: null }], ['a', 'b', 'c'])).toBe('a,b,c\r\n"x,y","say ""hi""",');
   });
 });
+
+describe('location helpers (FR-03)', () => {
+  it('UT-LOC-01 municipal bounds and nearest suburb', async () => {
+    const { insideMunicipality, nearestSuburb, distanceFromKimberley } = await import('../src');
+    expect(insideMunicipality({ lat: -28.7382, lng: 24.7638 })).toBe(true);
+    expect(insideMunicipality({ lat: -26.2041, lng: 28.0473 })).toBe(false); // Johannesburg
+    expect(nearestSuburb({ lat: -28.7185, lng: 24.7335 })).toBe('Galeshewe');
+    expect(nearestSuburb({ lat: -29.034, lng: 24.601 })).toBe('Ritchie');
+    expect(nearestSuburb({ lat: -26.2041, lng: 28.0473 })).toBeNull();
+    expect(Math.round(distanceFromKimberley({ lat: -26.2041, lng: 28.0473 }) / 1000)).toBeGreaterThan(400);
+  });
+});

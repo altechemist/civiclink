@@ -4,6 +4,9 @@ import {
   SEVERITIES,
   submitReportSchema,
   SUBURBS,
+  SUBURB_CENTRES,
+  nearestSuburb,
+  type Suburb,
   type CallableResults,
   type LatLng,
   type Severity,
@@ -34,6 +37,9 @@ export function NewReportPage() {
   const [categoryId, setCategoryId] = useState('');
   const [location, setLocation] = useState<LatLng | null>(null);
   const [suburb, setSuburb] = useState(claims.suburb ?? '');
+  // The suburb follows the pin until the resident picks one themselves.
+  const [suburbTouched, setSuburbTouched] = useState(false);
+  const pinSuburb = location ? nearestSuburb(location) : null;
   const [landmark, setLandmark] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<Severity | ''>('');
@@ -179,18 +185,36 @@ export function NewReportPage() {
           <Field label="Location" htmlFor="location" error={errors.location}>
             <div id="location">
               <Suspense fallback={<LoadingState label="Loading map" />}>
-                <LocationPicker value={location} onChange={(l) => { setLocation(l); clear('location'); }} invalid={!!errors.location} />
+                <LocationPicker
+                  value={location}
+                  focus={SUBURB_CENTRES[suburb as Suburb] ?? null}
+                  onChange={(l) => {
+                    setLocation(l);
+                    clear('location');
+                    const near = nearestSuburb(l);
+                    if (near && !suburbTouched) {
+                      setSuburb(near);
+                      clear('suburb');
+                    }
+                  }}
+                  invalid={!!errors.location}
+                />
               </Suspense>
             </div>
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Suburb" htmlFor="suburb" error={errors.suburb}>
-              <Select id="suburb" value={suburb} onChange={(e) => { setSuburb(e.target.value); clear('suburb'); }} invalid={!!errors.suburb}>
+              <Select id="suburb" value={suburb} onChange={(e) => { setSuburb(e.target.value); setSuburbTouched(true); clear('suburb'); }} invalid={!!errors.suburb}>
                 <option value="">Choose…</option>
                 {SUBURBS.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </Select>
+              {pinSuburb && suburb && pinSuburb !== suburb && (
+                <button type="button" className="text-xs font-medium text-brand-700 hover:underline" onClick={() => setSuburb(pinSuburb)}>
+                  The pin is in {pinSuburb}. Use that?
+                </button>
+              )}
             </Field>
             <Field label="Nearby landmark (optional)" htmlFor="landmark" error={errors.landmark}>
               <Input id="landmark" value={landmark} maxLength={LIMITS.landmarkMax} onChange={(e) => setLandmark(e.target.value)} placeholder="e.g. opposite the clinic" />
