@@ -2,7 +2,19 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer. `v1.0.0` is the assessed release.
 
-## [Unreleased]
+## [1.0.0] - 2026-10-30
 
 ### Added
-- Stage 4 baseline: consolidated SRS, change log CR-01–CR-13, ADRs 0001–0005, implementation plan, traceability matrix, test catalogue, Phase 1–3 review.
+- **Residents:** self-registration; three-step located incident report with up to 3 photos; reference numbers; duplicate detection within 100 m / 72 h; my reports with live lifecycle and audit timeline; confirm or reopen within 7 days; suburb alerts feed with read receipts; community map (privacy-safe projection); in-app notifications.
+- **Officials:** department-scoped dashboard and report queue (filters, search, CSV export); triage, reject, assign, reassign and escalate; internal notes; alert composer with live preview; alert history with delivery and read counts; live analytics.
+- **Field workers:** task list; accept, start and complete with notes and proof photos.
+- **Administrators:** staff accounts, roles and activation; departments (SLA hours) and categories; system log; on-demand SLA escalation and auto-close.
+- **Backend:** callable command API with role checks and shared Zod validation; transactions TX-1 (submit), TX-2 (assign), TX-3 (complete); hourly SLA escalation and daily auto-close schedules; Firestore and Storage Security Rules.
+- **Quality:** 119 automated tests (unit, security rules, API integration, Playwright E2E on Chromium and Firefox, accessibility and timing); GitHub Actions CI with secret scan.
+- **Documentation:** consolidated SRS, change log CR-01 to CR-21, ADRs, PlantUML diagrams, traceability matrix, test catalogue, defect log, UI evidence, final report builder, demo script.
+
+### Fixed
+- DEF-01 to DEF-04 (see `docs/trackers/defect-log.md`).
+
+### Deferred
+- FR-24 web push, FR-25 SMS, FR-27 offline drafts, FR-28 scheduled alerts, bulk assignment.
