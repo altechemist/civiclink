@@ -1,6 +1,6 @@
 # CivicLink: Consolidated Requirements Baseline (v1.0)
 
-Status: **Approved baseline for Stage 4.** This document controls the project. Phases 1–3 are kept as the academic record, and differences from them are recorded in `change-log.md`.
+Status: **Approved baseline for Stage 4. Release statuses final (19 Oct 2026).** This document controls the project. Phases 1–3 are kept as the academic record, and differences from them are recorded in `change-log.md`.
 Release status is finalised at the code freeze (30 Oct 2026). Anything still *Planned* then becomes *Included* if it is verified, and goes to §3.4 Known Limitations if it is not.
 
 ## 1. Context, problem, purpose
@@ -67,7 +67,15 @@ Supporting: reassignment, escalation (manual + SLA-automatic), resident reopen/c
 | AI/ML prediction | Excluded | Not part of the product. "Community intelligence" means analytics and duplicate detection |
 
 ### 3.4 Known limitations
-Filled in at the code freeze.
+
+| Area | Limitation | Impact | Status / workaround |
+|---|---|---|---|
+| Notifications (FR-15) | In-app only; residents must open the app to see updates (no push or SMS) | A resident who does not open CivicLink is not alerted | FR-24 (FCM push) and FR-25 (SMS) deferred |
+| Scheduled rules (FR-13, FR-14) | The emulator does not fire schedules on its own | In the local demo, escalation and auto-close run when an admin presses "Run SLA & auto-close now" | Deployed Cloud Scheduler runs them hourly/daily |
+| Alert broadcast (FR-16) | Recipient records are written in batches after the alert document, so they are not one atomic unit | A crash mid-broadcast could leave `recipientCount` higher than the stored delivery records | Acceptable at municipal scale; recipients can be re-derived from the suburb query |
+| Location (FR-03) | No reverse geocoding; address = suburb + optional landmark | Officials rely on the map pin and landmark text | Deliberate (ADR-0004) |
+| Photos | Images are uploaded at full size (≤ 5 MB) without client compression | Slower uploads on low-end connections | Possible future improvement |
+
 
 ## 4. Functional requirements
 
@@ -75,32 +83,32 @@ Priority uses MoSCoW. Release status is *Planned* until the freeze, then becomes
 
 | ID | Requirement | Actor | Priority | Release | BRs |
 |---|---|---|---|---|---|
-| FR-01 | The system shall allow a member of the public to register as a Resident with name, email, password, suburb and optional phone number. | Resident | Must | Planned | BR-16 |
-| FR-02 | The system shall authenticate users by email and password and route each user to the interface for their role. Deactivated accounts are refused. | All | Must | Planned | BR-15, BR-16 |
-| FR-03 | The system shall allow an authenticated Resident to submit an incident report with category, description, map location, suburb, optional landmark, severity and 0–3 photos. | Resident | Must | Planned | BR-01, BR-02 |
-| FR-04 | The system shall give each accepted report a unique reference (CL-YYYY-NNNN), status SUBMITTED, a default department derived from its category, and a first status-history entry. | System | Must | Planned | BR-04, BR-05 |
-| FR-05 | The system shall detect when a new report duplicates an open report, link it to the original, and tell the resident the original's reference. | System | Must | Planned | BR-03 |
-| FR-06 | The system shall allow a Resident to list their reports (All / Active / Resolved) and view a report's details and full status timeline. | Resident | Must | Planned | BR-17 |
-| FR-07 | The system shall show a community map of open reports with category filtering, without revealing reporter identity or photos. | Resident, Official | Should | Planned | BR-17 |
-| FR-08 | The system shall allow an Official to view the report queue with filters (status, category, department, severity, unassigned) and search by reference. | Official | Must | Planned | — |
-| FR-09 | The system shall allow an Official to triage a SUBMITTED report (→ UNDER_REVIEW, confirm or change department) or reject it with a reason (→ REJECTED). | Official | Must | Planned | BR-05, BR-12, BR-19 |
-| FR-10 | The system shall allow an Official to assign an UNDER_REVIEW or ESCALATED report to an active field worker in its department, with notes. This creates a Task and moves the report to IN_PROGRESS. | Official | Must | Planned | BR-06, BR-07, TX-2 |
-| FR-11 | The system shall allow a Field Worker to view their tasks, open task details (description, photos, location with an "open in maps" link, history), and accept, start and complete a task. Completion requires notes and at least one proof photo and resolves the report. | Field Worker | Must | Planned | BR-08, BR-09, TX-3 |
-| FR-12 | The system shall allow an Official to reassign an active task to another eligible field worker. The old task becomes REASSIGNED. | Official | Should | Planned | BR-06, BR-07 |
-| FR-13 | The system shall escalate open reports that exceed their department's SLA hours (automatically, by schedule) and allow an Official to escalate manually with a reason. | System, Official | Should | Planned | BR-10 |
-| FR-14 | The system shall allow the reporting Resident to confirm (→ CLOSED) or reopen (→ UNDER_REVIEW, with a reason) a RESOLVED report within 7 days, and shall auto-close RESOLVED reports after 7 days. | Resident, System | Should | Planned | BR-11 |
-| FR-15 | The system shall notify users in-app in real time: the resident on every status change of their report (and of the parent of a duplicate), the department's officials on a new report, and the field worker on assignment. | System | Must | Planned | — |
-| FR-16 | The system shall allow an Official to broadcast an alert with type, title, message, target suburbs (or all) and expiry, and shall record a delivery record for each targeted resident. | Official | Must | Planned | BR-13 |
-| FR-17 | The system shall show Residents the active, unexpired alerts for their suburb (newest first, emergencies pinned), with unread counts and mark-as-read. | Resident | Must | Planned | BR-14 |
-| FR-18 | The system shall allow an Official to view sent alerts with recipient count, read count and status, and to deactivate an alert early. | Official | Should | Planned | — |
-| FR-19 | The system shall show Officials an analytics dashboard from live data: open reports by status and category, average resolution time, SLA compliance per department, and the 30-day submission trend. | Official | Should | Planned | — |
-| FR-20 | The system shall allow an Administrator to create staff accounts (Official, Field Worker, Admin) with a department, change roles, and deactivate or reactivate any account. | Admin | Must | Planned | BR-15, BR-16 |
-| FR-21 | The system shall allow an Administrator to manage departments (name, SLA hours, active) and categories (name, default department, active). | Admin | Should | Planned | BR-19 |
-| FR-22 | The system shall allow Officials and Field Workers to add internal comments to a report that residents cannot see. | Official, Field Worker | Could | Planned | BR-18 |
-| FR-23 | The system shall record significant system events (function errors, admin actions) and show them to Administrators. | Admin | Could | Planned | — |
-| FR-24 | The system shall send web push notifications (FCM) for status changes and alerts. | System | Could | Planned | — |
+| FR-01 | The system shall allow a member of the public to register as a Resident with name, email, password, suburb and optional phone number. | Resident | Must | Included | BR-16 |
+| FR-02 | The system shall authenticate users by email and password and route each user to the interface for their role. Deactivated accounts are refused. | All | Must | Included | BR-15, BR-16 |
+| FR-03 | The system shall allow an authenticated Resident to submit an incident report with category, description, map location, suburb, optional landmark, severity and 0–3 photos. | Resident | Must | Included | BR-01, BR-02 |
+| FR-04 | The system shall give each accepted report a unique reference (CL-YYYY-NNNN), status SUBMITTED, a default department derived from its category, and a first status-history entry. | System | Must | Included | BR-04, BR-05 |
+| FR-05 | The system shall detect when a new report duplicates an open report, link it to the original, and tell the resident the original's reference. | System | Must | Included | BR-03 |
+| FR-06 | The system shall allow a Resident to list their reports (All / Active / Resolved) and view a report's details and full status timeline. | Resident | Must | Included | BR-17 |
+| FR-07 | The system shall show a community map of open reports with category filtering, without revealing reporter identity or photos. | Resident, Official | Should | Included | BR-17 |
+| FR-08 | The system shall allow an Official to view the report queue with filters (status, category, department, severity, unassigned) and search by reference. | Official | Must | Included | — |
+| FR-09 | The system shall allow an Official to triage a SUBMITTED report (→ UNDER_REVIEW, confirm or change department) or reject it with a reason (→ REJECTED). | Official | Must | Included | BR-05, BR-12, BR-19 |
+| FR-10 | The system shall allow an Official to assign an UNDER_REVIEW or ESCALATED report to an active field worker in its department, with notes. This creates a Task and moves the report to IN_PROGRESS. | Official | Must | Included | BR-06, BR-07, TX-2 |
+| FR-11 | The system shall allow a Field Worker to view their tasks, open task details (description, photos, location with an "open in maps" link, history), and accept, start and complete a task. Completion requires notes and at least one proof photo and resolves the report. | Field Worker | Must | Included | BR-08, BR-09, TX-3 |
+| FR-12 | The system shall allow an Official to reassign an active task to another eligible field worker. The old task becomes REASSIGNED. | Official | Should | Included | BR-06, BR-07 |
+| FR-13 | The system shall escalate open reports that exceed their department's SLA hours (automatically, by schedule) and allow an Official to escalate manually with a reason. | System, Official | Should | Included | BR-10 |
+| FR-14 | The system shall allow the reporting Resident to confirm (→ CLOSED) or reopen (→ UNDER_REVIEW, with a reason) a RESOLVED report within 7 days, and shall auto-close RESOLVED reports after 7 days. | Resident, System | Should | Included | BR-11 |
+| FR-15 | The system shall notify users in-app in real time: the resident on every status change of their report (and of the parent of a duplicate), the department's officials on a new report, and the field worker on assignment. | System | Must | Included | — |
+| FR-16 | The system shall allow an Official to broadcast an alert with type, title, message, target suburbs (or all) and expiry, and shall record a delivery record for each targeted resident. | Official | Must | Included | BR-13 |
+| FR-17 | The system shall show Residents the active, unexpired alerts for their suburb (newest first, emergencies pinned), with unread counts and mark-as-read. | Resident | Must | Included | BR-14 |
+| FR-18 | The system shall allow an Official to view sent alerts with recipient count, read count and status, and to deactivate an alert early. | Official | Should | Included | — |
+| FR-19 | The system shall show Officials an analytics dashboard from live data: open reports by status and category, average resolution time, SLA compliance per department, and the 30-day submission trend. | Official | Should | Included | — |
+| FR-20 | The system shall allow an Administrator to create staff accounts (Official, Field Worker, Admin) with a department, change roles, and deactivate or reactivate any account. | Admin | Must | Included | BR-15, BR-16 |
+| FR-21 | The system shall allow an Administrator to manage departments (name, SLA hours, active) and categories (name, default department, active). | Admin | Should | Included | BR-19 |
+| FR-22 | The system shall allow Officials and Field Workers to add internal comments to a report that residents cannot see. | Official, Field Worker | Could | Included | BR-18 |
+| FR-23 | The system shall record significant system events (function errors, admin actions) and show them to Administrators. | Admin | Could | Included | — |
+| FR-24 | The system shall send web push notifications (FCM) for status changes and alerts. | System | Could | Deferred | — |
 | FR-25 | The system shall send SMS alerts to residents without data access. | System | Won't (this release) | Deferred | — |
-| FR-26 | The system shall allow an Official to export the filtered report queue as CSV. | Official | Could | Planned | — |
+| FR-26 | The system shall allow an Official to export the filtered report queue as CSV. | Official | Could | Included | — |
 | FR-27 | The system shall let residents draft reports offline and submit when connectivity returns. | Resident | Won't (this release) | Deferred | — |
 | FR-28 | The system shall allow alerts to be scheduled for a future time. | Official | Won't (this release) | Deferred | — |
 
@@ -115,9 +123,9 @@ All are verified in the assessment environment: local Firebase Emulator Suite, s
 | NFR-03 | Security: input validation | All commands validate input server-side against shared schemas. Invalid input is rejected with a field-level message and no data change. | Function integration tests (invalid cases) |
 | NFR-04 | Security: secrets | No secrets in source control. Configuration comes from environment variables with a committed `.env.example`. | Secret scan in CI (gitleaks) |
 | NFR-05 | Performance: propagation | Under the demo workload, a new report appears on the official queue, and a status change appears on the resident's view, within 5 seconds without a manual refresh. | Playwright timing test |
-| NFR-06 | Performance: responsiveness | Key screens become interactive within 3 seconds on the demo machine. Commands complete within 2 seconds (p95 of 50 runs on the emulator). | Lighthouse and timing script |
+| NFR-06 | Performance: responsiveness | Key screens become interactive within 3 seconds on the demo machine. Commands complete within 2 seconds (p95 of 50 runs on the emulator). | NFT-06 (Playwright timing) |
 | NFR-07 | Usability: mobile | Resident and field worker flows work at a 360×640 viewport with no horizontal scrolling. Submitting a report takes at most 3 steps. | Playwright mobile project, manual check |
-| NFR-08 | Accessibility | The login, report form, my-reports and queue pages score at least 90 for accessibility in Lighthouse. | Lighthouse CI report |
+| NFR-08 | Accessibility | The login, report form, my-reports and queue pages have no serious or critical WCAG 2.1 A/AA violations in an automated axe-core audit. | NFT-08 (axe-core in Playwright) |
 | NFR-09 | Compatibility | Core flows pass on the latest Chrome and Firefox. | Playwright chromium and firefox projects |
 | NFR-10 | Integrity and reliability | Multi-document operations (TX-1–TX-3) are atomic. Concurrent conflicting commands (e.g. two officials assigning the same report) result in exactly one success. Failed operations leave no partial data. | Concurrency integration tests |
 | NFR-11 | Privacy (POPIA) | Residents' identity, contact details and photos are visible only to the reporter and staff. Public map data excludes personal information. Only the data needed for service delivery is collected. | Rules tests, data classification review |

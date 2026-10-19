@@ -25,6 +25,7 @@
     "evidence": "playwright test --config playwright.evidence.config.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "10.0.1",
     "@firebase/rules-unit-testing": "5.0.2",
     "@playwright/test": "1.63.0",
