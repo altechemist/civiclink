@@ -60,6 +60,8 @@ export interface ReportDoc {
   parentReportId?: string | null;
   parentRef?: string | null;
   affectedCount: number;
+  /** Residents whose duplicate reports point here; they receive this report's status updates (FR-15). */
+  followerIds: string[];
   resolutionNotes?: string | null;
   createdAt: TimestampLike;
   updatedAt: TimestampLike;

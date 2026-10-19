@@ -1,0 +1,84 @@
+rules_version = '2';
+
+// CivicLink Firestore Security Rules: reads per the role/permission matrix (plan §1).
+// All state-changing writes go through Cloud Functions (ADR-0001); clients may only mark
+// their own notifications read and record their own last login.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function active() { return signedIn() && request.auth.token.active == true; }
+    function role() { return request.auth.token.role; }
+    function isRole(r) { return active() && role() == r; }
+    function isAdmin() { return isRole('ADMIN'); }
+    function isOfficial() { return isRole('OFFICIAL'); }
+    function isWorker() { return isRole('FIELD_WORKER'); }
+    function isStaff() { return active() && role() in ['OFFICIAL', 'FIELD_WORKER', 'ADMIN']; }
+    function dept() { return request.auth.token.dept; }
+    function onlyChanges(fields) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields); }
+
+    // BR-17 / BR-20: who may read a full report document.
+    function canReadReport(r) {
+      return isAdmin()
+        || (isOfficial() && r.departmentId == dept())
+        || (isWorker() && r.assignedWorkerId == request.auth.uid)
+        || (active() && (r.reporterId == request.auth.uid || request.auth.uid in r.followerIds));
+    }
+
+    match /users/{uid} {
+      // Own profile; staff can see the staff directory (needed to assign work); admins see everyone.
+      allow get: if active() && request.auth.uid == uid;
+      allow read: if isAdmin() || (isStaff() && resource.data.role in ['OFFICIAL', 'FIELD_WORKER']);
+      // Role, department, suburb and active flag change only through admin functions (BR-16).
+      allow update: if active() && request.auth.uid == uid && onlyChanges(['lastLoginAt'])
+        && request.resource.data.lastLoginAt == request.time;
+
+      match /notifications/{id} {
+        allow read: if signedIn() && request.auth.uid == uid;
+        allow update: if signedIn() && request.auth.uid == uid && onlyChanges(['readAt'])
+          && request.resource.data.readAt == request.time;
+      }
+    }
+
+    match /reports/{reportId} {
+      allow read: if canReadReport(resource.data);
+
+      match /history/{id} {
+        allow read: if canReadReport(get(/databases/$(database)/documents/reports/$(reportId)).data);
+      }
+      // BR-18: internal comments are staff-only.
+      match /comments/{id} {
+        allow read: if isStaff() && canReadReport(get(/databases/$(database)/documents/reports/$(reportId)).data);
+      }
+    }
+
+    // Privacy-safe projection for the community map (no reporter, description or photos).
+    match /publicReports/{id} {
+      allow read: if active() && (role() == 'RESIDENT' || isOfficial() || isAdmin());
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAdmin()
+        || (isWorker() && resource.data.workerId == request.auth.uid)
+        || (isOfficial() && resource.data.departmentId == dept());
+    }
+
+    // Alerts are public announcements; targeting (BR-14) decides relevance, not secrecy.
+    match /alerts/{alertId} {
+      allow read: if active();
+      match /recipients/{uid} {
+        allow read: if (active() && request.auth.uid == uid) || isOfficial() || isAdmin();
+      }
+    }
+    match /{path=**}/recipients/{uid} {
+      allow read: if active() && resource.data.uid == request.auth.uid;
+    }
+
+    match /departments/{id} { allow read: if active(); }
+    match /categories/{id} { allow read: if active(); }
+    match /systemLogs/{id} { allow read: if isAdmin(); }
+
+    // Counters and anything not listed above: no client access.
+    match /{document=**} { allow read, write: if false; }
+  }
+}
