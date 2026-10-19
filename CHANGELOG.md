@@ -9,12 +9,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: Se
 - **Officials:** department-scoped dashboard and report queue (filters, search, CSV export); triage, reject, assign, reassign and escalate; internal notes; alert composer with live preview; alert history with delivery and read counts; live analytics.
 - **Field workers:** task list; accept, start and complete with notes and proof photos.
 - **Administrators:** staff accounts, roles and activation; departments (SLA hours) and categories; system log; on-demand SLA escalation and auto-close.
+- **Accounts:** Google sign-in with profile completion, password reset, profile editing, POPIA self-deletion with anonymised records; admin-configurable report rate limit; photo compression; offline cache of viewed screens; clearer location guidance.
 - **Backend:** callable command API with role checks and shared Zod validation; transactions TX-1 (submit), TX-2 (assign), TX-3 (complete); hourly SLA escalation and daily auto-close schedules; Firestore and Storage Security Rules.
-- **Quality:** 119 automated tests (unit, security rules, API integration, Playwright E2E on Chromium and Firefox, accessibility and timing); GitHub Actions CI with secret scan.
+- **Quality:** 132 automated tests (unit, security rules, API integration, Playwright E2E on Chromium and Firefox, accessibility and timing); GitHub Actions CI with secret scan.
 - **Documentation:** consolidated SRS, change log CR-01 to CR-21, ADRs, PlantUML diagrams, traceability matrix, test catalogue, defect log, UI evidence, final report builder, demo script.
 
 ### Fixed
-- DEF-01 to DEF-04 (see `docs/trackers/defect-log.md`).
+- DEF-01 to DEF-05 (see `docs/trackers/defect-log.md`).
 
 ### Deferred
 - FR-24 web push, FR-25 SMS, FR-27 offline drafts, FR-28 scheduled alerts, bulk assignment.

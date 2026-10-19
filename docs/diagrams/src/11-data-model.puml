@@ -122,6 +122,9 @@ entity "categories/{id}" as cat {
 entity "counters/reports-{year}" as counter {
   * next : int
 }
+entity "settings/app" as settings {
+  * reportsPerHour : int (1–100)
+}
 entity "systemLogs/{id}" as logs {
   * level, source, message
   actorId, createdAt

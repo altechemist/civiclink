@@ -75,6 +75,9 @@ package "Domain entities (shared models → Firestore documents)" {
   class Comment <<reports/{id}/comments>> {
     authorId, authorRole, text, createdAt
   }
+  class Settings <<settings/app>> {
+    reportsPerHour: int
+  }
   class PublicReport <<publicReports>> {
     ref, categoryId, status
     location «≈100 m», suburb

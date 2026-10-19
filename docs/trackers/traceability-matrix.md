@@ -35,6 +35,10 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | FR-26 | P6 | — | — | queue "Export CSV" | `shared/analytics.ts` (`toCsv`), `ReportQueuePage.tsx` | — | UT-CSV-01 | Included |
 | FR-27 | P1 | — | — | — | — | — | — | Deferred |
 | FR-28 | P5 | — | — | — | — | — | — | Deferred |
+| FR-29 | P7 | BR-16 | UC Sign in (Google) | `/login`, `/welcome` | `AuthProvider.signInWithGoogle`, `WelcomePage.tsx`, `completeProfile` → `UserService.completeProfile` | users, Auth claims | IT-AUTH-04, IT-AUTH-05, E2E-08 | Included |
+| FR-30 | P7 | — | UC Sign in | `/login` | `AuthProvider.resetPassword` (Firebase Auth reset email) | Auth | E2E-09 | Included |
+| FR-31 | P5 | BR-14, BR-16 | UC Profile | `/profile` | `ProfilePage.tsx`, `updateProfile` → `UserService.updateProfile` | users, Auth claims | IT-PRF-01, IT-PRF-02, E2E-10 | Included |
+| FR-32 | P7 | BR-22 | UC Delete account | `/profile` | `ProfilePage.tsx`, `deleteMyAccount` → `UserService.deleteMyAccount` | users, reports, Storage, recipients, notifications, Auth | IT-DEL-01, IT-DEL-02, E2E-10 | Included |
 
 ## Business rules → enforcement → tests
 
@@ -60,6 +64,8 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | BR-18 | comments rule `isStaff()`; `CommentService` access check | RT-CMT-01, IT-CMT-01 |
 | BR-19 | active checks in submit, triage, staff creation | IT-RPT-05, IT-TRI-05, IT-CFG-03 |
 | BR-20 | `assertDepartmentAccess`; rules `departmentId == dept()` | IT-TRI-04, RT-RPT-04, RT-TSK-01 |
+| BR-21 | `settings/app.reportsPerHour` read and enforced inside TX-1; `updateSettings` (admin) | IT-RPT-11, IT-CFG-05 |
+| BR-22 | `UserService.deleteMyAccount`; notifications skip `deleted-user` | IT-DEL-01, IT-DEL-02, E2E-10 |
 
 ## NFR → verification
 
