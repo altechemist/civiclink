@@ -1,0 +1,100 @@
+@startuml class-domain
+!include _style.iuml
+hide empty members
+title Class design (1/2): domain entities and relationships
+package "Domain entities (shared models → Firestore documents)" {
+  class User <<users>> {
+    uid: string
+    name: string
+    email: string
+    phone?: string
+    role: Role
+    departmentId?: string
+    suburb?: Suburb
+    isActive: boolean
+    createdAt, lastLoginAt
+  }
+  class Report <<reports>> {
+    id: string
+    ref: string  «CL-YYYY-NNNN»
+    reporterId, reporterName
+    categoryId, departmentId
+    description: string
+    location: LatLng
+    geohash: string
+    suburb, landmark?
+    severity: Severity
+    photoPaths: string[]
+    status: ReportStatus
+    assignedWorkerId?, activeTaskId?
+    parentReportId?, affectedCount
+    followerIds: string[]
+    resolutionNotes?, resolutionPhotoPaths
+    createdAt, resolvedAt?, escalatedAt?, closedAt?
+  }
+  class HistoryEntry <<reports/{id}/history>> {
+    from: ReportStatus?
+    to: ReportStatus
+    event: string
+    actorId, actorRole, actorName
+    note: string
+    at: Timestamp
+  }
+  class Task <<tasks>> {
+    id, reportId, reportRef
+    workerId, assignedBy
+    departmentId, priority: Severity
+    status: TaskStatus
+    notes?, completionNotes?
+    proofPaths: string[]
+    assignedAt, acceptedAt?, startedAt?, completedAt?
+  }
+  class Alert <<alerts>> {
+    type: AlertType
+    title, message
+    targetSuburbs: string[]
+    isActive: boolean
+    recipientCount, readCount
+    createdAt, expiresAt
+  }
+  class AlertRecipient <<alerts/{id}/recipients>> {
+    uid, alertId
+    channel: IN_APP
+    deliveredAt, readAt?
+  }
+  class Notification <<users/{uid}/notifications>> {
+    type, title, body, link
+    readAt?, createdAt
+  }
+  class Department <<departments>> {
+    name, slaHours: int, isActive
+  }
+  class Category <<categories>> {
+    name, icon, departmentId, isActive
+  }
+  class Comment <<reports/{id}/comments>> {
+    authorId, authorRole, text, createdAt
+  }
+  class PublicReport <<publicReports>> {
+    ref, categoryId, status
+    location «≈100 m», suburb
+    affectedCount, isOpen
+  }
+}
+
+User "1" -- "0..*" Report : submits >
+User "1" -- "0..*" Task : is assigned >
+Report "1" *-- "1..*" HistoryEntry : audited by >
+Report "1" *-- "0..*" Comment
+Report "1" -- "0..*" Task : generates (≤1 active) >
+Report "0..*" -- "0..1" Report : duplicate of >
+Report "1" -- "1" PublicReport : projected as >
+Category "0..*" --> "1" Department : routes to >
+Report "0..*" --> "1" Category
+Report "0..*" --> "1" Department
+Alert "1" *-- "0..*" AlertRecipient
+User "1" -- "0..*" AlertRecipient
+User "1" *-- "0..*" Notification
+User "1" -- "0..*" Alert : creates >
+
+@enduml

@@ -1,0 +1,114 @@
+@startuml class-services
+!include _style.iuml
+hide empty members
+left to right direction
+title Class design (2/2): application services and domain logic
+package "Application services (functions/src/services)" {
+  class ReportService {
+    -clock: () => number
+    +submit(input, actor)  «TX-1»
+    +triage(input, actor)
+    +reject(input, actor)
+    +escalate(input, actor)
+    +assign(input, actor)  «TX-2»
+    +reassign(input, actor)
+    +confirm(reportId, actor)
+    +reopen(input, actor)
+  }
+  class TaskService {
+    +update(input, actor)
+    +complete(input, actor)  «TX-3»
+  }
+  class ReportLifecycle <<module>> {
+    +applyTransition(tx, args): ReportStatus
+    +assertDepartmentAccess(actor, deptId)
+  }
+  class NotificationService <<module>> {
+    +add(tx, recipients, n, now)
+    +departmentOfficials(tx, deptId)
+  }
+  class AlertService {
+    +broadcast(input, actor)
+    +deactivate(alertId)
+    +markRead(alertId, actor)
+  }
+  class UserService {
+    +registerResident(input)
+    +createStaff(input, actor)
+    +setRole(input, actor)
+    +setActive(uid, active, actor)
+  }
+  class ConfigService {
+    +upsertDepartment(input, actor)
+    +upsertCategory(input, actor)
+  }
+  class MaintenanceService {
+    +escalateOverdue(): number
+    +autoCloseResolved(): number
+  }
+  class AnalyticsService {
+    +summary(days): AnalyticsSummary
+  }
+  class CommentService {
+    +add(reportId, text, actor)
+  }
+  class "command()" as Command <<API wrapper>> {
+    +auth → loadActor → role check
+    +parse(schema) → handler
+    +toHttpsError()
+  }
+}
+
+package "Domain logic (packages/shared)" {
+  class ReportStateMachine <<module>> {
+    +next(from, event, actor): ReportStatus
+    +can(from, event, actor): boolean
+    +eventsFrom(status, actor): ReportEvent[]
+  }
+  class TaskStateMachine <<module>> {
+    +next(from, event): TaskStatus
+    +can(from, event): boolean
+  }
+  class DuplicatePolicy <<module>> {
+    radiusM = 100
+    windowMs = 72 h
+    +isMatch(new, candidate, now): boolean
+    +findParent(new, candidates, now): Candidate?
+  }
+  class SlaPolicy <<module>> {
+    +isBreached(report, slaHours, now): boolean
+  }
+  class ResolutionPolicy <<module>> {
+    +withinWindow(resolvedAt, now): boolean
+    +shouldAutoClose(report, now): boolean
+  }
+}
+
+package "Domain entities (see part 1)" {
+  class Report
+  class Task
+  class Alert
+  class User
+}
+Command ..> ReportService
+Command ..> TaskService
+Command ..> AlertService
+Command ..> UserService
+Command ..> ConfigService
+Command ..> CommentService
+Command ..> AnalyticsService
+ReportService ..> ReportLifecycle
+TaskService ..> ReportLifecycle
+MaintenanceService ..> ReportLifecycle
+ReportLifecycle ..> ReportStateMachine
+ReportLifecycle ..> NotificationService
+TaskService ..> TaskStateMachine
+ReportService ..> DuplicatePolicy
+MaintenanceService ..> SlaPolicy
+MaintenanceService ..> ResolutionPolicy
+ReportService ..> ResolutionPolicy
+ReportService ..> Report
+TaskService ..> Task
+AlertService ..> Alert
+UserService ..> User
+@enduml
