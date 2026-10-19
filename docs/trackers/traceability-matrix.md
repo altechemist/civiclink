@@ -9,7 +9,7 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 |---|---|---|---|---|---|---|---|---|
 | FR-01 | P7 | BR-16 | UC Register | `/register` | `web/pages/auth/RegisterPage.tsx` → `registerResident` → `fn/services/userService.ts` | users, Auth claims | UT-SCH-05, IT-AUTH-01, IT-AUTH-02 | Included |
 | FR-02 | P7 | BR-15, BR-16 | UC Sign in | `/login`, all routes | `web/auth/AuthProvider.tsx`, `web/auth/RequireRole.tsx`, `fn/lib/command.ts` (`loadActor`) | Auth claims, users | IT-AUTH-03, RT-USR-05, E2E-04, E2E-06 | Included |
-| FR-03 | P1 | BR-01, BR-02 | W1 | `/resident/report/new` | `web/pages/resident/NewReportPage.tsx`, `web/components/maps.tsx` (LocationPicker), `web/lib/upload.ts`, `ReportService.submit` | reports, Storage `reports/{uid}` | UT-SCH-01..04, IT-RPT-01..06, IT-RPT-10, RT-STO-01, E2E-05 | Included |
+| FR-03 | P1 | BR-01, BR-02 | W1 | `/resident/report/new` | `web/pages/resident/NewReportPage.tsx`, `web/components/maps.tsx` (LocationPicker), `web/lib/upload.ts` (compression), `ReportService.submit`, `photoService` | reports, photos | UT-SCH-01..04, UT-SCH-09, IT-RPT-01..06, IT-RPT-10, RT-PHO-01, E2E-05, E2E-07 | Included |
 | FR-04 | P1, P4 | BR-04, BR-05 | W1 (TX-1) | submit result | `ReportService.submit`, `shared/policies.ts` (`formatReference`) | counters, reports, history | UT-REF-01, IT-RPT-07, IT-RPT-08 | Included |
 | FR-05 | P2 | BR-03 | W1 (alt: duplicate) | duplicate result | `shared/policies.ts` (`DuplicatePolicy`), geohash query in `ReportService.submit` | reports.geohash, followerIds | UT-DUP-01..06, IT-RPT-09, E2E-02 | Included |
 | FR-06 | P3 | BR-17 | UC Track | `/resident`, `/resident/reports`, `/resident/reports/:id` | `MyReportsPage.tsx`, `ResidentReportPage.tsx`, `components/domain.tsx` (Timeline, LifecycleProgress) | reports, history | RT-RPT-02, RT-RPT-03, E2E-01 | Included |
@@ -17,7 +17,7 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | FR-08 | P4, P6 | BR-20 | W2 | `/official`, `/official/reports` | `OfficialDashboard.tsx`, `ReportQueuePage.tsx`, `useStaffReports.ts` | reports | RT-RPT-04, RT-RPT-06, E2E-01 | Included |
 | FR-09 | P4 | BR-05, BR-12, BR-19, BR-20 | W2 (alt: reject) | `/official/reports/:id` | `OfficialReportPage.tsx`, `ReportService.triage/reject`, `reportLifecycle.ts` | reports, history | IT-TRI-01..05 | Included |
 | FR-10 | P4 | BR-06, BR-07, BR-20 | W2 (TX-2) | `/official/reports/:id` | `OfficialReportPage.tsx`, `ReportService.assign` | tasks, reports, history | IT-ASG-01..07, E2E-01 | Included |
-| FR-11 | P3, P4 | BR-08, BR-09 | W2 (TX-3) | `/worker`, `/worker/tasks/:id` | `WorkerHome.tsx`, `TaskPage.tsx`, `TaskService.update/complete`, `shared/stateMachines.ts` | tasks, reports, Storage `proofs/` | UT-TSM-01, UT-SCH-06, IT-TSK-01..07, RT-STO-03, E2E-01 | Included |
+| FR-11 | P3, P4 | BR-08, BR-09 | W2 (TX-3) | `/worker`, `/worker/tasks/:id` | `WorkerHome.tsx`, `TaskPage.tsx`, `TaskService.update/complete`, `shared/stateMachines.ts` | tasks, reports, photos | UT-TSM-01, UT-SCH-06, IT-TSK-01..07, RT-PHO-01, E2E-01 | Included |
 | FR-12 | P4 | BR-06, BR-07 | W2 (alt: reassign) | `/official/reports/:id` | `ReportService.reassign` | tasks, history | IT-ASG-08..10, IT-TSK-06 | Included |
 | FR-13 | P4, P6 | BR-10 | State ESCALATED | queue, dashboard | `shared/policies.ts` (`SlaPolicy`), `MaintenanceService.escalateOverdue`, `escalateOverdue` schedule, `ReportService.escalate` | reports, departments | UT-SLA-01..02, IT-ESC-01..03 | Included |
 | FR-14 | P3 | BR-11 | W2 (alt: confirm/reopen) | `/resident/reports/:id` | `ReportService.confirm/reopen`, `MaintenanceService.autoCloseResolved` | reports, history | UT-RES-01, IT-RES-01..05, E2E-01 | Included |
@@ -38,14 +38,14 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | FR-29 | P7 | BR-16 | UC Sign in (Google) | `/login`, `/welcome` | `AuthProvider.signInWithGoogle`, `WelcomePage.tsx`, `completeProfile` → `UserService.completeProfile` | users, Auth claims | IT-AUTH-04, IT-AUTH-05, E2E-08 | Included |
 | FR-30 | P7 | — | UC Sign in | `/login` | `AuthProvider.resetPassword` (Firebase Auth reset email) | Auth | E2E-09 | Included |
 | FR-31 | P5 | BR-14, BR-16 | UC Profile | `/profile` | `ProfilePage.tsx`, `updateProfile` → `UserService.updateProfile` | users, Auth claims | IT-PRF-01, IT-PRF-02, E2E-10 | Included |
-| FR-32 | P7 | BR-22 | UC Delete account | `/profile` | `ProfilePage.tsx`, `deleteMyAccount` → `UserService.deleteMyAccount` | users, reports, Storage, recipients, notifications, Auth | IT-DEL-01, IT-DEL-02, E2E-10 | Included |
+| FR-32 | P7 | BR-22 | UC Delete account | `/profile` | `ProfilePage.tsx`, `deleteMyAccount` → `UserService.deleteMyAccount` | users, reports, photos, recipients, notifications, Auth | IT-DEL-01, IT-DEL-02, E2E-10 | Included |
 
 ## Business rules → enforcement → tests
 
 | BR | Enforced in | Tests |
 |---|---|---|
-| BR-01 | `command()` role list for `submitReport`; Storage rules (resident uploads) | IT-RPT-06, RT-STO-01 |
-| BR-02 | `submitReportSchema`, `photoFileSchema`, `assertPhotosExist`, storage.rules `validImage()` | UT-SCH-01..04, IT-RPT-02..04, RT-STO-01, E2E-05 |
+| BR-01 | `execute()` role list for `submitReport` (both adapters) | IT-RPT-06, IT-HTTP-02 |
+| BR-02 | `submitReportSchema`, `photoFileSchema`, `photoInputSchema`, `photoService.decodePhotos` (size, magic bytes), `insideMunicipality` | UT-SCH-01..04, UT-SCH-09, UT-LOC-01, IT-RPT-02..04, E2E-05, E2E-07 |
 | BR-03 | `DuplicatePolicy` inside TX-1 | UT-DUP-01..06, IT-RPT-09, E2E-02 |
 | BR-04 | counter document inside TX-1, `formatReference` | UT-REF-01, IT-RPT-08 |
 | BR-05 | `ReportStateMachine` via `applyTransition`; history client-write denied | UT-RSM-01..03, IT-TRI-02, RT-RPT-01 |
@@ -60,7 +60,7 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | BR-14 | feed query `array-contains-any [suburb, ALL]`; recipients by suburb | IT-ALR-01, IT-ALR-02, E2E-03 |
 | BR-15 | admin-only commands; self-change refused | IT-ADM-04, IT-ADM-05 |
 | BR-16 | `registerResident` fixes role; `loadActor` refuses inactive; Auth `disabled` | UT-SCH-05, IT-AUTH-01, IT-AUTH-03, RT-USR-02 |
-| BR-17 | `canReadReport` rule; `publicReports` projection; storage read rules | UT-PRV-01, RT-RPT-03, RT-PUB-01, RT-STO-02 |
+| BR-17 | `canReadReport` rule (reports, history, photos); `publicReports` projection | UT-PRV-01, RT-RPT-03, RT-PUB-01, RT-PHO-01, RT-PHO-02 |
 | BR-18 | comments rule `isStaff()`; `CommentService` access check | RT-CMT-01, IT-CMT-01 |
 | BR-19 | active checks in submit, triage, staff creation | IT-RPT-05, IT-TRI-05, IT-CFG-03 |
 | BR-20 | `assertDepartmentAccess`; rules `departmentId == dept()` | IT-TRI-04, RT-RPT-04, RT-TSK-01 |
@@ -81,7 +81,7 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | NFR-08 | NFT-08 axe-core WCAG 2.1 A/AA: login, report form, my reports, queue → 0 violations (after DEF-03 fix) | Pass |
 | NFR-09 | E2E on Chromium and Firefox in CI | Pass (CI) |
 | NFR-10 | IT-RPT-08, IT-ASG-07, IT-TSK-06 | Pass |
-| NFR-11 | RT-RPT-03, RT-PUB-01, RT-STO-02, UT-PRV-01; data classification (plan §1) | Pass |
+| NFR-11 | RT-RPT-03, RT-PUB-01, RT-PHO-01, RT-PHO-02, UT-PRV-01; data classification (plan §1) | Pass |
 | NFR-12 | strict TS, ESLint, CI, shared coverage 97.9% lines (threshold 80%) | Pass |
 
 ## Screen inventory (states implemented)

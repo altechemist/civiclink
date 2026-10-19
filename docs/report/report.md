@@ -14,7 +14,7 @@ CivicLink is a web application that connects four groups in one workflow. **Resi
 
 The final release implements 28 of the 32 specified functional requirements, including all 14 Must-have requirements. The core lifecycle runs end to end: report, duplicate detection, triage, assignment, field completion, and resident confirmation or reopening. It is supported by real-time notifications, suburb-targeted alerts with read receipts, a privacy-safe community map, live service-delivery analytics, SLA-based automatic escalation, a complete audit trail, Google sign-in, and self-service account deletion that meets POPIA's right to erasure. Push notifications (Could-have), SMS alerts, offline drafting and scheduled alerts were deliberately deferred.
 
-The system is built with React and TypeScript on Firebase: Authentication, Cloud Firestore, Cloud Functions and Cloud Storage. Every state-changing operation runs on the server inside a database transaction, and access is enforced by Security Rules. The assessed system runs on the Firebase Emulator Suite, so it can be reproduced with two commands and no cloud account. It is verified by 132 automated tests (unit, security-rule, API integration, end-to-end and non-functional) running in continuous integration. All five success criteria were achieved.
+The system is built with React and TypeScript on Firebase Authentication and Cloud Firestore, with a Node.js command API. Every state-changing operation runs on the server inside a database transaction, and access is enforced by Security Rules. It runs entirely on free tiers: the deployed system uses Vercel and Firebase's free Spark plan, and a local configuration using the Firebase Emulator Suite can be reproduced with two commands and no cloud account. It is verified by 136 automated tests (unit, security-rule, API integration, end-to-end and non-functional) running in continuous integration. All five success criteria were achieved.
 
 # PROJECT CONTEXT
 
@@ -63,7 +63,7 @@ Table: Success criteria
 
 ## Solution Overview
 
-CivicLink is a responsive web application backed by Firebase. The system boundary contains the React single-page application (with separate resident, official, field-worker and administrator areas), a Cloud Functions command API, Cloud Firestore, Cloud Storage and Firebase Authentication. The external actors are the four user roles. The only external services are OpenStreetMap, which supplies map tiles, and the browser's geolocation service on the user's device.
+CivicLink is a responsive web application backed by Firebase. The system boundary contains the React single-page application (with separate resident, official, field-worker and administrator areas), a Node.js command API (served by Cloud Functions locally and by Vercel serverless functions when deployed), Cloud Firestore and Firebase Authentication. The external actors are the four user roles. The only external services are OpenStreetMap, which supplies map tiles, and the browser's geolocation service on the user's device.
 
 Its major functional areas are:
 
@@ -131,7 +131,7 @@ Table: Known limitations
 
 # SYSTEM REQUIREMENTS SPECIFICATION
 
-The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-26 in `docs/baseline/change-log.md`.
+The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-28 in `docs/baseline/change-log.md`.
 
 ## Functional Requirements
 
@@ -200,7 +200,7 @@ Table: Business rules
 | ID | Rule |
 |---|---|
 | BR-01 | Only an authenticated, active user with role Resident may submit a report. |
-| BR-02 | A report needs an active category, a description of 10–300 characters, a location inside the Sol Plaatje municipal bounds, a suburb from the configured list and a severity. It may carry 0–3 photos, each JPEG/PNG/WebP and at most 5 MB. |
+| BR-02 | A report needs an active category, a description of 10–300 characters, a location inside the Sol Plaatje municipal bounds, a suburb from the configured list and a severity. It may carry 0–3 photos, each a real JPEG/PNG/WebP image (checked by its content) of at most 700 KB once compressed; residents may pick files of up to 15 MB, which the app compresses. |
 | BR-03 | A new report is a duplicate if an open report with the same category exists within 100 m and was created in the last 72 hours. The duplicate is stored as Duplicate, linked to the original; the original's affected count is incremented and the resident follows it. |
 | BR-04 | References are CL-<year>-<sequence>, allocated in a transaction, unique and never reused. |
 | BR-05 | A report's status may change only along the transitions of the report state machine (Figure 7). Every change appends an immutable history entry recording the actor, role, note and time. |
@@ -228,7 +228,7 @@ Table: Business rules
 
 **FR-02 Sign in.** Valid credentials open the area for the user's role. Wrong credentials show a generic error. A deactivated account cannot sign in or call any function. Opening another role's page shows the access-denied page.
 
-**FR-03 Submit report.** Every BR-02 rule is checked in the form and again on the server, with field-level messages. A location outside the municipality, a fourth photo, a file over 5 MB or a non-image is refused. On success the resident sees the reference number.
+**FR-03 Submit report.** Every BR-02 rule is checked in the form and again on the server, with field-level messages. A location outside the municipality, a fourth photo, a file over 15 MB or a file that is not really an image is refused. On success the resident sees the reference number.
 
 **FR-04 Reference.** Concurrent submissions receive distinct, sequential references. A new report is Submitted, routed to its category's department, and has one history entry.
 
@@ -288,7 +288,7 @@ Two end-to-end workflows were selected from the core functionality. Both diagram
 
 ### Workflow W1: Submit an incident report (FR-03, FR-04, FR-05)
 
-A resident completes the three-step form, and client validation gives immediate feedback. Photos are uploaded to the resident's own Storage folder, where Storage rules reject non-images, oversized files and other users' folders. The `submitReport` command then checks the caller's role and the input, and runs transaction TX-1. TX-1 checks that the category is active, searches for open reports of the same category within 100 m, allocates the next reference, and writes either a new Submitted report (with the public map projection and notifications to the department's officials) or a Duplicate report linked to the original.
+A resident completes the three-step form, and client validation gives immediate feedback. Photos are compressed in the browser (≤ 1280 px, ≤ 700 KB) and sent with the request. The `submitReport` command checks the caller's role and the input, verifies each photo's real type from its first bytes, and runs transaction TX-1, which also writes the photos as binary documents. TX-1 checks that the category is active, searches for open reports of the same category within 100 m, allocates the next reference, and writes either a new Submitted report (with the public map projection and notifications to the department's officials) or a Duplicate report linked to the original.
 
 ![Figure: Activity diagram, W1 submit incident report](docs/diagrams/activity-w1.png){width=3.9}
 
@@ -326,14 +326,15 @@ Table: Component responsibilities and technology stack
 | Web application | React 19, TypeScript, Vite, React Router, Tailwind CSS | Role-specific user interfaces, client-side validation, real-time views |
 | Maps | Leaflet 1.9 with OpenStreetMap tiles | Location capture (GPS or draggable pin) and incident maps |
 | Charts | Recharts 3 | Analytics visualisation |
-| Command API | Cloud Functions for Firebase (2nd gen, Node.js 22), region africa-south1 | Authentication and role checks, validation, business rules, transactions, notifications |
-| Scheduled jobs | Cloud Functions scheduler | Hourly SLA escalation, daily auto-close |
+| Command API | Node.js 22 command registry with two adapters: Vercel serverless functions (deployed) and Cloud Functions (local emulator) | Authentication and role checks, validation, business rules, transactions, notifications |
+| Scheduled jobs | GitHub Actions (hourly) and Vercel Cron (daily) calling a secret-protected endpoint; Cloud Functions scheduler locally | SLA escalation, auto-close |
 | Shared domain package | TypeScript, Zod 4 | Schemas, report/task state machines, duplicate, SLA and resolution policies, analytics |
 | Database | Cloud Firestore | Persistent documents, real-time listeners, transactions |
-| File storage | Cloud Storage for Firebase | Report and proof photos |
+| Photo storage | Cloud Firestore binary documents (`photos`) | Report and proof photos, compressed in the browser (decision D3) |
 | Authentication | Firebase Authentication with custom claims | Email/password sign-in, role, department, suburb and active-account claims |
-| Access control | Firestore and Storage Security Rules | Server-side enforcement of the permission matrix |
-| Runtime (assessed) | Firebase Emulator Suite | Local Auth, Firestore, Functions and Storage |
+| Access control | Firestore Security Rules | Server-side enforcement of the permission matrix |
+| Runtime: deployed | Vercel (static site + Node serverless functions, Cape Town region) and Firebase Spark (Auth, Firestore) | Free-tier production configuration (decision D3) |
+| Runtime: local | Firebase Emulator Suite | Local Auth, Firestore and Functions for development, tests and offline demonstration |
 | Testing / CI | Vitest, @firebase/rules-unit-testing, Playwright, axe-core, GitHub Actions, gitleaks | Automated verification |
 
 ## Key Architecture and Design Decisions
@@ -352,12 +353,12 @@ Table: Component responsibilities and technology stack
 - *Rationale:* all data comes from the Firebase SDK in the browser, so server rendering adds complexity for no benefit. A static single-page app deploys to Firebase Hosting, and Phase 3 already used React Router conventions.
 - *Consequences:* simple hosting and a fast build. Search-engine indexing is irrelevant for an authenticated application.
 
-**D3: The assessed runtime is the Firebase Emulator Suite (ADR-0003).**
-- *Context:* a reliable, reproducible assessment environment with no cost.
-- *Options:* a live Firebase project only, the emulator only, or the emulator plus an optional cloud deployment.
-- *Decision:* the emulator as the primary runtime, with the same code deployable to Firebase.
-- *Rationale:* it needs no billing, works without a cloud dependency during the demonstration, and is identical to the CI test environment.
-- *Consequences:* scheduled functions are triggered from the admin "Run SLA & auto-close now" action in the demonstration, and FCM push notifications cannot be shown (FR-24 deferred).
+**D3: Free-tier deployment: Firebase Spark, a Node API on Vercel, and photos stored in Firestore (ADR-0006).**
+- *Context:* the system had to be deployable without cost. Cloud Functions and Cloud Storage both require Firebase's paid Blaze plan.
+- *Options:* (a) Blaze with a budget alert; (b) port to Supabase; (c) keep the free Spark plan (Auth, Firestore), serve the command API from a free Node host, and store photos in Firestore.
+- *Decision:* (c). Vercel serverless functions run the API next to the static web app; photos are compressed to ≤ 700 KB and stored as binary documents.
+- *Rationale:* the commands were already transport-independent, so a second adapter reuses every service unchanged and speaks the same callable protocol (the client only switches its URL). Vercel's free functions do not sleep, which matters in a live demonstration. A Supabase port would have meant rewriting the backend and about 90 tests.
+- *Consequences:* two adapters must stay equivalent, so CI runs the complete E2E suite through both. Photo size is bounded by Firestore's 1 MiB document limit, and each photo view is one document read. The hourly SLA job runs from GitHub Actions, because Vercel's free cron is daily. The local emulator configuration remains for development, tests and an offline demonstration.
 
 **D4: Leaflet and OpenStreetMap instead of Google Maps (ADR-0004).**
 - *Context:* residents must pinpoint incidents, and staff must see them.
@@ -447,7 +448,7 @@ Table: User interface evidence
 
 ## Data Design
 
-CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in **Cloud Storage**, and the database holds only their paths. Figure 27 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
+CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in Firestore as well, as binary documents in the `photos` collection (decision D3), so the system needs no separate file store. Figure 27 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
 
 ![Figure: Firestore document model](docs/diagrams/data-model.png)
 
@@ -469,7 +470,7 @@ Table: Data dictionary (principal collections)
 | location, geohash | {lat,lng}, string | required | Map position; geohash for the 100 m duplicate query |
 | suburb, landmark | string | suburb required | Human-readable location |
 | severity | enum HIGH, MEDIUM, LOW | required | Priority of the resulting task |
-| photoPaths | string[0..3] | required (may be empty) | Storage paths of evidence |
+| photoIds | string[0..3] | required (may be empty) | Ids of evidence photos (`photos`) |
 | status | enum (8 states) | required | Lifecycle (Figure 7) |
 | assignedWorkerId, activeTaskId | string | FK, optional | Current assignment (BR-06) |
 | parentReportId, followerIds, affectedCount | string, string[], int | optional / required | Duplicate linkage (BR-03) |
@@ -483,6 +484,7 @@ Table: Data dictionary (principal collections)
 | **alerts/{id}/recipients/{uid}** | | uid (PK, FK users) | Delivery record: channel, deliveredAt, readAt |
 | **users/{uid}/notifications/{id}** | | auto id | type, title, body, link, readAt, createdAt |
 | **departments/{id}**, **categories/{id}** | | slug id | name (unique), slaHours (1–720) / icon and departmentId (FK), isActive |
+| **photos/{id}** | | auto id | reportId (FK), ownerId (FK users), kind EVIDENCE/PROOF, contentType, size, data (bytes ≤ 700 KB), createdAt; readable by whoever can read the report |
 | **counters/reports-{year}** | | year | next reference sequence |
 | **settings/app** | | fixed id | reportsPerHour (BR-21) |
 | **systemLogs/{id}** | | auto id | level, source, message, actorId, createdAt |
@@ -527,13 +529,13 @@ Table: Security controls
 | Authentication | Unauthorised access | Firebase Authentication with email/password (minimum 8 characters) or Google; signed ID tokens on every request; new Google users can only become Residents |
 | Account enumeration | Attackers discover which emails are registered | Password reset and sign-in errors give the same message whether or not an account exists |
 | Abuse | Flooding the queue with fake reports | Configurable per-resident hourly limit enforced inside the submission transaction (BR-21) |
-| Authorisation | A user reaches another role's data or functions | Firestore and Storage Security Rules per the matrix; role and department checks in every command; client route guards for usability only |
+| Authorisation | A user reaches another role's data or functions | Firestore Security Rules per the matrix (photos inherit their report's access); role and department checks in every command; client route guards for usability only |
 | Account lifecycle | A deactivated user keeps access | Auth account disabled, refresh tokens revoked, profile check on every command |
-| Input | Malicious or invalid data | Zod schemas on the server; geographic bounds; length limits; photo type and size enforced by Storage rules |
+| Input | Malicious or invalid data | Zod schemas on the server; geographic bounds; length limits; photo size limit and real-type check from magic bytes, so renamed or script-bearing files (e.g. SVG) are refused; request body limited to 4 MB |
 | Integrity | Race conditions or partial updates | Firestore transactions TX-1 to TX-3; append-only history; no client writes |
-| File uploads | Malware, oversized files, writing to others' folders | Only images ≤ 5 MB in the uploader's own folder; the server checks that the paths belong to the caller |
+| File uploads | Malicious or oversized files | Photos accepted only through commands, re-checked server-side (type sniffing, ≤ 700 KB); never served as HTML; displayed from bytes with an explicit image content type |
 | Sensitive data (POPIA) | Exposure or indefinite retention of residents' identity, location or photos | Reports readable only by the reporter, followers and staff; public map uses an anonymised projection with location rounded to about 100 m; minimal data collected; processing region africa-south1; residents can erase their personal data (FR-32), leaving anonymised service records (BR-22) |
-| Secrets | API key or credential exposure | No secrets in the repository; emulator demo configuration; `.env.example`; gitleaks scan in CI |
+| Secrets | API key or credential exposure | Service-account key and cron secret only in Vercel's encrypted environment; none in the repository (`.env.example` lists names only); gitleaks scan in CI; the cron endpoint compares the secret in constant time |
 | Error handling | Leaking internals | Unexpected errors return a generic message and are written to the system log |
 | Logging and audit | Unaccountable actions | Immutable status history with actor; administrator actions and errors in the system log |
 
@@ -548,7 +550,12 @@ Table: Security controls
 
 ## Deployment and Runtime Design
 
-The assessed system **runs locally**. The web application is served by Vite. Authentication, Firestore, Cloud Functions and Storage run in the Firebase Emulator Suite on the same machine, with ports listed in Figure 28. The browser loads map tiles from OpenStreetMap over HTTPS. The same code can be deployed unchanged to a Firebase project (Hosting, Cloud Functions in africa-south1, Firestore, Storage, Auth), but that cloud deployment is optional and is not part of the assessed configuration.
+CivicLink has two runtime configurations built from the same code (Figure 28):
+
+- **Deployed (free tier):** the static web app and the Node command API run on **Vercel** (serverless functions in the Cape Town region). Authentication and Firestore run on Firebase's free **Spark** plan. The API uses a service-account key held in Vercel's encrypted environment. A GitHub Actions schedule calls the protected maintenance endpoint hourly, and Vercel Cron calls it daily. The deployed URL is given in Appendix 11.2.
+- **Local:** the web app runs on Vite. Auth, Firestore and Cloud Functions run in the Firebase Emulator Suite on one machine, with the same command registry served by the Cloud Functions adapter. This configuration is used for development, all automated tests and an offline demonstration.
+
+In both configurations the browser loads map tiles from OpenStreetMap over HTTPS.
 
 ![Figure: Deployment diagram](docs/diagrams/deployment.png)
 
@@ -565,7 +572,8 @@ Table: Repository structure
 | `apps/web/` | Web application | `src/pages/{auth,resident,official,worker,admin,common}`, `src/components` (UI kit, maps, timeline, notification bell), `src/auth` (AuthProvider, RequireRole), `src/lib` (Firebase setup, typed API client, live hooks, uploads) |
 | `functions/` | Command API and schedules | `src/index.ts` (callable and scheduled exports), `src/lib/command.ts` (auth/role/validation wrapper), `src/services/*` (business services), `test/` (integration tests) |
 | `packages/shared/` | Shared domain package | `src/schemas.ts`, `stateMachines.ts`, `policies.ts`, `analytics.ts`, `models.ts`, `constants.ts`; `test/` (unit tests) |
-| `firestore.rules`, `storage.rules`, `firestore.indexes.json` | Access control and indexes | Security Rules and composite indexes |
+| `firestore.rules`, `firestore.indexes.json` | Access control and indexes | Security Rules and composite indexes |
+| `api/`, `vercel.json`, `functions/src/http.ts`, `functions/src/commands.ts` | Deployed API | Vercel entry points; Node HTTP adapter; the single command registry shared with Cloud Functions |
 | `scripts/seed.ts` | Data initialisation | Deterministic demonstration data |
 | `tests/rules`, `tests/e2e`, `tests/evidence`, `tests/support` | Verification | Rules tests, Playwright tests, screenshot capture, emulator harness |
 | `docs/` | Documentation | Baseline SRS, change log, ADRs, diagrams (source and rendered), traceability matrix, test catalogue, defect log, evidence, report |
@@ -579,13 +587,13 @@ Table: Capability implementation
 | Capability | Requirement(s) | Main implementation components |
 |---|---|---|
 | Register and sign in | FR-01, FR-02 | RegisterPage, LoginPage, AuthProvider, RequireRole; `registerResident` → UserService; `command()`/`loadActor`; users, Auth claims |
-| Submit report with duplicate detection | FR-03–FR-05 | NewReportPage, LocationPicker, upload.ts; `submitReport` → ReportService.submit (TX-1), DuplicatePolicy, formatReference; reports, history, publicReports, counters, Storage `reports/{uid}` |
+| Submit report with duplicate detection | FR-03–FR-05 | NewReportPage, LocationPicker, upload.ts; `submitReport` → ReportService.submit (TX-1), DuplicatePolicy, formatReference; reports, history, publicReports, counters, photos (photoService: decode, size, type sniffing) |
 | Track reports | FR-06, FR-15 | MyReportsPage, ResidentReportPage, Timeline, NotificationBell, useLiveQuery/useLiveDoc listeners; reports, history, notifications |
 | Triage and dispatch | FR-08–FR-10, FR-12, FR-13 | ReportQueuePage, OfficialReportPage; ReportService.triage/reject/assign (TX-2)/reassign/escalate; applyTransition; tasks, reports, history |
-| Field completion | FR-11 | WorkerHome, TaskPage; `updateTask`, `completeTask` → TaskService (TX-3), TaskStateMachine; tasks, reports, Storage `proofs/` |
+| Field completion | FR-11 | WorkerHome, TaskPage; `updateTask`, `completeTask` → TaskService (TX-3), TaskStateMachine; tasks, reports, photos |
 | Confirm, reopen, SLA | FR-13, FR-14 | ResidentReportPage; ReportService.confirm/reopen; MaintenanceService with `escalateOverdue` and `autoCloseResolved` schedules and admin `runMaintenance` |
 | Alerts | FR-16–FR-18 | NewAlertPage, AlertsAdminPage, AlertsFeedPage, useResidentAlerts; AlertService; alerts, recipients |
-| Accounts | FR-01, FR-02, FR-29–FR-32 | LoginPage, RegisterPage, WelcomePage, ProfilePage, AuthProvider (Google popup, password reset); `registerResident`, `completeProfile`, `updateProfile`, `deleteMyAccount` → UserService; users, Auth claims, Storage |
+| Accounts | FR-01, FR-02, FR-29–FR-32 | LoginPage, RegisterPage, WelcomePage, ProfilePage, AuthProvider (Google popup, password reset); `registerResident`, `completeProfile`, `updateProfile`, `deleteMyAccount` → UserService; users, Auth claims, photos |
 | Insight and administration | FR-19–FR-23, FR-26 | AnalyticsPage → AnalyticsService → computeAnalytics; UsersPage → UserService; ConfigPage → ConfigService; LogsPage, logService; CommentService; toCsv |
 
 **Validation.** Forms validate on the client with the same Zod schemas the server uses, and show field-level messages that clear as the user corrects them. The `command()` wrapper validates every request again and returns `invalid-argument` with a `fields` map, which the client displays against the matching inputs.
@@ -625,7 +633,7 @@ Table: Callable command API
 - **OpenStreetMap tiles** are fetched by the browser over HTTPS. If tiles are unavailable, the map shows a blank background but still works: the pin, map clicks and coordinates function, and the report form, lists and timelines do not depend on tiles.
 - **Browser geolocation** is optional. If permission is denied, or the position is outside the municipality, the user is told to drag the pin instead.
 
-**Substituted integrations.** In the assessed configuration, Firebase Authentication, Firestore, Cloud Functions and Storage are provided by the official Firebase Emulator Suite, not by Google Cloud. No integration is mocked within the application code.
+**Two adapters, one API.** `functions/src/commands.ts` defines all 26 commands once. `index.ts` exposes them as Cloud Functions (local emulator), and `http.ts` exposes them as a plain Node handler (Vercel). The Node adapter verifies the Firebase ID token (rejecting revoked sessions), limits the request size, and returns errors in the callable protocol. The client therefore uses `httpsCallableFromURL` with no other changes. In the local configuration, Firebase services come from the official Emulator Suite. No integration is mocked in the application code.
 
 ## AI / Machine-Learning Component
 
@@ -641,17 +649,17 @@ Table: Test levels
 
 | Level | Tool | Scope | Count |
 |---|---|---|---|
-| Unit | Vitest | Shared domain: schemas, state machines, duplicate/SLA/resolution policies, location helpers, references, analytics, CSV (≈ 98% line coverage) | 29 |
-| Security rules | @firebase/rules-unit-testing on the emulator | Allow and deny case for every permission-matrix cell, Firestore and Storage | 20 |
-| API integration | Vitest + Firebase client SDK against the emulators | Every command: success, validation, boundary, authorisation, state conflict and concurrency | 70 |
-| End-to-end | Playwright (Chromium and Firefox; 360 px mobile) | Full lifecycle across three browser sessions, duplicates, alerts, access control, validation, out-of-area GPS, Google sign-in, password reset, profile and account deletion | 10 + 3 non-functional |
+| Unit | Vitest | Shared domain: schemas, state machines, duplicate/SLA/resolution policies, location helpers, image sniffing, references, analytics, CSV (≈ 98% line coverage) | 30 |
+| Security rules | @firebase/rules-unit-testing on the emulator | Allow and deny case for every permission-matrix cell, including photos | 19 |
+| API integration | Vitest + Firebase client SDK against the emulators | Every command: success, validation, boundary, authorisation, state conflict and concurrency; the Node HTTP adapter | 74 |
+| End-to-end | Playwright (Chromium and Firefox; 360 px mobile) | Full lifecycle across three browser sessions, duplicates, alerts, access control, validation, out-of-area GPS, Google sign-in, password reset, profile and account deletion | 10 + 3 non-functional (run through both API adapters) |
 | Non-functional | Playwright timing, axe-core, gitleaks, ESLint, TypeScript | NFR-04 to NFR-09, NFR-12 | — |
 
 Everything except visual review was tested automatically. **Manual testing** consisted of exploratory sessions in each role and a review of every screenshot in Section 5.5, including mobile layouts. Seeded data (`scripts/seed.ts`) gives every test run the same starting state.
 
 ## Functional and Business-Rule Verification
 
-The table below lists the principal test cases. The complete list of 132 automated tests, with their results, is produced by CI for the submitted commit (Appendix 11.3). All tests listed passed. "As expected" means the actual result matched the expected result exactly.
+The table below lists the principal test cases. The complete list of 136 automated tests, with their results, is produced by CI for the submitted commit (Appendix 11.3). All tests listed passed. "As expected" means the actual result matched the expected result exactly.
 
 Table: Functional and business-rule test results
 
@@ -716,7 +724,7 @@ Table: Non-functional verification results
 | NFR-08 Accessibility | NFT-08 axe-core WCAG 2.1 A/AA on login, report form, my reports, queue | 0 violations (after DEF-03) | Pass |
 | NFR-09 Compatibility | E2E suite on Chromium and Firefox in CI | All pass | Pass |
 | NFR-10 Integrity | IT-RPT-08, IT-ASG-07, IT-TSK-06 | Atomic, exactly-once outcomes | Pass |
-| NFR-11 Privacy | RT-RPT-03, RT-PUB-01, RT-STO-02, UT-PRV-01, IT-RPT-07 | No PII in public data; photos restricted | Pass |
+| NFR-11 Privacy | RT-RPT-03, RT-PUB-01, RT-PHO-01, RT-PHO-02, UT-PRV-01, IT-RPT-07 | No PII in public data; photos restricted | Pass |
 | NFR-12 Maintainability | CI: ESLint, TypeScript strict, coverage threshold | 0 lint errors; 97.9% line coverage of the domain package | Pass |
 
 Timings were measured on the development laptop running the emulators, Vite and the browsers at the same time, which is the assessed configuration.
@@ -749,7 +757,7 @@ npx -y npm@11.6.2 ci
 npm run dev
 ```
 
-`npm run dev` builds the Cloud Functions, starts the Auth, Firestore, Functions and Storage emulators, initialises the database with the deterministic seed (departments, categories, 15 accounts, 150 reports with valid histories, and alerts), and starts the web application. Open **http://127.0.0.1:5173**. The emulator data browser is at http://127.0.0.1:4000. Restarting the command resets the database to the same seed. npm 11 is used because npm 10 has a known workspace-resolution defect.
+`npm run dev` builds the Cloud Functions, starts the Auth, Firestore and Functions emulators, initialises the database with the deterministic seed (departments, categories, 15 accounts, 150 reports with valid histories, and alerts), and starts the web application. Open **http://127.0.0.1:5173**. The emulator data browser is at http://127.0.0.1:4000. Restarting the command resets the database to the same seed. npm 11 is used because npm 10 has a known workspace-resolution defect.
 
 **Demo accounts.** All accounts use the password `CivicLink#2026`. The login page offers one-click shortcuts for the main four.
 
@@ -765,12 +773,20 @@ Table: Demo accounts
 
 **Tests.** `npm run test:unit`, `npm run test:emulator` (rules and API integration), and `npm run test:e2e` (run `npx playwright install chromium` once beforehand).
 
-**Optional cloud deployment.**
-1. Copy `.env.example` to `apps/web/.env.local` and enter the web configuration of a Firebase project on the Blaze plan.
-2. Set `VITE_USE_EMULATORS=false`.
-3. Run `npm run build` followed by `npx firebase deploy`.
+**Deployed configuration (free tier).** The full runbook is in `docs/deploy.md`. In summary:
+1. In the Firebase console, enable Email/Password and Google sign-in and create the Firestore database (location africa-south1).
+2. Deploy the rules and indexes with `npx firebase deploy --only firestore --project prod`.
+3. Import the GitHub repository into Vercel, which reads the build settings from `vercel.json`.
+4. Set the environment variables listed in `.env.example`: Firebase web config, `VITE_API_BASE=/api`, `VITE_USE_EMULATORS=false`, `FIREBASE_SERVICE_ACCOUNT` and `CRON_SECRET`.
+5. Set the same `CRON_SECRET` and the `APP_URL` in the GitHub repository for the hourly schedule.
+6. Seed the deployed project with `npm run seed:prod`.
 
-The assessed system is the local configuration above, so no deployed URL is required.
+**Alternative cloud deployment (Blaze plan).**
+1. Copy `.env.example` to `apps/web/.env.local` and enter the web configuration of a Firebase project on the Blaze plan.
+2. Set `VITE_USE_EMULATORS=false` and leave `VITE_API_BASE` empty.
+3. Run `npm run build` followed by `npx firebase deploy --project prod`.
+
+The same code also runs entirely on Firebase.
 
 # SOLUTION EVALUATION
 
@@ -830,13 +846,15 @@ Submitted version: tag **{{TAG}}**, commit **{{COMMIT}}**.
 
 ## Deployed System
 
-Not applicable. The assessed system runs locally on the Firebase Emulator Suite (Section 8 and decision D3).
+URL: **{{APP_URL}}** (Vercel + Firebase Spark, decision D3). Demo accounts are listed in Section 8. The local emulator configuration in Section 8 reproduces the same system offline.
+
+> VERIFY: Confirm the deployed URL works and the demo accounts exist in the deployed project before submission.
 
 ## Additional Supporting Material
 
 - **Complete automated test results:** the GitHub Actions run for commit {{COMMIT}} (tab "Actions"). It includes the Playwright HTML report and the coverage report as downloadable artefacts.
 - **Traceability matrix** (requirement → rule → screen → code → data → test): `docs/trackers/traceability-matrix.md`.
 - **Full test catalogue:** `docs/trackers/test-catalog.md`; **defect log:** `docs/trackers/defect-log.md`.
-- **Baseline change log** reconciling Phases 1–3 (CR-01 to CR-26): `docs/baseline/change-log.md`.
+- **Baseline change log** reconciling Phases 1–3 (CR-01 to CR-28): `docs/baseline/change-log.md`.
 - **Architecture decision records:** `docs/adr/README.md`.
 - **Diagram sources** (PlantUML): `docs/diagrams/src/`; **all 31 UI screenshots:** `docs/evidence/`.

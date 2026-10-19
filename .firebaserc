@@ -1,1 +1,1 @@
-{ "projects": { "default": "demo-civiclink" } }
+{ "projects": { "default": "demo-civiclink", "prod": "civiclink-2ae84" } }

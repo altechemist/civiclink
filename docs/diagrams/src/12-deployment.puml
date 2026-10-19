@@ -1,42 +1,42 @@
 @startuml deployment
 !include _style.iuml
-title CivicLink: Deployment and Runtime (assessed configuration)
+title CivicLink: Deployment and Runtime
 
-node "Assessor / developer machine\n(Linux · macOS · Windows)" as PC {
-  node "Node.js 22" {
-    artifact "Vite dev server :5173\n(apps/web)" as Vite
-    artifact "seed script\n(scripts/seed.ts)" as Seed
-  }
-  node "Firebase Emulator Suite\n(firebase-tools, Java 21)" as EMU {
-    component "Auth emulator :9099" as EA
-    component "Firestore emulator :8080\n+ firestore.rules" as EF
-    component "Functions emulator :5001\n(functions/lib/index.js)" as EFN
-    component "Storage emulator :9199\n+ storage.rules" as ES
-    component "Emulator UI :4000" as EUI
-  }
-}
-node "User device\n(browser: Chrome, Firefox,\nmobile Chrome)" as Browser {
+node "User device\n(Chrome, Firefox, mobile Chrome)" as Browser {
   artifact "CivicLink SPA" as SPA
 }
-cloud "Internet" {
-  node "tile.openstreetmap.org" as OSM
+
+cloud "Deployed configuration (free tier, ADR-0006)" {
+  node "Vercel (Hobby)" as Vercel {
+    artifact "Static SPA\n(apps/web/dist, CDN)" as Static
+    component "Serverless functions, region cpt1\napi/[command].js · api/cron/maintenance.js\n(functions/lib/http.js)" as VApi
+  }
+  node "Firebase Spark: civiclink-2ae84" as Fb {
+    component "Firebase Authentication\n(password, Google)" as FA
+    database "Cloud Firestore (africa-south1)\n+ Security Rules\n(incl. photos)" as FF
+  }
+  node "GitHub Actions\n(hourly schedule)" as GHA
 }
 
-Browser --> Vite : HTTP (load SPA)
-SPA --> EA : HTTP
-SPA --> EF : WebChannel / gRPC-web\n(listeners)
-SPA --> EFN : HTTPS callable
-SPA --> ES : HTTP upload/download
-SPA --> OSM : HTTPS tiles
+node "Developer / assessor machine (local configuration)" as PC {
+  artifact "Vite dev server :5173" as Vite
+  node "Firebase Emulator Suite (Java 21)" as EMU {
+    component "Auth :9099" as EA
+    component "Firestore :8080 + rules" as EF
+    component "Functions :5001\n(functions/lib/index.js)" as EFN
+  }
+}
+cloud "tile.openstreetmap.org" as OSM
+
+SPA --> Static : HTTPS
+SPA --> VApi : HTTPS POST /api/<command>\n(ID token)
+SPA --> FA : HTTPS
+SPA --> FF : HTTPS listeners (reads)
+VApi --> FF : Admin SDK\n(service-account key)
+VApi --> FA : verify tokens, claims
+GHA --> VApi : /api/cron/maintenance\n(CRON_SECRET)
+SPA --> OSM : tiles
+Vite ..> EFN : local only
 EFN --> EF
 EFN --> EA
-EFN --> ES
-Seed --> EF
-Seed --> EA
-
-note bottom of EMU
-  Optional cloud deployment (same code):
-  Firebase Hosting (SPA) + Cloud Functions (africa-south1)
-  + Firestore + Storage + Auth, Blaze plan with budget alert.
-end note
 @enduml

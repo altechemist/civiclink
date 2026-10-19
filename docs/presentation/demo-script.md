@@ -4,7 +4,7 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
 
 ## Before you start (10 min before)
 
-1. `npm run dev` from a fresh terminal. This resets the database to the seed. Wait for "Local: http://127.0.0.1:5173".
+1. **Primary:** open the deployed URL and wake it with one sign-in. **Fallback (offline):** `npm run dev` from a fresh terminal, which resets the database to the seed; wait for "Local: http://127.0.0.1:5173".
 2. Open **four browser windows** side by side, each in its own profile or incognito window so the sessions don't clash. Sign in with the demo buttons:
    - A: Resident **thandi@** (narrow the window to phone width or use DevTools device mode)
    - B: Official **naledi@** (Water & Sanitation)
@@ -19,8 +19,8 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
 1. **Problem:** the 31 March strike; phone and WhatsApp reporting; no tracking; no alerts.
 2. **Solution and scope:** four roles; 28 of 32 requirements included (all 14 Must-haves); deferred items and why.
 3. **Architecture:** React SPA → callable commands → transactions; Security Rules; shared domain package (Figure 9).
-4. **Two key decisions:** server-side commands with transactions (D1); emulator as the assessed runtime (D3).
-5. **Verification:** 132 automated tests, CI green, NFR measurements, SC-01 to SC-05 all achieved.
+4. **Two key decisions:** server-side commands with transactions (D1); free-tier deployment, with a Node API on Vercel and photos in Firestore (D3).
+5. **Verification:** 136 automated tests, CI green, NFR measurements, SC-01 to SC-05 all achieved.
 
 ## Principal workflow (≈ 5 min, 2 marks)
 

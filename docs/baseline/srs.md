@@ -46,7 +46,7 @@ Release status is finalised at the code freeze (30 Oct 2026). Anything still *Pl
 ## 3. Scope
 
 ### 3.1 Solution boundary
-Inside the system: the web client (resident, official, field worker and admin views), the Cloud Functions API (commands, triggers, schedules), Firestore, Cloud Storage and Firebase Authentication. External: the four human actors and OpenStreetMap tile servers. The assessed runtime is the **Firebase Emulator Suite on a local machine** (ADR-0003), with optional deployment to a Firebase project.
+Inside the system: the web client (resident, official, field worker and admin views), the Node.js command API (commands and scheduled rules; served by Vercel when deployed and by Cloud Functions locally), Firestore (including photos) and Firebase Authentication. External: the four human actors, OpenStreetMap tile servers, Google sign-in, and the GitHub Actions schedule. The system is deployed on free tiers (Vercel + Firebase Spark, ADR-0006) and also runs locally on the Firebase Emulator Suite (ADR-0003).
 
 ### 3.2 Final release scope (target)
 Core: registration and role login, located incident reporting with photos, reference numbers, duplicate detection, status tracking with history, official queue/triage/reject/assign, field worker accept/start/complete with proof, real-time in-app notifications, suburb-targeted alerts with read receipts, admin user management.
@@ -121,7 +121,7 @@ All are verified in the assessment environment: local Firebase Emulator Suite, s
 
 | ID | Attribute | Requirement | Verification |
 |---|---|---|---|
-| NFR-01 | Security: authorisation | Every role-restricted read or write is enforced server-side (Firestore/Storage Security Rules and role checks in Cloud Functions), independently of the UI. | Rules unit tests and function auth tests (permission matrix) |
+| NFR-01 | Security: authorisation | Every role-restricted read or write is enforced server-side (Firestore Security Rules and role checks in every command), independently of the UI. | Rules unit tests and function auth tests (permission matrix) |
 | NFR-02 | Security: authentication | Passwords are handled only by Firebase Authentication (minimum 8 characters). No password or credential is stored in Firestore or the repository. Roles are carried as signed custom claims. | Code review, rules tests, secret scan |
 | NFR-03 | Security: input validation | All commands validate input server-side against shared schemas. Invalid input is rejected with a field-level message and no data change. | Function integration tests (invalid cases) |
 | NFR-04 | Security: secrets | No secrets in source control. Configuration comes from environment variables with a committed `.env.example`. | Secret scan in CI (gitleaks) |
@@ -139,7 +139,7 @@ All are verified in the assessment environment: local Firebase Emulator Suite, s
 | ID | Rule |
 |---|---|
 | BR-01 | Only an authenticated, active user with role RESIDENT may submit a report. |
-| BR-02 | A report needs a category (active), a description of 10–300 characters, a location inside the Sol Plaatje municipal bounding box, a suburb from the configured list, and a severity. A report may carry 0–3 photos, each JPEG/PNG/WebP and at most 5 MB. |
+| BR-02 | A report needs a category (active), a description of 10–300 characters, a location inside the Sol Plaatje municipal bounding box, a suburb from the configured list, and a severity. A report may carry 0–3 photos: the resident may pick JPEG/PNG/WebP files of up to 15 MB, which are compressed; each stored photo must be at most 700 KB and really be an image of its declared type (checked from its content). |
 | BR-03 | A new report is a duplicate if an *open* report with the same category exists within 100 m and was created in the last 72 hours. The duplicate is stored with status DUPLICATE and `parentReportId`, and the parent's `affectedCount` is incremented. DUPLICATE is terminal. |
 | BR-04 | References are `CL-<year>-<4-digit sequence>`, allocated in a transaction, unique and never reused. |
 | BR-05 | A report's status may change only along the transitions in the Report state machine (§7). Every change appends an immutable status-history entry (from, to, actor, role, note, time). History entries are never edited or deleted. |
@@ -191,7 +191,7 @@ Task: ASSIGNED → ACCEPTED → IN_PROGRESS → COMPLETED. Any active state goes
 
 **FR-02 Sign in.** Valid credentials redirect to `/resident`, `/official`, `/worker` or `/admin` by role. Wrong credentials show a generic error. A deactivated account is refused with "account deactivated". Opening another role's route shows the permission-denied page. Sign-out clears the session.
 
-**FR-03 Submit report.** The form validates every BR-02 field with field-level messages before submission, and the server re-validates. A pin outside the municipal box is refused. A fourth photo, a file over 5 MB or a non-image is refused. On success the resident sees a confirmation with the reference.
+**FR-03 Submit report.** The form validates every BR-02 field with field-level messages before submission, and the server re-validates. A pin outside the municipal box is refused. A fourth photo, a file over 15 MB, or a file that is not really an image of its declared type (e.g. a renamed SVG) is refused. On success the resident sees a confirmation with the reference.
 
 **FR-04 Reference.** Two reports submitted at the same time get distinct sequential references. A new report has status SUBMITTED, the category's default department and one history entry.
 

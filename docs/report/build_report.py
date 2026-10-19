@@ -5,6 +5,7 @@ Keeps the template cover page, styles and automatic heading numbering; replaces 
 body with the report content. Run from the repository root:  python3 docs/report/build_report.py
 """
 import copy
+import os
 import re
 import subprocess
 import sys
@@ -62,7 +63,8 @@ def placeholders() -> dict[str, str]:
     remote = git('remote', 'get-url', 'origin')
     m = re.search(r'github\.com[:/](.+?)(\.git)?$', remote)
     repo = f'https://github.com/{m.group(1)}' if m else remote
-    return {'{{TAG}}': tag, '{{COMMIT}}': commit, '{{REPO}}': repo}
+    app_url = os.environ.get('APP_URL', '(deployed URL pending)')
+    return {'{{TAG}}': tag, '{{COMMIT}}': commit, '{{REPO}}': repo, '{{APP_URL}}': app_url}
 
 
 def num_pr(paragraph):

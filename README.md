@@ -35,7 +35,7 @@ Restarting `npm run dev` resets the database to the same deterministic seed.
 
 ### Configuration
 
-The web app defaults to the local emulator, so no `.env` file is needed. To point it at a real Firebase project, copy `.env.example` to `apps/web/.env.local`, set the project's web config and `VITE_USE_EMULATORS=false`, then deploy with `npx firebase deploy` (Cloud Functions require the Blaze plan). Never commit real keys or service-account files.
+The web app defaults to the local emulator, so no `.env` file is needed. The deployed system runs on free tiers (Vercel + Firebase Spark); see **[docs/deploy.md](docs/deploy.md)**. Never commit real keys or service-account files.
 
 ## Tests
 
@@ -45,6 +45,7 @@ The web app defaults to the local emulator, so no `.env` file is needed. To poin
 | `npm run coverage` | Same, with coverage (CI fails below 80% lines) |
 | `npm run test:emulator` | Security Rules matrix `RT-*` and Cloud Functions integration `IT-*` against the emulators |
 | `npm run test:e2e` | Playwright end-to-end `E2E-*` / `NFT-*` (run `npx playwright install chromium` once) |
+| `npm run test:e2e:http` | The same E2E suite through the Node HTTP API used on Vercel |
 | `npm run lint` / `npm run typecheck` | ESLint and TypeScript strict mode |
 
 Test IDs match [the test catalogue](docs/trackers/test-catalog.md) and the final report. CI runs all of the above plus a gitleaks secret scan on every push.
@@ -53,10 +54,10 @@ Test IDs match [the test catalogue](docs/trackers/test-catalog.md) and the final
 
 ```
 apps/web/            React + Vite + TypeScript SPA (resident, official, field worker, admin)
-functions/           Cloud Functions: callable command API, services, schedules (TX-1..TX-3)
+functions/           Command API: commands.ts registry, services (TX-1..TX-3), adapters index.ts (Cloud Functions) and http.ts (Node/Vercel)
+api/                 Vercel serverless entry points (use functions/lib/http.js)
 packages/shared/     Domain logic shared by web and functions: schemas, state machines, policies
 firestore.rules      Firestore Security Rules (role/permission matrix)
-storage.rules        Storage rules (photo uploads)
 scripts/seed.ts      Deterministic demo data
 tests/rules/         Security Rules tests
 tests/e2e/           Playwright tests
@@ -80,7 +81,7 @@ docs/                Baseline SRS, ADRs, plan, trackers, diagrams, evidence, rep
 
 ## Stack
 
-React 19 · Vite · TypeScript · Tailwind CSS · React Router · Leaflet + OpenStreetMap · Recharts · Firebase Authentication · Cloud Firestore · Cloud Functions (Node 22, `africa-south1`) · Cloud Storage · Zod · Vitest · Playwright · GitHub Actions.
+React 19 · Vite · TypeScript · Tailwind CSS · React Router · Leaflet + OpenStreetMap · Recharts · Firebase Authentication (password, Google) · Cloud Firestore (data and photos) · Node.js 22 command API on Vercel or Cloud Functions · Zod · Vitest · Playwright · GitHub Actions.
 
 ## Workflow
 
