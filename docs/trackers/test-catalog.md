@@ -1,80 +1,144 @@
 # Test Catalogue
 
-Each test's ID appears in its test title (e.g. `it('IT-ASG-07 concurrent assigns: exactly one succeeds', …)`) so the report and code can be cross-checked with `grep -r "IT-ASG-07"`.
-Report §7.2 uses the columns: Test ID · Requirement/Rule · Scenario · Type · Expected · Actual · Status.
-*Actual* and *Status* are filled from the CI run used for the `v1.0.0` tag.
+Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cited in the report appears in a test title, so `grep -r "<ID>"` finds the test. Results for the submitted commit are in its GitHub Actions run.
 
-Types: S = success, V = validation, B = boundary, A = authorisation, F = failure / state conflict, C = concurrency.
+**Total: 119 automated tests.**
 
-## Shared domain (unit)
+## Unit (Vitest): 28 tests
 
-| ID | Ref | Scenario | Type | Expected |
-|---|---|---|---|---|
-| UT-SCH-01 | BR-02 | description 9 / 10 / 300 / 301 chars | B | 10 and 300 accepted, 9 and 301 rejected |
-| UT-SCH-02 | BR-02 | 0, 3, 4 photos. 5 MB vs 5 MB + 1 byte. image/gif | B,V | ≤3 and ≤5 MB jpeg/png/webp only |
-| UT-SCH-03 | BR-02 | location just inside / outside municipal bounding box | B | outside rejected |
-| UT-RSM-01 | BR-05 | every allowed transition in srs §7 | S | allowed |
-| UT-RSM-02 | BR-05 | every other (from, to) pair | F | rejected with `invalid-transition` |
-| UT-TSM-01 | BR-08 | task order ASSIGNED→ACCEPTED→IN_PROGRESS→COMPLETED. Skip steps | S,F | skips rejected |
-| UT-DUP-01..06 | BR-03 | 99 m / 100 m / 101 m. 71 h / 73 h. Different category. Parent RESOLVED | B | duplicate only for ≤100 m, ≤72 h, same category, open parent |
-| UT-SLA-01..03 | BR-10 | created + slaHours − 1 min / + 1 min. Already escalated | B | escalate only after SLA and once |
-| UT-REF-01 | BR-04 | format CL-2026-0001, CL-2026-9999, rollover to 5 digits | B | correct formatting |
-| UT-SCH-ALR-01 | BR-13 | title 100/101, message 500/501, empty suburbs, expiry past / >30 days | B,V | boundaries enforced |
-| UT-ANL-01 | FR-19 | metric functions on fixture, including empty input | S,B | expected values, no NaN |
+| ID | Scenario | File |
+|---|---|---|
+| UT-RSM-01 | every allowed transition succeeds for its allowed actors | `packages/shared/test/domain.test.ts` |
+| UT-RSM-02 | every other (status, event) pair is rejected | `packages/shared/test/domain.test.ts` |
+| UT-RSM-03 | terminal statuses allow no events and actors are enforced | `packages/shared/test/domain.test.ts` |
+| UT-TSM-01 | tasks move in order; skipping steps is rejected (BR-08) | `packages/shared/test/domain.test.ts` |
+| UT-DUP-01 | distance boundary 99 m / 100 m / 101 m | `packages/shared/test/domain.test.ts` |
+| UT-DUP-02 | time window 71 h / 73 h | `packages/shared/test/domain.test.ts` |
+| UT-DUP-03 | different category is not a duplicate | `packages/shared/test/domain.test.ts` |
+| UT-DUP-04 | parent must be open | `packages/shared/test/domain.test.ts` |
+| UT-DUP-05 | picks the closest candidate, oldest on a tie | `packages/shared/test/domain.test.ts` |
+| UT-DUP-06 | haversine distance sanity check (Kimberley CBD → Galeshewe ≈ 3.4 km) | `packages/shared/test/domain.test.ts` |
+| UT-SLA-01 | breach only after slaHours | `packages/shared/test/domain.test.ts` |
+| UT-SLA-02 | never re-escalates and ignores closed work | `packages/shared/test/domain.test.ts` |
+| UT-RES-01 | 7-day window and auto-close | `packages/shared/test/domain.test.ts` |
+| UT-REF-01 | reference format and padding (BR-04) | `packages/shared/test/domain.test.ts` |
+| UT-PRV-01 | public location is rounded to ~110 m (BR-17) | `packages/shared/test/domain.test.ts` |
+| UT-ANL-01 | metrics on a fixture | `packages/shared/test/domain.test.ts` |
+| UT-ANL-02 | empty input yields nulls, not NaN | `packages/shared/test/domain.test.ts` |
+| UT-CSV-01 | CSV quoting | `packages/shared/test/domain.test.ts` |
+| UT-SCH-01 | description boundaries 9/10/300/301 | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-02 | photo count 0/3/4 and file size and type | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-03 | location inside / outside municipal bounding box | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-04 | rejects unknown suburb and severity with field errors | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-05 | password minimum, optional SA phone, no role field accepted | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-06 | completion requires notes ≥10 and 1–3 proof photos (BR-09) | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-ALR-01 | title/message boundaries and target suburbs (BR-13) | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-ALR-02 | expiry must be future and within 30 days | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-07 | staff users need a department unless admin | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-08 | department SLA hours 1–720 whole numbers | `packages/shared/test/schemas.test.ts` |
 
-## Security rules
+## Security rules (emulator): 20 tests
 
-| ID | Ref | Scenario | Type | Expected |
-|---|---|---|---|---|
-| RT-USR-01 | NFR-01 | user reads / updates own profile name/phone/suburb | S | allowed |
-| RT-USR-02 | BR-16 | user writes own `role` / `isActive` / `departmentId` | A | denied |
-| RT-USR-03 | NFR-11 | resident reads another user's profile | A | denied |
-| RT-RPT-01 | BR-01 | any client creates / updates `reports` directly | A | denied (functions only) |
-| RT-RPT-02 | FR-06 | resident reads own report and its history | S | allowed |
-| RT-RPT-03 | BR-17 | resident reads another's report | A | denied |
-| RT-RPT-04..06 | BR-20 | official reads own-dept / other-dept. Worker reads assigned / unassigned | A | per matrix |
-| RT-PUB-01 | BR-17 | anyone signed in reads `publicReports`. Payload has no PII fields | S | allowed, no PII |
-| RT-ALR-01..03 | BR-14 | resident reads alert for own suburb / other suburb. Official reads all | A | per matrix |
-| RT-STO-01..04 | BR-02 | upload to own path ≤5 MB image / to another uid / 6 MB / pdf. Read another's photo | A,V | only valid own uploads. Staff read allowed |
-| RT-CMT-01..02 | BR-18 | resident reads comments / staff reads | A | denied / allowed |
+| ID | Scenario | File |
+|---|---|---|
+| RT-USR-01 | a user reads their own profile and may only stamp lastLoginAt | `tests/rules/rules.test.ts` |
+| RT-USR-02 | users cannot change their own role, department or active flag (BR-16) | `tests/rules/rules.test.ts` |
+| RT-USR-03 | residents cannot read other users; staff read the staff directory only | `tests/rules/rules.test.ts` |
+| RT-USR-04 | notifications are private; only readAt can be set | `tests/rules/rules.test.ts` |
+| RT-USR-05 | deactivated or anonymous users read nothing | `tests/rules/rules.test.ts` |
+| RT-RPT-01 | no client can create or modify reports or history (functions only) | `tests/rules/rules.test.ts` |
+| RT-RPT-02 | the reporter and duplicate followers read the report and its history | `tests/rules/rules.test.ts` |
+| RT-RPT-03 | residents cannot read others' reports or list all reports (BR-17) | `tests/rules/rules.test.ts` |
+| RT-RPT-04 | officials read only their department (BR-20) | `tests/rules/rules.test.ts` |
+| RT-RPT-05 | workers read only reports assigned to them | `tests/rules/rules.test.ts` |
+| RT-RPT-06 | admins read every report | `tests/rules/rules.test.ts` |
+| RT-CMT-01 | internal comments are hidden from residents (BR-18) | `tests/rules/rules.test.ts` |
+| RT-PUB-01 | the public projection is readable by residents, officials and admins only | `tests/rules/rules.test.ts` |
+| RT-TSK-01 | workers read own tasks; officials read their department; others denied | `tests/rules/rules.test.ts` |
+| RT-ALR-01 | signed-in users read alerts; nobody writes them directly | `tests/rules/rules.test.ts` |
+| RT-ALR-02 | residents read only their own delivery record; officials read all | `tests/rules/rules.test.ts` |
+| RT-CFG-01 | configuration is readable, never client-writable; counters and logs locked | `tests/rules/rules.test.ts` |
+| RT-STO-01 | residents upload images ≤ 5 MB into their own folder only | `tests/rules/rules.test.ts` |
+| RT-STO-02 | report photos are visible to the reporter and staff only (BR-17) | `tests/rules/rules.test.ts` |
+| RT-STO-03 | proof uploads by the worker; the reporter can view proof of their report | `tests/rules/rules.test.ts` |
 
-## Cloud Functions (integration, emulator)
+## Cloud Functions integration (emulator): 62 tests
 
-| ID | Ref | Scenario | Type | Expected |
-|---|---|---|---|---|
-| IT-AUTH-01..03 | FR-01, BR-16 | registration creates RESIDENT claims and profile. Deactivated user calls a function | S,A | claims set. `permission-denied` |
-| IT-RPT-01 | FR-03 | valid submit | S | report SUBMITTED, ref returned |
-| IT-RPT-02..05 | BR-02 | invalid fields (each) | V | `invalid-argument` with field, nothing written |
-| IT-RPT-06 | BR-01 | official / worker / unauthenticated submit | A | `permission-denied` / `unauthenticated` |
-| IT-RPT-07 | FR-04 | default department from category, one history entry | S | correct |
-| IT-RPT-08 | BR-04, NFR-10 | 20 concurrent submits | C | 20 unique sequential refs |
-| IT-RPT-09 | FR-05 | submit near an open same-category report | S | DUPLICATE, parent count +1, parent ref returned |
-| IT-TRI-01..05 | FR-09 | triage ok. Triage non-SUBMITTED. Reject without reason. Other dept. Inactive dept | S,F,V,A | per rules |
-| IT-ASG-01..06 | FR-10, BR-06/07 | assign ok. Worker in other dept. Inactive worker. Report has active task. Report SUBMITTED. Resident caller | S,A,F | per rules |
-| IT-ASG-07 | NFR-10 | two concurrent assigns | C | exactly one succeeds |
-| IT-ASG-08..10 | FR-12 | reassign ok. Same worker. No active task | S,F | per rules |
-| IT-TSK-01..07 | FR-11, BR-08/09 | accept/start/complete ok. Wrong worker. Skip step. Complete without notes / photo. Report no longer open | S,A,F,V | per rules |
-| IT-TSK-08 | NFR-10 | completion is atomic (forced failure leaves task and report unchanged) | C | no partial write |
-| IT-ESC-01..04 | FR-13 | schedule with fixed clock. Idempotent rerun. Manual with / without reason | S,F,V | per rules |
-| IT-RES-01..05 | FR-14 | confirm. Reopen. Day 8 refused. Other resident. Auto-close | S,F,A | per rules |
-| IT-NTF-01..03 | FR-15 | notifications created for each event and recipient | S | correct recipients |
-| IT-ALR-01..05 | FR-16, BR-13 | broadcast ok + recipients = targeted active residents. Invalid. Resident caller | S,V,A | per rules |
-| IT-ALR-06..07 | FR-18 | read counts. Deactivate | S | correct |
-| IT-ANL-01 | FR-19, SC-05 | seeded dataset metrics | S | equal to fixture expectations |
-| IT-ADM-01..07 | FR-20, BR-15/16 | create staff. Role change. Deactivate blocks. Self-demote. Self-deactivate. Non-admin. Duplicate email | S,A,F,V | per rules |
-| IT-CFG-01..04 | FR-21, BR-19 | SLA bounds. Unique names. Deactivated category hidden. Non-admin | V,A | per rules |
+| ID | Scenario | File |
+|---|---|---|
+| IT-AUTH-01 | self-registration creates a RESIDENT with claims and a profile | `functions/test/admin-alerts.test.ts` |
+| IT-AUTH-02 | duplicate email and weak password are refused | `functions/test/admin-alerts.test.ts` |
+| IT-AUTH-03 | a deactivated account is refused by every command | `functions/test/admin-alerts.test.ts` |
+| IT-ALR-01 | broadcast creates one recipient per active resident in the target suburbs | `functions/test/admin-alerts.test.ts` |
+| IT-ALR-02 | ALL targets every active resident | `functions/test/admin-alerts.test.ts` |
+| IT-ALR-03 | validation: long title, empty targets, past or far expiry | `functions/test/admin-alerts.test.ts` |
+| IT-ALR-04 | residents and field workers cannot broadcast | `functions/test/admin-alerts.test.ts` |
+| IT-ALR-05 | mark-as-read counts once per resident | `functions/test/admin-alerts.test.ts` |
+| IT-ALR-06 | deactivation hides the alert | `functions/test/admin-alerts.test.ts` |
+| IT-ADM-01 | admin creates a staff account with claims | `functions/test/admin-alerts.test.ts` |
+| IT-ADM-02 | staff accounts need an active department | `functions/test/admin-alerts.test.ts` |
+| IT-ADM-03 | role change updates the profile and claims | `functions/test/admin-alerts.test.ts` |
+| IT-ADM-04 | an admin cannot demote or deactivate themselves (BR-15) | `functions/test/admin-alerts.test.ts` |
+| IT-ADM-05 | non-admins cannot manage users | `functions/test/admin-alerts.test.ts` |
+| IT-ADM-06 | reactivation restores access | `functions/test/admin-alerts.test.ts` |
+| IT-ADM-07 | admin actions are written to the system log (FR-23) | `functions/test/admin-alerts.test.ts` |
+| IT-CFG-01 | SLA hours must be 1–720 | `functions/test/admin-alerts.test.ts` |
+| IT-CFG-02 | names are unique (case-insensitive) | `functions/test/admin-alerts.test.ts` |
+| IT-CFG-03 | categories link to an existing department and can be deactivated | `functions/test/admin-alerts.test.ts` |
+| IT-CFG-04 | non-admins cannot change configuration | `functions/test/admin-alerts.test.ts` |
+| IT-ANL-01 | metrics reflect live data and are restricted to officials and admins | `functions/test/admin-alerts.test.ts` |
+| IT-RPT-01 | valid submission creates a SUBMITTED report with a reference | `functions/test/reports.test.ts` |
+| IT-RPT-02 | invalid fields are rejected with field errors and nothing is written | `functions/test/reports.test.ts` |
+| IT-RPT-03 | location outside the municipality is rejected (BR-02) | `functions/test/reports.test.ts` |
+| IT-RPT-04 | photo paths must be the caller's own existing uploads | `functions/test/reports.test.ts` |
+| IT-RPT-05 | inactive category is refused (BR-19) | `functions/test/reports.test.ts` |
+| IT-RPT-06 | only residents may submit (BR-01) | `functions/test/reports.test.ts` |
+| IT-RPT-07 | default department from category, one history entry, officials notified | `functions/test/reports.test.ts` |
+| IT-RPT-08 | concurrent submissions get unique sequential references (BR-04, NFR-10) | `functions/test/reports.test.ts` |
+| IT-RPT-09 | a nearby open report of the same category is linked as a duplicate (BR-03) | `functions/test/reports.test.ts` |
+| IT-RPT-10 | optional fields sent as undefined/null by the web client are accepted (DEF-02) | `functions/test/reports.test.ts` |
+| IT-TRI-01 | triage moves SUBMITTED → UNDER_REVIEW and records history | `functions/test/reports.test.ts` |
+| IT-TRI-02 | triage from a non-SUBMITTED status is refused | `functions/test/reports.test.ts` |
+| IT-TRI-03 | reject needs a reason ≥ 10 characters (BR-12) | `functions/test/reports.test.ts` |
+| IT-TRI-04 | officials cannot act on another department's report (BR-20) | `functions/test/reports.test.ts` |
+| IT-TRI-05 | rerouting to an inactive department is refused; active reroute works | `functions/test/reports.test.ts` |
+| IT-ASG-01 | assignment creates a task, moves the report to IN_PROGRESS and notifies | `functions/test/reports.test.ts` |
+| IT-ASG-02 | a worker from another department is refused (BR-07) | `functions/test/reports.test.ts` |
+| IT-ASG-03 | an inactive worker is refused (BR-07) | `functions/test/reports.test.ts` |
+| IT-ASG-04 | a report with an active task cannot be assigned again (BR-06) | `functions/test/reports.test.ts` |
+| IT-ASG-05 | a SUBMITTED (untriaged) report cannot be assigned | `functions/test/reports.test.ts` |
+| IT-ASG-06 | residents and workers cannot assign | `functions/test/reports.test.ts` |
+| IT-ASG-07 | two concurrent assignments: exactly one succeeds (NFR-10) | `functions/test/reports.test.ts` |
+| IT-ASG-08 | reassignment ends the old task and creates a new one | `functions/test/reports.test.ts` |
+| IT-ASG-09 | reassigning to the same worker is refused | `functions/test/reports.test.ts` |
+| IT-ASG-10 | reassigning without an active task is refused | `functions/test/reports.test.ts` |
+| IT-TSK-01 | accept → start → complete resolves the report and notifies the resident | `functions/test/reports.test.ts` |
+| IT-TSK-02 | another worker cannot act on the task (BR-08) | `functions/test/reports.test.ts` |
+| IT-TSK-03 | steps cannot be skipped (BR-08) | `functions/test/reports.test.ts` |
+| IT-TSK-04 | completion without notes or proof is refused (BR-09) | `functions/test/reports.test.ts` |
+| IT-TSK-05 | proof must be uploaded by the worker under the report path | `functions/test/reports.test.ts` |
+| IT-TSK-06 | a reassigned (stale) task cannot be completed | `functions/test/reports.test.ts` |
+| IT-TSK-07 | officials and residents cannot complete tasks | `functions/test/reports.test.ts` |
+| IT-ESC-01 | the schedule escalates reports past their SLA once, and is idempotent | `functions/test/reports.test.ts` |
+| IT-ESC-02 | manual escalation requires a reason; escalated reports can be assigned | `functions/test/reports.test.ts` |
+| IT-ESC-03 | only admins can run maintenance | `functions/test/reports.test.ts` |
+| IT-RES-01 | the reporter can confirm a resolved report (→ CLOSED) | `functions/test/reports.test.ts` |
+| IT-RES-02 | the reporter can reopen with a reason (→ UNDER_REVIEW); officials notified | `functions/test/reports.test.ts` |
+| IT-RES-03 | after 7 days confirm/reopen are refused and the schedule closes the report | `functions/test/reports.test.ts` |
+| IT-RES-04 | another resident cannot confirm or reopen | `functions/test/reports.test.ts` |
+| IT-RES-05 | confirming an unresolved report is refused | `functions/test/reports.test.ts` |
+| IT-CMT-01 | staff with access can comment; residents and other departments cannot | `functions/test/reports.test.ts` |
 
-## End-to-end (Playwright) and non-functional
+## End-to-end and non-functional (Playwright): 9 tests
 
-| ID | Ref | Scenario | Expected |
-|---|---|---|---|
-| E2E-01 | SC-01 | full lifecycle across 3 browser contexts (resident, official, worker) | resident sees RESOLVED + full timeline |
-| E2E-02 | FR-05 | second resident reports the same issue | duplicate message with parent ref |
-| E2E-03 | FR-16/17 | official broadcasts a strike alert to Galeshewe | Galeshewe resident sees it, Roodepan resident doesn't |
-| E2E-04 | NFR-01 | each role opens another role's routes | 403 page, no data shown |
-| NFT-05 | NFR-05, SC-04 | time from submit to queue row, and from status change to resident timeline | < 5 s |
-| NFT-06 | NFR-06 | Lighthouse TTI on key pages. p95 command latency over 50 runs | < 3 s / < 2 s |
-| NFT-07 | NFR-07 | resident and worker flows at 360×640 | no horizontal scroll, ≤ 3 steps |
-| NFT-08 | NFR-08 | Lighthouse accessibility | ≥ 90 |
-| NFT-09 | NFR-09 | E2E-01..04 on firefox | pass |
-| NFT-04 | NFR-04 | gitleaks on full history | 0 findings |
+| ID | Scenario | File |
+|---|---|---|
+| E2E-01 | full lifecycle: resident → official → field worker → resident (SC-01, NFT-05) | `tests/e2e/lifecycle.spec.ts` |
+| E2E-02 | a second resident reporting the same issue is linked as a duplicate (FR-05) | `tests/e2e/lifecycle.spec.ts` |
+| E2E-03 | suburb-targeted alert reaches Galeshewe but not Roodepan (FR-16, FR-17, BR-14) | `tests/e2e/lifecycle.spec.ts` |
+| E2E-04 | each role is denied other roles’ areas (NFR-01) | `tests/e2e/lifecycle.spec.ts` |
+| E2E-05 | invalid report input is rejected with field messages (BR-02, NFR-03) | `tests/e2e/lifecycle.spec.ts` |
+| E2E-06 | wrong password shows a generic error (FR-02) | `tests/e2e/lifecycle.spec.ts` |
+| NFT-07 | mobile layouts fit a 360 px screen | `tests/e2e/mobile.spec.ts` |
+| NFT-08 | accessibility of login, report form, my reports and queue | `tests/e2e/quality.spec.ts` |
+| NFT-06 | responsiveness: screens interactive < 3 s, p95 command < 2 s | `tests/e2e/quality.spec.ts` |
