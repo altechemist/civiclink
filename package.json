@@ -19,7 +19,7 @@
     "lint": "eslint .",
     "test": "npm run test:unit && npm run test:emulator",
     "test:unit": "vitest run --project shared",
-    "test:emulator": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage \"vitest run --project rules --project functions\"",
+    "test:emulator": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage \"vitest run --project rules && vitest run --project functions\"",
     "test:e2e": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage \"npm run seed && playwright test\"",
     "coverage": "vitest run --project shared --coverage"
   },

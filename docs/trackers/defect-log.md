@@ -4,4 +4,4 @@ Defects are tracked as GitHub issues labelled `type: bug`. This table is the sum
 
 | ID | Issue | Found by (test / activity) | Related req | Severity | Description | Resolution | Status |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| DEF-01 | — | IT-CFG-02 | FR-21, BR-19 | Major | Creating a department or category whose name slug matched an existing ID silently overwrote the existing record | Create now refuses when the ID already exists; update requires an existing ID | Fixed (19 Oct) |

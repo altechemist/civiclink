@@ -15,7 +15,9 @@ export class ConfigService {
     await db.runTransaction(async (tx) => {
       const same = await tx.get(col.departments().where('nameLower', '==', input.name.toLowerCase()));
       if (same.docs.some((d) => d.id !== id)) throw invalid('name', 'A department with this name exists');
-      if (input.id && !(await tx.get(col.departments().doc(id))).exists) throw notFound('Department');
+      const exists = (await tx.get(col.departments().doc(id))).exists;
+      if (input.id && !exists) throw notFound('Department');
+      if (!input.id && exists) throw invalid('name', 'A department with this name exists');
       tx.set(col.departments().doc(id), {
         name: input.name, nameLower: input.name.toLowerCase(), slaHours: input.slaHours, isActive: input.isActive,
       });
@@ -31,7 +33,9 @@ export class ConfigService {
       if (same.docs.some((d) => d.id !== id)) throw invalid('name', 'A category with this name exists');
       const dept = (await tx.get(col.departments().doc(input.departmentId))).data() as DepartmentDoc | undefined;
       if (!dept) throw invalid('departmentId', 'Choose a department');
-      if (input.id && !(await tx.get(col.categories().doc(id))).exists) throw notFound('Category');
+      const exists = (await tx.get(col.categories().doc(id))).exists;
+      if (input.id && !exists) throw notFound('Category');
+      if (!input.id && exists) throw invalid('name', 'A category with this name exists');
       tx.set(col.categories().doc(id), {
         name: input.name, nameLower: input.name.toLowerCase(), icon: input.icon, departmentId: input.departmentId, isActive: input.isActive,
       });
