@@ -1,0 +1,66 @@
+@startuml activity-w1
+!include _style.iuml
+title W1: Submit incident report (FR-03, FR-04, FR-05, TX-1)
+
+|Resident|
+start
+:Open "Report an issue";
+:Step 1: choose category;
+:Step 2: set location (GPS or drag pin),\nsuburb, description, severity, photos;
+if (Client validation passes?\n(BR-02 schema)) then (no)
+  :Show field errors;
+  stop
+else (yes)
+endif
+:Step 3: review and submit;
+:Upload photos to\nreports/{uid}/ (Storage);
+if (Storage rules accept?\n(image, ≤5 MB, own folder)) then (no)
+  :Show upload error;
+  stop
+else (yes)
+endif
+|CivicLink (submitReport)|
+:Authenticate and load caller profile;
+if (Active RESIDENT? (BR-01, BR-16)) then (no)
+  :Reject: permission-denied;
+  stop
+else (yes)
+endif
+:Validate input (zod) and photo paths;
+if (Valid? (BR-02)) then (no)
+  :Reject: invalid-argument\nwith field errors;
+  |Resident|
+  :Show field errors;
+  stop
+else (yes)
+endif
+|CivicLink (submitReport)|
+partition "Firestore transaction (TX-1)" {
+  :Read category (active?) and department;
+  if (Category active? (BR-19)) then (no)
+    :Abort: invalid-argument;
+    stop
+  else (yes)
+  endif
+  :Query open reports within 100 m\n(geohash bounds);
+  :Read year counter;
+  :Allocate reference CL-YYYY-NNNN (BR-04);
+  if (Same category, open, ≤100 m, ≤72 h? (BR-03)) then (duplicate)
+    :Write report status DUPLICATE\nlinked to parent;
+    :Parent affectedCount +1,\nadd resident to followers;
+  else (new)
+    :Write report status SUBMITTED;
+    :Write public projection (no PII);
+    :Notify department officials;
+  endif
+  :Append history entry;
+  :Commit (retry on contention);
+}
+|Resident|
+if (Duplicate?) then (yes)
+  :Show "already reported as <parent ref>";
+else (no)
+  :Show reference number;
+endif
+stop
+@enduml

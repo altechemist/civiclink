@@ -1,0 +1,145 @@
+@startuml data-model
+!include _style.iuml
+title CivicLink: Firestore Document Model (implemented)
+hide circle
+skinparam linetype ortho
+
+entity "users/{uid}" as users {
+  * uid : string <<PK, = Auth uid>>
+  --
+  * name : string
+  * email : string <<unique via Auth>>
+  phone : string
+  * role : RESIDENT|OFFICIAL|FIELD_WORKER|ADMIN
+  departmentId : string <<FK departments>>
+  suburb : string
+  * isActive : boolean
+  * createdAt : timestamp
+  lastLoginAt : timestamp
+}
+entity "users/{uid}/notifications/{id}" as notif {
+  * id <<PK>>
+  --
+  * type, title, body, link : string
+  readAt : timestamp
+  * createdAt : timestamp
+}
+entity "reports/{id}" as reports {
+  * id : string <<PK>>
+  --
+  * ref : string <<unique, counter>>
+  * reporterId : string <<FK users>>
+  * categoryId : string <<FK categories>>
+  * departmentId : string <<FK departments>>
+  * description : string (10–300)
+  * location : {lat,lng}
+  * geohash : string <<indexed>>
+  * suburb : string
+  * severity : HIGH|MEDIUM|LOW
+  * photoPaths : string[0..3]
+  * status : ReportStatus
+  assignedWorkerId : string <<FK users>>
+  activeTaskId : string <<FK tasks>>
+  parentReportId : string <<FK reports>>
+  * affectedCount : int
+  * followerIds : string[] <<FK users>>
+  * createdAt, updatedAt : timestamp
+  resolvedAt, escalatedAt, closedAt : timestamp
+}
+entity "reports/{id}/history/{id}" as history {
+  * id <<PK>>
+  --
+  from : ReportStatus
+  * to : ReportStatus
+  * event : string
+  * actorId, actorRole, actorName : string
+  * note : string
+  * at : timestamp
+  .. append-only ..
+}
+entity "reports/{id}/comments/{id}" as comments {
+  * id <<PK>>
+  --
+  * authorId <<FK users>>
+  * authorRole, text : string
+  * createdAt : timestamp
+}
+entity "publicReports/{id}" as pub {
+  * id <<PK, = report id>>
+  --
+  ref, categoryId, status, suburb
+  location : {lat,lng} ≈100 m
+  affectedCount, isOpen, createdAt
+  .. no PII ..
+}
+entity "tasks/{id}" as tasks {
+  * id <<PK>>
+  --
+  * reportId <<FK reports>>
+  * workerId <<FK users>>
+  * assignedBy <<FK users>>
+  * departmentId <<FK departments>>
+  * priority, status : enum
+  notes, completionNotes : string
+  * proofPaths : string[]
+  * assignedAt : timestamp
+  acceptedAt, startedAt, completedAt, endedAt
+}
+entity "alerts/{id}" as alerts {
+  * id <<PK>>
+  --
+  * type : AlertType
+  * title (≤100), message (≤500)
+  * targetSuburbs : string[]
+  * createdBy <<FK users>>
+  * isActive : boolean
+  * recipientCount, readCount : int
+  * createdAt, expiresAt : timestamp
+}
+entity "alerts/{id}/recipients/{uid}" as rec {
+  * uid <<PK, FK users>>
+  --
+  * alertId <<FK alerts>>
+  * channel : IN_APP
+  * deliveredAt : timestamp
+  readAt : timestamp
+}
+entity "departments/{id}" as dept {
+  * id <<PK, slug>>
+  --
+  * name, nameLower <<unique>>
+  * slaHours : int (1–720)
+  * isActive : boolean
+}
+entity "categories/{id}" as cat {
+  * id <<PK, slug>>
+  --
+  * name, nameLower <<unique>>
+  * icon : string
+  * departmentId <<FK departments>>
+  * isActive : boolean
+}
+entity "counters/reports-{year}" as counter {
+  * next : int
+}
+entity "systemLogs/{id}" as logs {
+  * level, source, message
+  actorId, createdAt
+}
+
+users ||--o{ notif
+users ||--o{ reports : reporterId
+reports ||--|{ history
+reports ||--o{ comments
+reports ||--|| pub
+reports ||--o{ tasks : reportId
+users ||--o{ tasks : workerId
+reports |o--o{ reports : parentReportId
+dept ||--o{ cat
+dept ||--o{ reports
+cat ||--o{ reports
+alerts ||--o{ rec
+users ||--o{ rec
+users ||--o{ alerts : createdBy
+dept ||--o{ users : departmentId
+@enduml

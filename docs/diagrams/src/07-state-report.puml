@@ -1,0 +1,32 @@
+@startuml state-report
+!include _style.iuml
+title Report lifecycle (BR-05, ReportStateMachine)
+
+[*] --> SUBMITTED : submit [resident, valid, not duplicate]\n/ reference, notify officials
+[*] --> DUPLICATE : submit [open same-category report\n≤100 m, ≤72 h] / link parent
+SUBMITTED --> UNDER_REVIEW : triage [official of dept]
+SUBMITTED --> REJECTED : reject [reason ≥10]
+UNDER_REVIEW --> REJECTED : reject [reason ≥10]
+UNDER_REVIEW --> IN_PROGRESS : assign [no active task,\neligible worker] / create Task
+ESCALATED --> IN_PROGRESS : assign / reassign
+IN_PROGRESS --> IN_PROGRESS : reassign / old task REASSIGNED
+SUBMITTED --> ESCALATED : escalate [SLA exceeded | official + reason]
+UNDER_REVIEW --> ESCALATED : escalate
+IN_PROGRESS --> ESCALATED : escalate
+IN_PROGRESS --> RESOLVED : completeTask [assignee, notes, proof]\n/ resolvedAt
+ESCALATED --> RESOLVED : completeTask
+RESOLVED --> CLOSED : confirm [reporter, ≤7 days]\n| autoClose [>7 days]
+RESOLVED --> UNDER_REVIEW : reopen [reporter, ≤7 days, reason]
+CLOSED --> [*]
+REJECTED --> [*]
+DUPLICATE --> [*]
+
+state ESCALATED #fee2e2
+state RESOLVED #dcfce7
+state DUPLICATE #ede9fe
+note right of IN_PROGRESS
+  Every transition appends an immutable
+  history entry and notifies the reporter
+  and followers (FR-15).
+end note
+@enduml

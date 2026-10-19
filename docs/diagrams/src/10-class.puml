@@ -1,0 +1,204 @@
+@startuml class
+!include _style.iuml
+title CivicLink: Application Class Design (implemented)
+hide empty members
+
+
+package "Domain entities (shared models → Firestore documents)" {
+  class User <<users>> {
+    uid: string
+    name: string
+    email: string
+    phone?: string
+    role: Role
+    departmentId?: string
+    suburb?: Suburb
+    isActive: boolean
+    createdAt, lastLoginAt
+  }
+  class Report <<reports>> {
+    id: string
+    ref: string  «CL-YYYY-NNNN»
+    reporterId, reporterName
+    categoryId, departmentId
+    description: string
+    location: LatLng
+    geohash: string
+    suburb, landmark?
+    severity: Severity
+    photoPaths: string[]
+    status: ReportStatus
+    assignedWorkerId?, activeTaskId?
+    parentReportId?, affectedCount
+    followerIds: string[]
+    resolutionNotes?, resolutionPhotoPaths
+    createdAt, resolvedAt?, escalatedAt?, closedAt?
+  }
+  class HistoryEntry <<reports/{id}/history>> {
+    from: ReportStatus?
+    to: ReportStatus
+    event: string
+    actorId, actorRole, actorName
+    note: string
+    at: Timestamp
+  }
+  class Task <<tasks>> {
+    id, reportId, reportRef
+    workerId, assignedBy
+    departmentId, priority: Severity
+    status: TaskStatus
+    notes?, completionNotes?
+    proofPaths: string[]
+    assignedAt, acceptedAt?, startedAt?, completedAt?
+  }
+  class Alert <<alerts>> {
+    type: AlertType
+    title, message
+    targetSuburbs: string[]
+    isActive: boolean
+    recipientCount, readCount
+    createdAt, expiresAt
+  }
+  class AlertRecipient <<alerts/{id}/recipients>> {
+    uid, alertId
+    channel: IN_APP
+    deliveredAt, readAt?
+  }
+  class Notification <<users/{uid}/notifications>> {
+    type, title, body, link
+    readAt?, createdAt
+  }
+  class Department <<departments>> {
+    name, slaHours: int, isActive
+  }
+  class Category <<categories>> {
+    name, icon, departmentId, isActive
+  }
+  class Comment <<reports/{id}/comments>> {
+    authorId, authorRole, text, createdAt
+  }
+  class PublicReport <<publicReports>> {
+    ref, categoryId, status
+    location «≈100 m», suburb
+    affectedCount, isOpen
+  }
+}
+
+package "Domain logic (packages/shared)" {
+  class ReportStateMachine <<module>> {
+    +next(from, event, actor): ReportStatus
+    +can(from, event, actor): boolean
+    +eventsFrom(status, actor): ReportEvent[]
+  }
+  class TaskStateMachine <<module>> {
+    +next(from, event): TaskStatus
+    +can(from, event): boolean
+  }
+  class DuplicatePolicy <<module>> {
+    radiusM = 100
+    windowMs = 72 h
+    +isMatch(new, candidate, now): boolean
+    +findParent(new, candidates, now): Candidate?
+  }
+  class SlaPolicy <<module>> {
+    +isBreached(report, slaHours, now): boolean
+  }
+  class ResolutionPolicy <<module>> {
+    +withinWindow(resolvedAt, now): boolean
+    +shouldAutoClose(report, now): boolean
+  }
+}
+
+package "Application services (functions/src/services)" {
+  class ReportService {
+    -clock: () => number
+    +submit(input, actor)  «TX-1»
+    +triage(input, actor)
+    +reject(input, actor)
+    +escalate(input, actor)
+    +assign(input, actor)  «TX-2»
+    +reassign(input, actor)
+    +confirm(reportId, actor)
+    +reopen(input, actor)
+  }
+  class TaskService {
+    +update(input, actor)
+    +complete(input, actor)  «TX-3»
+  }
+  class ReportLifecycle <<module>> {
+    +applyTransition(tx, args): ReportStatus
+    +assertDepartmentAccess(actor, deptId)
+  }
+  class NotificationService <<module>> {
+    +add(tx, recipients, n, now)
+    +departmentOfficials(tx, deptId)
+  }
+  class AlertService {
+    +broadcast(input, actor)
+    +deactivate(alertId)
+    +markRead(alertId, actor)
+  }
+  class UserService {
+    +registerResident(input)
+    +createStaff(input, actor)
+    +setRole(input, actor)
+    +setActive(uid, active, actor)
+  }
+  class ConfigService {
+    +upsertDepartment(input, actor)
+    +upsertCategory(input, actor)
+  }
+  class MaintenanceService {
+    +escalateOverdue(): number
+    +autoCloseResolved(): number
+  }
+  class AnalyticsService {
+    +summary(days): AnalyticsSummary
+  }
+  class CommentService {
+    +add(reportId, text, actor)
+  }
+  class "command()" as Command <<API wrapper>> {
+    +auth → loadActor → role check
+    +parse(schema) → handler
+    +toHttpsError()
+  }
+}
+
+User "1" -- "0..*" Report : submits >
+User "1" -- "0..*" Task : is assigned >
+Report "1" *-- "1..*" HistoryEntry : audited by >
+Report "1" *-- "0..*" Comment
+Report "1" -- "0..*" Task : generates (≤1 active) >
+Report "0..*" -- "0..1" Report : duplicate of >
+Report "1" -- "1" PublicReport : projected as >
+Category "0..*" --> "1" Department : routes to >
+Report "0..*" --> "1" Category
+Report "0..*" --> "1" Department
+Alert "1" *-- "0..*" AlertRecipient
+User "1" -- "0..*" AlertRecipient
+User "1" *-- "0..*" Notification
+User "1" -- "0..*" Alert : creates >
+
+Command ..> ReportService
+Command ..> TaskService
+Command ..> AlertService
+Command ..> UserService
+Command ..> ConfigService
+Command ..> CommentService
+Command ..> AnalyticsService
+ReportService ..> ReportLifecycle
+TaskService ..> ReportLifecycle
+MaintenanceService ..> ReportLifecycle
+ReportLifecycle ..> ReportStateMachine
+ReportLifecycle ..> NotificationService
+TaskService ..> TaskStateMachine
+ReportService ..> DuplicatePolicy
+MaintenanceService ..> SlaPolicy
+MaintenanceService ..> ResolutionPolicy
+ReportService ..> ResolutionPolicy
+ReportService ..> Report
+TaskService ..> Task
+AlertService ..> Alert
+UserService ..> User
+@enduml

@@ -1,0 +1,13 @@
+@startuml state-task
+!include _style.iuml
+title Task lifecycle (BR-08, TaskStateMachine)
+[*] --> ASSIGNED : assignReport / reassignTask
+ASSIGNED --> ACCEPTED : accept [assignee]
+ACCEPTED --> IN_PROGRESS : start [assignee]
+IN_PROGRESS --> COMPLETED : complete [notes ≥10, 1–3 proofs,\nstill the report's active task]
+ASSIGNED --> REASSIGNED : reassign
+ACCEPTED --> REASSIGNED : reassign
+IN_PROGRESS --> REASSIGNED : reassign
+COMPLETED --> [*]
+REASSIGNED --> [*]
+@enduml

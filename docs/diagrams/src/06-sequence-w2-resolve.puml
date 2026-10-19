@@ -1,0 +1,72 @@
+@startuml sequence-w2
+!include _style.iuml
+title W2: Assign and complete, sequence (TX-2, TX-3)
+autonumber
+
+actor Official
+actor "Field Worker" as Worker
+actor Resident
+participant "Web app" as UI
+participant "assignReport /\ncompleteTask (callable)" as API
+participant "ReportService /\nTaskService" as SVC
+participant "ReportStateMachine\nTaskStateMachine" as SM
+database Firestore as DB
+
+== Assign (TX-2) ==
+Official -> UI : choose worker, Assign
+UI -> API : assignReport({reportId, workerId, notes})
+API -> SVC : assign(input, actor)
+SVC -> DB : runTransaction: get report
+alt other department (BR-20)
+  SVC --> UI : permission-denied
+else report has activeTaskId (BR-06)
+  SVC --> UI : failed-precondition
+else
+  SVC -> DB : get worker profile
+  alt inactive / wrong department (BR-07)
+    SVC --> UI : invalid-argument {workerId}
+  else eligible
+    SVC -> SM : next(UNDER_REVIEW, assign, OFFICIAL)
+    SM --> SVC : IN_PROGRESS
+    SVC -> DB : set task ASSIGNED, update report,\nappend history, notifications
+    DB --> SVC : commit
+    note over DB : A concurrent assign retries, sees\nactiveTaskId and fails (IT-ASG-07)
+    SVC --> UI : {taskId}
+  end
+end
+DB -->> Worker : onSnapshot: task appears
+DB -->> Resident : onSnapshot: status In progress + notification
+
+== Field work ==
+Worker -> UI : Accept, then Start
+UI -> API : updateTask(accept | start)
+API -> SM : TaskStateMachine.next()
+alt step skipped / not assignee
+  API --> UI : failed-precondition / permission-denied
+end
+
+== Complete (TX-3) ==
+Worker -> UI : notes + proof photos, Mark as resolved
+UI -> DB : upload proofs/{reportId}/{uid}/... (Storage)
+UI -> API : completeTask({taskId, notes, proofPaths})
+API -> SVC : complete(input, actor)
+SVC -> DB : runTransaction: get task, report
+alt report.activeTaskId != taskId
+  SVC --> UI : failed-precondition (reassigned)
+else
+  SVC -> SM : next(IN_PROGRESS, complete) / next(IN_PROGRESS, completeTask)
+  SVC -> DB : task COMPLETED, report RESOLVED + resolvedAt,\nhistory, notifications (one commit)
+  SVC --> UI : {status: COMPLETED}
+end
+DB -->> Resident : onSnapshot: Resolved (< 5 s, NFT-05)
+
+== Resident response (FR-14) ==
+alt within 7 days
+  Resident -> UI : Yes, it's fixed / Reopen + reason
+  UI -> API : confirmResolution / reopenReport
+  API -> DB : RESOLVED → CLOSED / UNDER_REVIEW
+else after 7 days
+  API --> UI : failed-precondition
+  note over DB : autoCloseResolved schedule closes it
+end
+@enduml
