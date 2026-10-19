@@ -1,0 +1,17 @@
+name: Bug
+description: A defect found during development or testing
+labels: ["type: bug"]
+body:
+  - type: input
+    id: req
+    attributes: { label: Related requirement / rule, placeholder: "FR-10, BR-07" }
+  - type: input
+    id: found
+    attributes: { label: Found by, placeholder: "IT-ASG-07 / manual demo rehearsal" }
+  - type: dropdown
+    id: severity
+    attributes: { label: Severity, options: [Critical, Major, Minor] }
+  - type: textarea
+    id: steps
+    attributes: { label: "Steps, expected vs actual" }
+    validations: { required: true }
