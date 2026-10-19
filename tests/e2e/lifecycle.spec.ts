@@ -1,12 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { ACCOUNTS, as, PNG, submitReport } from './helpers';
 
-// Locations chosen away from seeded data so duplicate detection does not interfere.
-const SPOT_A = { latitude: -28.6802, longitude: 24.6921 };
-const SPOT_B = { latitude: -28.6855, longitude: 24.6991 };
+// Locations away from seeded data, offset per browser project (~550 m apart) so runs in
+// different browsers never trigger duplicate detection against each other.
+const offset = () => (test.info().project.name === 'firefox' ? 0.005 : 0);
+const SPOT_A = () => ({ latitude: -28.6802 - offset(), longitude: 24.6921 });
+const SPOT_B = () => ({ latitude: -28.6855 - offset(), longitude: 24.6991 });
 
 test('E2E-01 full lifecycle: resident → official → field worker → resident (SC-01, NFT-05)', async ({ browser }) => {
-  const resident = await as(browser, ACCOUNTS.thandi, SPOT_A);
+  const resident = await as(browser, ACCOUNTS.thandi, SPOT_A());
   const official = await as(browser, ACCOUNTS.naledi);
   const worker = await as(browser, ACCOUNTS.sipho);
 
@@ -58,11 +60,11 @@ test('E2E-01 full lifecycle: resident → official → field worker → resident
 });
 
 test('E2E-02 a second resident reporting the same issue is linked as a duplicate (FR-05)', async ({ browser }) => {
-  const first = await as(browser, ACCOUNTS.thandi, SPOT_B);
+  const first = await as(browser, ACCOUNTS.thandi, SPOT_B());
   await submitReport(first, { category: 'Road Damage', description: 'E2E: deep pothole at the taxi stop', suburb: 'Galeshewe' });
   const ref = (await first.getByTestId('report-ref').innerText()).trim();
 
-  const second = await as(browser, ACCOUNTS.pieter, { latitude: SPOT_B.latitude + 0.0003, longitude: SPOT_B.longitude });
+  const second = await as(browser, ACCOUNTS.pieter, { latitude: SPOT_B().latitude + 0.0003, longitude: SPOT_B().longitude });
   await submitReport(second, { category: 'Road Damage', description: 'E2E: pothole damaging cars at the taxi rank', suburb: 'Galeshewe' });
   await expect(second.getByText('This issue has already been reported')).toBeVisible();
   await expect(second.getByTestId('parent-ref')).toHaveText(ref);
