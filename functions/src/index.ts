@@ -8,6 +8,10 @@ import {
   analyticsQuerySchema,
   assignReportSchema,
   broadcastAlertSchema,
+  completeProfileSchema,
+  deleteAccountSchema,
+  updateProfileSchema,
+  updateSettingsSchema,
   completeTaskSchema,
   confirmResolutionSchema,
   createStaffUserSchema,
@@ -55,6 +59,9 @@ const STAFF_MANAGERS = ['OFFICIAL', 'ADMIN'] as const;
 export const registerResident = command({ name: 'registerResident', schema: registerResidentSchema, roles: 'public', handler: (i) => users.registerResident(i) });
 export const createStaffUser = command({ name: 'createStaffUser', schema: createStaffUserSchema, roles: ['ADMIN'], handler: (i, a) => users.createStaff(i, a) });
 export const setUserRole = command({ name: 'setUserRole', schema: setUserRoleSchema, roles: ['ADMIN'], handler: (i, a) => users.setRole(i, a) });
+export const completeProfile = command({ name: 'completeProfile', schema: completeProfileSchema, roles: 'signed-in', handler: (i, a) => users.completeProfile(a.uid, i) });
+export const updateProfile = command({ name: 'updateProfile', schema: updateProfileSchema, roles: ['RESIDENT', 'OFFICIAL', 'FIELD_WORKER', 'ADMIN'], handler: (i, a) => users.updateProfile(i, a) });
+export const deleteMyAccount = command({ name: 'deleteMyAccount', schema: deleteAccountSchema, roles: ['RESIDENT'], handler: (_i, a) => users.deleteMyAccount(a) });
 export const setUserActive = command({ name: 'setUserActive', schema: setUserActiveSchema, roles: ['ADMIN'], handler: (i, a) => users.setActive(i.uid, i.active, a) });
 
 // ---- Reports (FR-03..FR-14) ----
@@ -80,6 +87,7 @@ export const markAlertRead = command({ name: 'markAlertRead', schema: alertIdSch
 // ---- Configuration and insight (FR-19, FR-21) ----
 export const upsertDepartment = command({ name: 'upsertDepartment', schema: upsertDepartmentSchema, roles: ['ADMIN'], handler: (i, a) => config.upsertDepartment(i, a) });
 export const upsertCategory = command({ name: 'upsertCategory', schema: upsertCategorySchema, roles: ['ADMIN'], handler: (i, a) => config.upsertCategory(i, a) });
+export const updateSettings = command({ name: 'updateSettings', schema: updateSettingsSchema, roles: ['ADMIN'], handler: (i, a) => config.updateSettings(i, a) });
 export const getAnalytics = command({ name: 'getAnalytics', schema: analyticsQuerySchema, roles: STAFF_MANAGERS, handler: (i) => analytics.summary(i.days) });
 
 // ---- Scheduled business rules (FR-13, FR-14) ----

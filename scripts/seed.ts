@@ -69,6 +69,7 @@ async function main() {
   console.log('Resetting emulators…');
   await resetEmulators();
   await seedConfig();
+  await adminDb.collection('settings').doc('app').set({ reportsPerHour: 10 });
 
   console.log('Creating users…');
   const residents: Person[] = [];

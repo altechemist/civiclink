@@ -10,6 +10,7 @@ import {
   Megaphone,
   PlusCircle,
   ScrollText,
+  UserRound,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -48,7 +49,10 @@ function MobileShell({ nav, accent }: { nav: NavItem[]; accent: 'brand' | 'field
           <div className="flex items-center gap-1">
             <span className="mr-1 hidden text-sm text-white/80 sm:inline">{profile?.name}</span>
             <NotificationBell />
-            <button onClick={signOut} aria-label="Sign out" className="rounded-full p-2 hover:bg-white/10">
+            <NavLink to="/profile" aria-label="My profile" className="rounded-full p-2 hover:bg-white/10">
+              <UserRound className="size-5" aria-hidden />
+            </NavLink>
+            <button onClick={() => signOut()} aria-label="Sign out" className="rounded-full p-2 hover:bg-white/10">
               <LogOut className="size-5" aria-hidden />
             </button>
           </div>
@@ -140,7 +144,7 @@ export function StaffLayout() {
           <Brand />
           <div className="flex items-center lg:hidden">
             <NotificationBell tone="light" />
-            <button onClick={signOut} aria-label="Sign out" className="rounded-full p-2 text-slate-600 hover:bg-slate-100">
+            <button onClick={() => signOut()} aria-label="Sign out" className="rounded-full p-2 text-slate-600 hover:bg-slate-100">
               <LogOut className="size-5" aria-hidden />
             </button>
           </div>
@@ -169,16 +173,16 @@ export function StaffLayout() {
           ))}
         </nav>
         <div className="hidden items-center justify-between border-t border-slate-200 px-4 py-3 lg:flex">
-          <div className="min-w-0">
+          <NavLink to="/profile" className="min-w-0 rounded-lg hover:bg-slate-50" aria-label="My profile">
             <p className="truncate text-sm font-semibold text-slate-900">{profile?.name}</p>
             <p className="truncate text-xs text-slate-500">
               {isAdmin ? 'Administrator' : 'Official'}
               {claims.dept ? ` · ${claims.dept}` : ''}
             </p>
-          </div>
+          </NavLink>
           <div className="flex items-center">
             <NotificationBell tone="light" />
-            <button onClick={signOut} aria-label="Sign out" className="rounded-full p-2 text-slate-600 hover:bg-slate-100">
+            <button onClick={() => signOut()} aria-label="Sign out" className="rounded-full p-2 text-slate-600 hover:bg-slate-100">
               <LogOut className="size-5" aria-hidden />
             </button>
           </div>
@@ -194,5 +198,7 @@ export function StaffLayout() {
 /** The map is shared by residents (mobile shell) and staff (sidebar shell). */
 export function RoleShell() {
   const { claims } = useSession();
-  return claims.role === 'RESIDENT' ? <ResidentLayout /> : <StaffLayout />;
+  if (claims.role === 'RESIDENT') return <ResidentLayout />;
+  if (claims.role === 'FIELD_WORKER') return <WorkerLayout />;
+  return <StaffLayout />;
 }

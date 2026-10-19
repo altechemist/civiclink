@@ -6,7 +6,7 @@ export class DomainError extends Error {
   constructor(
     readonly code: Extract<
       FunctionsErrorCode,
-      'invalid-argument' | 'failed-precondition' | 'permission-denied' | 'not-found' | 'already-exists' | 'unauthenticated'
+      'invalid-argument' | 'failed-precondition' | 'permission-denied' | 'not-found' | 'already-exists' | 'unauthenticated' | 'resource-exhausted'
     >,
     message: string,
     readonly details?: Record<string, string>,

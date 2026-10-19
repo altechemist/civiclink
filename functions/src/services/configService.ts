@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { upsertCategorySchema, upsertDepartmentSchema } from '@civiclink/shared';
+import type { upsertCategorySchema, upsertDepartmentSchema, updateSettingsSchema } from '@civiclink/shared';
 import type { DepartmentDoc } from '@civiclink/shared';
 import type { Actor } from '../lib/command';
 import { invalid, notFound } from '../lib/errors';
@@ -42,5 +42,11 @@ export class ConfigService {
     });
     await writeLog('INFO', 'admin.upsertCategory', `${actor.name} saved category ${input.name}`, actor.uid);
     return { id };
+  }
+
+  async updateSettings(input: z.infer<typeof updateSettingsSchema>, actor: Actor) {
+    await col.settings().set({ reportsPerHour: input.reportsPerHour }, { merge: true });
+    await writeLog('INFO', 'admin.updateSettings', `${actor.name} set the report limit to ${input.reportsPerHour} per hour`, actor.uid);
+    return { ok: true as const };
   }
 }

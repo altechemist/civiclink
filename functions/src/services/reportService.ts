@@ -25,7 +25,7 @@ import type {
   triageReportSchema,
 } from '@civiclink/shared';
 import type { Actor } from '../lib/command';
-import { denied, invalid, notFound, precondition } from '../lib/errors';
+import { DomainError, denied, invalid, notFound, precondition } from '../lib/errors';
 import { bucket, col, ts } from '../lib/firebase';
 import { NotificationService } from './notificationService';
 import { applyTransition, assertDepartmentAccess, getReport, type ReportWithId } from './reportLifecycle';
@@ -81,6 +81,14 @@ export class ReportService {
       const counterRef = col.counters().doc(`reports-${year}`);
       const sequence = (((await tx.get(counterRef)).data()?.next as number | undefined) ?? 0) + 1;
       const reporter = (await tx.get(col.users().doc(actor.uid))).data() as UserDoc;
+      // BR-21: abuse prevention, at most N reports per resident per rolling hour (admin-configurable).
+      const perHour = ((await tx.get(col.settings())).data()?.reportsPerHour as number | undefined) ?? LIMITS.reportsPerHour;
+      const recent = await tx.get(
+        col.reports().where('reporterId', '==', actor.uid).where('createdAt', '>=', ts(now - 3600_000)).limit(perHour),
+      );
+      if (recent.size >= perHour) {
+        throw new DomainError('resource-exhausted', `You have submitted ${perHour} reports in the last hour. Please wait before reporting again.`);
+      }
       const officials = parent ? [] : await NotificationService.departmentOfficials(tx, category.departmentId);
 
       // ---- writes ----

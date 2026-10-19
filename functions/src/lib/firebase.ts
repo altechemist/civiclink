@@ -25,4 +25,5 @@ export const col = {
   categories: () => db.collection('categories'),
   counters: () => db.collection('counters'),
   systemLogs: () => db.collection('systemLogs'),
+  settings: () => db.collection('settings').doc('app'),
 };

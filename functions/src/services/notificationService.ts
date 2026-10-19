@@ -13,6 +13,7 @@ export interface NotificationInput {
 export const NotificationService = {
   add(tx: Transaction, recipients: Iterable<string>, n: NotificationInput, now: number) {
     for (const uid of new Set(recipients)) {
+      if (uid === 'deleted-user') continue; // reporter deleted their account (BR-22)
       const doc: NotificationDoc = { ...n, readAt: null, createdAt: ts(now) };
       tx.set(col.notifications(uid).doc(), doc);
     }

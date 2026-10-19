@@ -32,6 +32,10 @@ export interface DepartmentDoc {
   isActive: boolean;
 }
 
+export interface SettingsDoc {
+  reportsPerHour: number;
+}
+
 export interface CategoryDoc {
   name: string;
   icon: string;
@@ -188,5 +192,9 @@ export interface CallableResults {
   upsertDepartment: { id: string };
   upsertCategory: { id: string };
   getAnalytics: import('./analytics').AnalyticsSummary;
+  completeProfile: { ok: true };
+  updateSettings: { ok: true };
+  updateProfile: { ok: true };
+  deleteMyAccount: { ok: true; anonymisedReports: number };
   runMaintenance: { escalated: number; closed: number };
 }

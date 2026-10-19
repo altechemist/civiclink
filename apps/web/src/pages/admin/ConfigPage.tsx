@@ -1,10 +1,10 @@
-import type { CategoryDoc, DepartmentDoc } from '@civiclink/shared';
+import { LIMITS, type CategoryDoc, type DepartmentDoc, type SettingsDoc } from '@civiclink/shared';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { CategoryIcon, useCategories } from '../../components/domain';
 import { Button, Card, ErrorState, Input, LoadingState, Notice, PageHeader, Select } from '../../components/ui';
 import { call, type ApiError } from '../../lib/api';
-import type { WithId } from '../../lib/hooks';
+import { useLiveDoc, type WithId } from '../../lib/hooks';
 import { useDepartments } from '../official/useStaffReports';
 
 const ICON_CHOICES = ['droplets', 'droplet', 'zap', 'construction', 'trash', 'shield-alert', 'hammer', 'lamp', 'circle-help'];
@@ -96,6 +96,40 @@ function CategoryRow({ cat, departments }: { cat?: WithId<CategoryDoc>; departme
   );
 }
 
+function SettingsCard() {
+  const settings = useLiveDoc<SettingsDoc>('settings/app');
+  const [value, setValue] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const current = value ?? String(settings.data?.reportsPerHour ?? LIMITS.reportsPerHour);
+  const save = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await call('updateSettings', { reportsPerHour: Number(current) });
+      setMessage({ tone: 'success', text: 'Saved.' });
+    } catch (err) {
+      setMessage({ tone: 'error', text: (err as ApiError).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card>
+      <h2 className="font-semibold text-slate-900">Abuse prevention</h2>
+      <p className="mb-3 text-sm text-slate-600">Maximum reports one resident can submit in any hour (BR-21).</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex items-center gap-2 text-sm">
+          <Input aria-label="Reports per resident per hour" type="number" min={1} max={LIMITS.reportsPerHourMax} value={current} onChange={(e) => setValue(e.target.value)} className="w-24" />
+          per hour
+        </label>
+        <Button variant="secondary" busy={busy} onClick={save}>Save</Button>
+      </div>
+      {message && <div className="mt-2"><Notice tone={message.tone}>{message.text}</Notice></div>}
+    </Card>
+  );
+}
+
 /** FR-21 / BR-19: department SLAs and category routing. */
 export function ConfigPage() {
   const departments = useDepartments();
@@ -116,6 +150,7 @@ export function ConfigPage() {
         {categories.data.map((c) => <CategoryRow key={c.id} cat={c} departments={departments.data} />)}
         <CategoryRow key={`new-${categories.data.length}`} departments={departments.data} />
       </Card>
+      <SettingsCard />
     </div>
   );
 }

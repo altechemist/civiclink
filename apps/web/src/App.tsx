@@ -6,6 +6,8 @@ import { LoadingState } from './components/ui';
 import { ResidentLayout, RoleShell, StaffLayout, WorkerLayout } from './layouts/Layouts';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
+import { WelcomePage } from './pages/auth/WelcomePage';
+import { ProfilePage } from './pages/common/ProfilePage';
 import { NotFoundPage } from './pages/common/NotFoundPage';
 import { ResidentHome } from './pages/resident/ResidentHome';
 import { NewReportPage } from './pages/resident/NewReportPage';
@@ -28,8 +30,9 @@ const CommunityMapPage = lazy(() => import('./pages/common/CommunityMapPage'));
 const AnalyticsPage = lazy(() => import('./pages/official/AnalyticsPage'));
 
 function Home() {
-  const { session, loading } = useAuth();
+  const { session, loading, pendingProfile } = useAuth();
   if (loading) return <LoadingState full />;
+  if (pendingProfile) return <Navigate to="/welcome" replace />;
   return <Navigate to={session ? HOME[session.claims.role] : '/login'} replace />;
 }
 
@@ -42,6 +45,13 @@ export function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/welcome" element={<WelcomePage />} />
+
+            <Route element={<RequireRole roles="any" />}>
+              <Route element={<RoleShell />}>
+                <Route path="/profile" element={<ProfilePage />} />
+              </Route>
+            </Route>
 
             <Route element={<RequireRole roles={['RESIDENT']} />}>
               <Route element={<ResidentLayout />}>

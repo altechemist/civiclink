@@ -1,9 +1,13 @@
 import type { Claims, DepartmentDoc, Role, UserDoc } from '@civiclink/shared';
 import type { z } from 'zod';
-import type { createStaffUserSchema, registerResidentSchema, setUserRoleSchema } from '@civiclink/shared';
+import type { completeProfileSchema, createStaffUserSchema, registerResidentSchema, setUserRoleSchema, updateProfileSchema } from '@civiclink/shared';
+import { FieldValue } from 'firebase-admin/firestore';
 import type { Actor } from '../lib/command';
 import { DomainError, denied, invalid, notFound } from '../lib/errors';
-import { auth, col, ts } from '../lib/firebase';
+
+/** Placeholder identity left on reports after a resident deletes their account (BR-22). */
+export const DELETED_REPORTER = 'deleted-user';
+import { auth, bucket, col, db, ts } from '../lib/firebase';
 import { writeLog } from './logService';
 
 const claimsFor = (u: Pick<UserDoc, 'role' | 'departmentId' | 'suburb' | 'isActive'>): Claims => ({
@@ -105,5 +109,68 @@ export class UserService {
     await this.syncClaims(uid, { ...user, isActive: active });
     await writeLog('INFO', 'admin.setUserActive', `${actor.name} ${active ? 'reactivated' : 'deactivated'} ${user.email}`, actor.uid);
     return { ok: true as const };
+  }
+
+  /** FR-29: first sign-in with Google (or another provider): create the resident profile and claims. */
+  async completeProfile(uid: string, input: z.infer<typeof completeProfileSchema>) {
+    const ref = col.users().doc(uid);
+    if ((await ref.get()).exists) throw new DomainError('already-exists', 'Your profile is already set up');
+    const record = await auth.getUser(uid);
+    if (!record.email) throw invalid('email', 'Your sign-in account has no email address');
+    const doc: UserDoc = {
+      name: input.name,
+      email: record.email.toLowerCase(),
+      phone: input.phone ?? null,
+      role: 'RESIDENT',
+      departmentId: null,
+      suburb: input.suburb,
+      isActive: true,
+      createdAt: ts(this.clock()),
+      lastLoginAt: null,
+    };
+    await auth.setCustomUserClaims(uid, claimsFor(doc));
+    await ref.set(doc);
+    return { ok: true as const };
+  }
+
+  /** FR-31: own name and phone; residents may also move suburb (claims updated for alert targeting). */
+  async updateProfile(input: z.infer<typeof updateProfileSchema>, actor: Actor) {
+    const { ref, user } = await this.load(actor.uid);
+    const suburb = user.role === 'RESIDENT' ? (input.suburb ?? user.suburb) : user.suburb;
+    if (user.role !== 'RESIDENT' && input.suburb && input.suburb !== user.suburb) throw denied('Only residents have a home suburb');
+    await ref.update({ name: input.name, phone: input.phone ?? null, suburb: suburb ?? null });
+    if (suburb !== user.suburb) await auth.setCustomUserClaims(actor.uid, claimsFor({ ...user, suburb }));
+    return { ok: true as const };
+  }
+
+  /**
+   * FR-32 / BR-22 (POPIA right to erasure): delete a resident's personal data. Reports are kept for
+   * service-delivery records but anonymised; photos, notifications, alert receipts, the profile and
+   * the Auth account are deleted.
+   */
+  async deleteMyAccount(actor: Actor) {
+    const { ref, user } = await this.load(actor.uid);
+    if (user.role !== 'RESIDENT') throw denied('Staff accounts are deactivated by an administrator, not deleted');
+    const writes: ((b: FirebaseFirestore.WriteBatch) => void)[] = [];
+
+    const own = await col.reports().where('reporterId', '==', actor.uid).get();
+    for (const d of own.docs) {
+      writes.push((b) => b.update(d.ref, { reporterId: DELETED_REPORTER, reporterName: 'Former resident', photoPaths: [] }));
+    }
+    const followed = await col.reports().where('followerIds', 'array-contains', actor.uid).get();
+    for (const d of followed.docs) writes.push((b) => b.update(d.ref, { followerIds: FieldValue.arrayRemove(actor.uid) }));
+    for (const d of (await col.notifications(actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
+    for (const d of (await db.collectionGroup('recipients').where('uid', '==', actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
+    writes.push((b) => b.delete(ref));
+
+    for (let i = 0; i < writes.length; i += 400) {
+      const batch = db.batch();
+      writes.slice(i, i + 400).forEach((w) => w(batch));
+      await batch.commit();
+    }
+    await bucket().deleteFiles({ prefix: `reports/${actor.uid}/` }).catch(() => {});
+    await auth.deleteUser(actor.uid);
+    await writeLog('INFO', 'user.deleteMyAccount', `A resident deleted their account; ${own.size} report(s) anonymised`, null);
+    return { ok: true as const, anonymisedReports: own.size };
   }
 }
