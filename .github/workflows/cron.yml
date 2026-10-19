@@ -1,0 +1,19 @@
+name: Scheduled maintenance
+
+# Runs the SLA-escalation and auto-close rules (FR-13, FR-14) hourly against the deployed API.
+# Vercel's free plan allows only daily cron jobs, so GitHub Actions provides the hourly schedule.
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    if: ${{ vars.APP_URL != '' }}
+    steps:
+      - name: Call /api/cron/maintenance
+        run: |
+          curl --fail --silent --show-error --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL }}/api/cron/maintenance"

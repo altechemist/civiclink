@@ -1,8 +1,22 @@
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-if (getApps().length === 0) initializeApp();
+/**
+ * Cloud Functions and the emulator provide credentials automatically. The Node API on Vercel
+ * (ADR-0006) reads a service-account key from FIREBASE_SERVICE_ACCOUNT (JSON or base64 JSON).
+ */
+function serviceAccount() {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!raw) return undefined;
+  const json = raw.trim().startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
+  return cert(JSON.parse(json));
+}
+
+if (getApps().length === 0) {
+  const credential = serviceAccount();
+  initializeApp(credential ? { credential } : undefined);
+}
 
 export const db = getFirestore();
 export const auth = getAuth();

@@ -1,6 +1,6 @@
 import type { CallableResults } from '@civiclink/shared';
 import { FirebaseError } from 'firebase/app';
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable, httpsCallableFromURL } from 'firebase/functions';
 import { functions } from './firebase';
 
 /** A command failure with an optional per-field message map for forms (NFR-03). */
@@ -30,10 +30,18 @@ export function toApiError(err: unknown): ApiError {
   return new ApiError(err instanceof Error ? err.message : 'Unexpected error', 'unknown');
 }
 
-/** Typed wrapper for the Cloud Functions command API. */
+/**
+ * Where commands are sent (ADR-0006): Cloud Functions by default (local emulator), or the Node API
+ * on the same origin when VITE_API_BASE is set (e.g. "/api" on Vercel). Both speak the callable protocol.
+ */
+const API_BASE = import.meta.env.VITE_API_BASE as string | undefined;
+const callable = (name: string) =>
+  API_BASE ? httpsCallableFromURL(functions, new URL(`${API_BASE.replace(/\/$/, '')}/${name}`, window.location.origin).href) : httpsCallable(functions, name);
+
+/** Typed wrapper for the command API. */
 export async function call<K extends keyof CallableResults>(name: K, data: unknown = {}): Promise<CallableResults[K]> {
   try {
-    const res = await httpsCallable(functions, name)(data);
+    const res = await callable(name)(data);
     return res.data as CallableResults[K];
   } catch (err) {
     throw toApiError(err);

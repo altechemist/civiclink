@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --outfile=lib/index.js --external:firebase-admin --external:firebase-functions --sourcemap",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --outfile=lib/index.js --external:firebase-admin --external:firebase-functions --sourcemap && esbuild src/http.ts --bundle --platform=node --target=node22 --format=cjs --outfile=lib/http.js --external:firebase-admin --external:firebase-functions",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
