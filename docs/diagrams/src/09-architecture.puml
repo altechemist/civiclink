@@ -20,16 +20,17 @@ package "Shared domain: packages/shared" as Shared {
   [DuplicatePolicy · SlaPolicy ·\nResolutionPolicy · analytics] as Pol
 }
 
-package "Firebase (emulator locally, africa-south1 in cloud)" {
-  [Firebase Authentication\n(custom claims: role, dept,\nsuburb, active)] as Auth
-  package "Cloud Functions: functions/" {
-    [command() wrapper\nauth · role · validation · errors] as Cmd
-    [ReportService · TaskService ·\nAlertService · UserService ·\nConfigService · CommentService ·\nAnalyticsService] as Svc
-    [MaintenanceService\n(scheduled: escalate, auto-close)] as Sched
-  }
-  database "Cloud Firestore\n+ Security Rules" as FS
-  database "Cloud Storage\n+ Storage Rules" as ST
+package "Command API: functions/ (Node.js 22)" {
+  [Adapters:\nhttp.ts on Vercel (deployed)\nindex.ts Cloud Functions (local)] as Adapt
+  [commands.ts registry +\nexecute(): auth · role ·\nvalidation · errors] as Cmd
+  [ReportService · TaskService ·\nAlertService · UserService ·\nConfigService · CommentService ·\nAnalyticsService · photoService] as Svc
+  [MaintenanceService\n(escalate, auto-close)] as Sched
 }
+package "Firebase (Spark plan; emulator locally)" {
+  [Firebase Authentication\n(password + Google;\nclaims: role, dept, suburb, active)] as Auth
+  database "Cloud Firestore + Security Rules\n(incl. photos as binary documents)" as FS
+}
+[GitHub Actions hourly /\nVercel Cron daily] as Cron
 cloud "OpenStreetMap tiles" as OSM
 
 M --> Routes
@@ -39,14 +40,16 @@ Pages --> Api : commands
 Pages --> Hooks : queries
 Pages --> Viz
 AuthP --> Auth : sign in, ID token
-Api --> Cmd : HTTPS callable + ID token
+Api --> Adapt : HTTPS callable protocol\n+ ID token
+Adapt --> Cmd
+Cron --> Adapt : /api/cron/maintenance\n(secret)
 Hooks --> FS : real-time listeners (read-only)
-Pages --> ST : photo upload / download
+Pages ..> FS : photos (read, rules-checked)
 Viz --> OSM : tiles
 Cmd --> Svc
 Svc --> FS : transactions (TX-1..3)
-Svc --> ST : verify uploads
 Svc --> Auth : create users, set claims
+Cmd --> Sched
 Sched --> FS
 Pages ..> Sch : client validation
 Svc ..> Sch : server validation

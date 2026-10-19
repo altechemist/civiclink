@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Report §5.3 uses ADR-0001 to ADR-0004 (the template asks for 2–4 decisions). ADR-0005 is supporting.
+Report §5.3 uses ADR-0001, ADR-0002, ADR-0006 and ADR-0004 (the template asks for 2–4 decisions). ADR-0003 and ADR-0005 are supporting.
 
 ---
 
@@ -20,7 +20,7 @@ Report §5.3 uses ADR-0001 to ADR-0004 (the template asks for 2–4 decisions). 
 - **Rationale:** All data access is client-side through the Firebase SDK, so SSR adds complexity for no benefit. A static SPA deploys straight to Firebase Hosting. The Phase 3 routes already use React Router conventions.
 - **Consequences:** A single codebase with role-guarded route trees. SEO is irrelevant (it's an authenticated app).
 
-## ADR-0003: The assessed runtime is the Firebase Emulator Suite, with cloud deployment optional
+## ADR-0003: Firebase Emulator Suite for local development and tests (deployment superseded by ADR-0006)
 
 - **Context:** Cloud Functions and new Storage buckets need the Blaze (billing) plan. The demo must be reliable and reproducible by the lecturer.
 - **Options:** Live Firebase project only, emulator only, or emulator as the primary runtime with an optional live deployment.
@@ -41,3 +41,16 @@ Report §5.3 uses ADR-0001 to ADR-0004 (the template asks for 2–4 decisions). 
 - **Context:** Validation and the state machine are needed client-side for UX and server-side for enforcement.
 - **Decision:** `packages/shared` holds the zod schemas, enums, `ReportStateMachine`, `TaskStateMachine`, `DuplicatePolicy` and `SlaPolicy`. Functions are bundled with esbuild so the shared code is inlined for deployment.
 - **Consequences:** One source of truth that is unit tested once (NFR-12). The client and server can't drift.
+
+## ADR-0006: Free-tier deployment: Firebase Spark + Node API on Vercel, photos stored in Firestore
+
+- **Context:** A live deployment strengthens the demonstration, but Cloud Functions and Cloud Storage both require Firebase's Blaze (billing) plan, which needs a payment card. Supabase was considered but would mean rewriting the backend, Security Rules and about 90 tests close to the deadline.
+- **Options:** (a) Blaze with a $1 budget alert; (b) port to Supabase (Postgres, RLS, Edge Functions); (c) stay on the free Spark plan (Auth, Firestore, Hosting), run the command API as a Node service on a free host, and store photos as binary Firestore documents.
+- **Decision:** (c). The API runs as Vercel serverless functions (Hobby plan, region `cpt1` Cape Town) next to the static web app. Photos are compressed in the browser to ≤ 700 KB and stored in `photos/{id}` documents.
+- **Rationale:** No cost and no card. The command logic was already transport-independent, so a second adapter (`functions/src/http.ts`) reuses `execute()` and every service unchanged. It speaks the Firebase callable protocol, so the client only switches from `httpsCallable` to `httpsCallableFromURL`. Vercel's free functions do not sleep, unlike Render's free tier, which matters for a live demo.
+- **Consequences:**
+  - Two adapters must stay equivalent. They share one command registry, and CI runs the whole E2E suite through both (`test:e2e` and `test:e2e:http`).
+  - Photos are limited by Firestore's 1 MiB document size, so compression is mandatory and each photo view costs one document read. Real types are verified server-side from magic bytes.
+  - Vercel's free cron runs daily, so the hourly SLA escalation is triggered by a GitHub Actions schedule calling a secret-protected endpoint.
+  - A service-account key is stored as a Vercel secret (never committed).
+  - Vercel Hobby is for non-commercial use, which fits an academic project. A municipal rollout would move to Blaze or a paid host with the same code.

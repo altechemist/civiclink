@@ -7,25 +7,36 @@ import { deleteApp, initializeApp as initClient, type FirebaseApp } from 'fireba
 import { connectAuthEmulator, getAuth as getClientAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore as getClientDb, type Firestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
-import { getApps, initializeApp, type App } from 'firebase-admin/app';
+import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import type { CallableResults, Role } from '@civiclink/shared';
 
-export const PROJECT_ID = 'demo-civiclink';
+/** SEED_TARGET=prod points the Admin SDK at the real project (seed only); everything else uses the emulator. */
+export const PROD = process.env.SEED_TARGET === 'prod';
+export const PROJECT_ID = PROD ? (process.env.FIREBASE_PROJECT_ID ?? 'civiclink-2ae84') : 'demo-civiclink';
 export const REGION = 'africa-south1';
 const HOSTS = { auth: '127.0.0.1:9099', firestore: '127.0.0.1:8080', functions: '127.0.0.1:5001' };
 
-process.env.FIRESTORE_EMULATOR_HOST ??= HOSTS.firestore;
-process.env.FIREBASE_AUTH_EMULATOR_HOST ??= HOSTS.auth;
+if (!PROD) {
+  process.env.FIRESTORE_EMULATOR_HOST ??= HOSTS.firestore;
+  process.env.FIREBASE_AUTH_EMULATOR_HOST ??= HOSTS.auth;
+}
 process.env.GCLOUD_PROJECT ??= PROJECT_ID;
 
-export const adminApp: App = getApps()[0] ?? initializeApp({ projectId: PROJECT_ID });
+function prodCredential() {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!raw) throw new Error('SEED_TARGET=prod needs FIREBASE_SERVICE_ACCOUNT (service-account JSON or base64)');
+  return cert(JSON.parse(raw.trim().startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8')));
+}
+
+export const adminApp: App = getApps()[0] ?? initializeApp(PROD ? { projectId: PROJECT_ID, credential: prodCredential() } : { projectId: PROJECT_ID });
 export const adminDb = getFirestore(adminApp);
 export const adminAuth = getAuth(adminApp);
 export { Timestamp };
 
 export async function resetEmulators() {
+  if (PROD) throw new Error('Refusing to reset a real project');
   await fetch(`http://${HOSTS.firestore}/emulator/v1/projects/${PROJECT_ID}/databases/(default)/documents`, { method: 'DELETE' });
   await fetch(`http://${HOSTS.auth}/emulator/v1/projects/${PROJECT_ID}/accounts`, { method: 'DELETE' });
 }
@@ -70,7 +81,8 @@ export interface NewUser {
   isActive?: boolean;
 }
 
-export const DEFAULT_PASSWORD = 'CivicLink#2026';
+/** Demo password; set SEED_PASSWORD for a deployed instance so the public password differs from the README. */
+export const DEFAULT_PASSWORD = process.env.SEED_PASSWORD ?? 'CivicLink#2026';
 
 /** Creates an Auth user + profile + claims exactly as the functions would. */
 export async function createUser(u: NewUser): Promise<string> {

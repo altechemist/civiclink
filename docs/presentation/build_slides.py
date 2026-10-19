@@ -96,25 +96,25 @@ s = slide('Commands on the server, real-time reads in the browser', 'Architectur
 picture(s, 'docs/diagrams/architecture.png', 0.6, 1.6, height=5.2)
 bullets(s, [
     'React SPA|reads Firestore through live listeners, under Security Rules',
-    'Callable Cloud Functions|authenticate, check the role, validate (shared Zod schemas), run transactions',
+    'Node command API|one registry of 26 commands: auth, roles, Zod validation, transactions; served by Vercel (deployed) or Cloud Functions (local)',
     'Shared domain package|state machines, duplicate/SLA policies, used on both sides',
-    'Firebase Emulator Suite|assessed runtime: reproducible with no cloud account',
+    'Free tier|Vercel + Firebase Spark; photos stored in Firestore; emulator for offline demo and tests',
 ], left=8.5, width=4.3, size=15)
 
 # 4. Decisions
 s = slide('Two decisions that shaped the system', 'Engineering decisions')
 bullets(s, [
     'D1: Every state change is a server command in a transaction|Rules alone cannot enforce "one active task", reference counters or the 100 m duplicate search. TX-1 submit, TX-2 assign, TX-3 complete are atomic; two simultaneous assignments → exactly one wins.',
-    'D3: The emulator is the assessed runtime|Zero cost, no network risk in the demo, identical to CI. Trade-off: schedules are triggered by an admin action locally, and push notifications are deferred.',
+    'D3: Free-tier deployment without Cloud Functions|Firebase Spark + a Node API on Vercel; photos compressed to ≤ 700 KB and stored in Firestore with real-type checks. One command registry, two adapters, and CI runs every E2E test through both.',
     'Also:|Leaflet + OpenStreetMap instead of Google Maps (no billing); React SPA instead of Next.js (no server rendering needed).',
 ], width=12, size=18)
 
 # 5. Verification
-s = slide('132 automated tests, all green in CI', 'Verification')
+s = slide('136 automated tests, all green in CI', 'Verification')
 bullets(s, [
-    'Unit (29)|state machines, duplicate boundaries 99/100/101 m and 71/72/73 h, SLA, analytics; 97.9% coverage',
+    'Unit (30)|state machines, duplicate boundaries 99/100/101 m and 71/72/73 h, SLA, analytics; 97.9% coverage',
     'Security rules (20)|every cell of the permission matrix, allow and deny',
-    'API integration (70)|validation, authorisation, wrong-state and concurrency for every command',
+    'API integration (74)|validation, authorisation, wrong-state and concurrency for every command',
     'End-to-end (13)|full lifecycle across 3 browsers, duplicates, alerts, access denied, Google sign-in, POPIA deletion; Chrome and Firefox; 360 px',
     'NFRs|update reaches the resident in 2.5 s (target 5 s), screens < 1.1 s, p95 command 28 ms, 0 WCAG violations',
 ], width=7.6, size=16)

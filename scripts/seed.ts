@@ -24,6 +24,8 @@ import {
   createUser,
   DEFAULT_PASSWORD,
   DEPARTMENTS,
+  PROD,
+  PROJECT_ID,
   resetEmulators,
   seedConfig,
   Timestamp,
@@ -66,8 +68,16 @@ interface Person {
 }
 
 async function main() {
-  console.log('Resetting emulators…');
-  await resetEmulators();
+  if (PROD) {
+    console.log(`Seeding the REAL project ${PROJECT_ID}…`);
+    if (!(await adminDb.collection('users').limit(1).get()).empty) {
+      console.error('This project already has users. Seeding is only allowed on an empty project.');
+      process.exit(1);
+    }
+  } else {
+    console.log('Resetting emulators…');
+    await resetEmulators();
+  }
   await seedConfig();
   await adminDb.collection('settings').doc('app').set({ reportsPerHour: 10 });
 
