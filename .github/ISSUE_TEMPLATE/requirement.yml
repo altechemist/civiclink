@@ -1,0 +1,15 @@
+name: Requirement
+description: Implement an FR from the baseline SRS
+labels: ["type: feature"]
+body:
+  - type: input
+    id: fr
+    attributes: { label: Requirement ID, placeholder: "FR-xx" }
+    validations: { required: true }
+  - type: textarea
+    id: ac
+    attributes: { label: Acceptance criteria (copy from srs.md §8) }
+    validations: { required: true }
+  - type: input
+    id: tests
+    attributes: { label: Test IDs, placeholder: "IT-ASG-01..07" }
