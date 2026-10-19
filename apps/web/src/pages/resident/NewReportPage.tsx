@@ -43,6 +43,7 @@ export function NewReportPage() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<CallableResults['submitReport'] | null>(null);
 
+  const clear = (field: string) => setErrors(({ [field]: _, ...rest }) => rest);
   const active = categories.data.filter((c) => c.isActive);
   const category = active.find((c) => c.id === categoryId);
   const draft = () => ({ categoryId, description, location, suburb, landmark: landmark || undefined, severity, photoPaths: photos.map(() => 'pending') });
@@ -178,13 +179,13 @@ export function NewReportPage() {
           <Field label="Location" htmlFor="location" error={errors.location}>
             <div id="location">
               <Suspense fallback={<LoadingState label="Loading map" />}>
-                <LocationPicker value={location} onChange={setLocation} invalid={!!errors.location} />
+                <LocationPicker value={location} onChange={(l) => { setLocation(l); clear('location'); }} invalid={!!errors.location} />
               </Suspense>
             </div>
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Suburb" htmlFor="suburb" error={errors.suburb}>
-              <Select id="suburb" value={suburb} onChange={(e) => setSuburb(e.target.value)} invalid={!!errors.suburb}>
+              <Select id="suburb" value={suburb} onChange={(e) => { setSuburb(e.target.value); clear('suburb'); }} invalid={!!errors.suburb}>
                 <option value="">Choose…</option>
                 {SUBURBS.map((s) => (
                   <option key={s}>{s}</option>
@@ -201,14 +202,14 @@ export function NewReportPage() {
             error={errors.description}
             hint={`${description.trim().length}/${LIMITS.descriptionMax} characters (at least ${LIMITS.descriptionMin})`}
           >
-            <Textarea id="description" rows={4} value={description} maxLength={LIMITS.descriptionMax} onChange={(e) => setDescription(e.target.value)} invalid={!!errors.description} />
+            <Textarea id="description" rows={4} value={description} maxLength={LIMITS.descriptionMax} onChange={(e) => { setDescription(e.target.value); clear('description'); }} invalid={!!errors.description} />
           </Field>
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium text-slate-800">How serious is it?</legend>
             <div className="grid gap-2 sm:grid-cols-3">
               {SEVERITIES.map((s) => (
                 <label key={s} className={cx('cursor-pointer rounded-xl bg-white p-3 text-sm ring-1', severity === s ? 'ring-2 ring-brand-600' : 'ring-slate-200')}>
-                  <input type="radio" name="severity" value={s} checked={severity === s} onChange={() => setSeverity(s)} className="sr-only" />
+                  <input type="radio" name="severity" value={s} checked={severity === s} onChange={() => { setSeverity(s); clear('severity'); }} className="sr-only" />
                   <span className="block font-semibold">{s.charAt(0) + s.slice(1).toLowerCase()}</span>
                   <span className="text-xs text-slate-600">{SEVERITY_HELP[s]}</span>
                 </label>
