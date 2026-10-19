@@ -101,6 +101,10 @@ export const LIMITS = {
   slaHoursMax: 720,
   commentMax: 1000,
   passwordMin: 8,
+  /** Default for BR-21 when settings/app has no value. */
+  reportsPerHour: 10,
+  reportsPerHourMax: 100,
+  photoMaxPixels: 1600,
 } as const;
 
 /** Rounding used for the public map projection (~110 m). BR-17, NFR-11. */

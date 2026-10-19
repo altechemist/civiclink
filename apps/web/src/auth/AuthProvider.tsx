@@ -1,5 +1,13 @@
 import type { Claims, Role, UserDoc } from '@civiclink/shared';
-import { onIdTokenChanged, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
+import {
+  GoogleAuthProvider,
+  onIdTokenChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth';
 import { doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { auth, db } from '../lib/firebase';
@@ -13,10 +21,15 @@ export interface Session {
 
 interface AuthState {
   session: Session | null;
+  /** Signed in (e.g. first Google sign-in) but no CivicLink profile yet: must complete it (FR-29). */
+  pendingProfile: User | null;
   loading: boolean;
   notice: string | null;
   signIn(email: string, password: string): Promise<void>;
-  signOut(): Promise<void>;
+  signInWithGoogle(): Promise<void>;
+  resetPassword(email: string): Promise<void>;
+  refreshClaims(): Promise<void>;
+  signOut(notice?: string): Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -78,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthState>(
     () => ({
       session: user && claims ? { user, uid: user.uid, claims, profile } : null,
+      pendingProfile: user && !claims && !loading ? user : null,
       loading,
       notice,
       async signIn(email, password) {
@@ -85,8 +99,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const cred = await signInWithEmailAndPassword(auth, email, password);
         await updateDoc(doc(db, 'users', cred.user.uid), { lastLoginAt: serverTimestamp() }).catch(() => {});
       },
-      async signOut() {
+      async signInWithGoogle() {
+        setNotice(null);
+        const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+        await updateDoc(doc(db, 'users', cred.user.uid), { lastLoginAt: serverTimestamp() }).catch(() => {});
+      },
+      async resetPassword(email) {
+        await sendPasswordResetEmail(auth, email);
+      },
+      async refreshClaims() {
+        await auth.currentUser?.getIdToken(true);
+      },
+      async signOut(message?: string) {
         await signOut(auth);
+        if (message) setNotice(message);
       },
     }),
     [user, claims, profile, loading, notice],

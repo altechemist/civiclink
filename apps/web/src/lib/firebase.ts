@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 import { connectStorageEmulator, getStorage } from 'firebase/storage';
 
@@ -18,7 +18,8 @@ export const app = initializeApp({
 });
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Offline cache: screens already visited keep working (read-only) on a weak connection.
+export const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 export const functions = getFunctions(app, 'africa-south1');
 export const storage = getStorage(app);
 

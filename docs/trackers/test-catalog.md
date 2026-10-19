@@ -2,7 +2,7 @@
 
 Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cited in the report appears in a test title, so `grep -r "<ID>"` finds the test. Results for the submitted commit are in its GitHub Actions run.
 
-**Total: 121 automated tests.**
+**Total: 132 automated tests.**
 
 ## Unit (Vitest): 29 tests
 
@@ -63,10 +63,18 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | RT-STO-02 | report photos are visible to the reporter and staff only (BR-17) | `tests/rules/rules.test.ts` |
 | RT-STO-03 | proof uploads by the worker; the reporter can view proof of their report | `tests/rules/rules.test.ts` |
 
-## Cloud Functions integration (emulator): 62 tests
+## Cloud Functions integration (emulator): 70 tests
 
 | ID | Scenario | File |
 |---|---|---|
+| IT-AUTH-04 | completeProfile creates a RESIDENT profile and claims once | `functions/test/account.test.ts` |
+| IT-AUTH-05 | existing accounts and anonymous callers cannot use completeProfile | `functions/test/account.test.ts` |
+| IT-PRF-01 | residents change suburb and phone; claims follow; invalid phone refused | `functions/test/account.test.ts` |
+| IT-PRF-02 | staff may change name and phone but have no home suburb | `functions/test/account.test.ts` |
+| IT-DEL-01 | deletion anonymises reports and removes photos, profile, receipts and the Auth account | `functions/test/account.test.ts` |
+| IT-DEL-02 | staff cannot self-delete; anonymised reports still progress without notifying anyone | `functions/test/account.test.ts` |
+| IT-RPT-11 | submissions beyond the hourly limit are refused | `functions/test/account.test.ts` |
+| IT-CFG-05 | settings are admin-only and bounded | `functions/test/account.test.ts` |
 | IT-AUTH-01 | self-registration creates a RESIDENT with claims and a profile | `functions/test/admin-alerts.test.ts` |
 | IT-AUTH-02 | duplicate email and weak password are refused | `functions/test/admin-alerts.test.ts` |
 | IT-AUTH-03 | a deactivated account is refused by every command | `functions/test/admin-alerts.test.ts` |
@@ -130,10 +138,13 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-RES-05 | confirming an unresolved report is refused | `functions/test/reports.test.ts` |
 | IT-CMT-01 | staff with access can comment; residents and other departments cannot | `functions/test/reports.test.ts` |
 
-## End-to-end and non-functional (Playwright): 10 tests
+## End-to-end and non-functional (Playwright): 13 tests
 
 | ID | Scenario | File |
 |---|---|---|
+| E2E-08 | first Google sign-in completes a resident profile (FR-29, BR-16) | `tests/e2e/account.spec.ts` |
+| E2E-09 | password reset gives the same answer whether or not the account exists (FR-30) | `tests/e2e/account.spec.ts` |
+| E2E-10 | profile change and POPIA self-deletion (FR-31, FR-32) | `tests/e2e/account.spec.ts` |
 | E2E-01 | full lifecycle: resident → official → field worker → resident (SC-01, NFT-05) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-02 | a second resident reporting the same issue is linked as a duplicate (FR-05) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-03 | suburb-targeted alert reaches Galeshewe but not Roodepan (FR-16, FR-17, BR-14) | `tests/e2e/lifecycle.spec.ts` |

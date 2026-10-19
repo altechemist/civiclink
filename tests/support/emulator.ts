@@ -61,6 +61,7 @@ export async function seedConfig() {
   for (const c of CATEGORIES) {
     batch.set(adminDb.collection('categories').doc(c.id), { name: c.name, nameLower: c.name.toLowerCase(), icon: c.icon, departmentId: c.departmentId, isActive: true });
   }
+  batch.set(adminDb.collection('settings').doc('app'), { reportsPerHour: 1000 });
   await batch.commit();
 }
 

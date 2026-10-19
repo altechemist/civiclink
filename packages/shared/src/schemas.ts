@@ -40,6 +40,30 @@ export const registerResidentSchema = z.object({
     .or(z.literal('').transform(() => undefined)),
 });
 
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^(\+27|0)\d{9}$/, 'Use a South African number, e.g. 0821234567')
+  .optional()
+  .or(z.literal('').transform(() => undefined));
+
+/** FR-29: first sign-in with Google; the role is always RESIDENT (BR-16). */
+export const completeProfileSchema = z.object({
+  name: z.string().trim().min(2, 'Enter your full name').max(80),
+  suburb: suburbSchema,
+  phone: phoneSchema,
+});
+
+/** FR-31: residents update their own details; staff may update name and phone only. */
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, 'Enter your full name').max(80),
+  suburb: suburbSchema.optional(),
+  phone: phoneSchema,
+});
+
+/** FR-32: deletion requires typing DELETE to confirm. */
+export const deleteAccountSchema = z.object({ confirm: z.literal('DELETE', { error: 'Type DELETE to confirm' }) });
+
 export const submitReportSchema = z.object({
   categoryId: id,
   description: z
@@ -140,6 +164,11 @@ export const upsertCategorySchema = z.object({
   icon: z.string().trim().min(1).max(40),
   departmentId: id,
   isActive: z.boolean(),
+});
+
+/** FR-21: system settings (BR-21 rate limit). */
+export const updateSettingsSchema = z.object({
+  reportsPerHour: z.number().int('Whole numbers only').min(1, 'At least 1').max(LIMITS.reportsPerHourMax, `At most ${LIMITS.reportsPerHourMax}`),
 });
 
 export const analyticsQuerySchema = z.object({ days: z.number().int().min(7).max(90).default(30) });

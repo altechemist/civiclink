@@ -77,6 +77,7 @@ service cloud.firestore {
     match /departments/{id} { allow read: if active(); }
     match /categories/{id} { allow read: if active(); }
     match /systemLogs/{id} { allow read: if isAdmin(); }
+    match /settings/{id} { allow read: if active(); }
 
     // Counters and anything not listed above: no client access.
     match /{document=**} { allow read, write: if false; }

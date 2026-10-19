@@ -41,8 +41,11 @@ export function parse<S extends z.ZodType>(schema: S, data: unknown): z.infer<S>
 interface CommandOptions<S extends z.ZodType, R> {
   name: string;
   schema: S;
-  /** Roles allowed to call; `'public'` allows unauthenticated callers (registration only). */
-  roles: readonly Role[] | 'public';
+  /**
+   * Roles allowed to call. `'public'` allows unauthenticated callers (registration only);
+   * `'signed-in'` allows any authenticated caller even without a profile yet (first Google sign-in).
+   */
+  roles: readonly Role[] | 'public' | 'signed-in';
   handler: (input: z.infer<S>, actor: Actor, request: CallableRequest) => Promise<R>;
 }
 
@@ -57,6 +60,9 @@ export function command<S extends z.ZodType, R>(opts: CommandOptions<S, R>) {
       let actor: Actor;
       if (opts.roles === 'public') {
         actor = { uid: request.auth?.uid ?? 'anonymous', role: 'RESIDENT', name: 'Public', departmentId: null, suburb: null };
+      } else if (opts.roles === 'signed-in') {
+        if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in');
+        actor = { uid: request.auth.uid, role: 'RESIDENT', name: String(request.auth.token.name ?? ''), departmentId: null, suburb: null };
       } else {
         if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in');
         actor = await loadActor(request.auth.uid);
