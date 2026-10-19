@@ -157,7 +157,7 @@ export async function expectCode(p: Promise<unknown>, code: string): Promise<{ m
     await p;
   } catch (err) {
     const e = err as { code?: string; message: string; details?: unknown };
-    if (e.code !== `functions/${code}`) throw new Error(`Expected ${code} but got ${e.code}: ${e.message}`);
+    if (e.code !== `functions/${code}`) throw new Error(`Expected ${code} but got ${e.code}: ${e.message}`, { cause: err });
     return e;
   }
   throw new Error(`Expected ${code} but the call succeeded`);

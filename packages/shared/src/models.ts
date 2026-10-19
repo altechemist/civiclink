@@ -63,6 +63,7 @@ export interface ReportDoc {
   /** Residents whose duplicate reports point here; they receive this report's status updates (FR-15). */
   followerIds: string[];
   resolutionNotes?: string | null;
+  resolutionPhotoPaths?: string[];
   createdAt: TimestampLike;
   updatedAt: TimestampLike;
   resolvedAt?: TimestampLike | null;
