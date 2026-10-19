@@ -1,4 +1,4 @@
-import { KIMBERLEY_CENTRE, MUNICIPAL_BOUNDS, type LatLng } from '@civiclink/shared';
+import { distanceFromKimberley, insideMunicipality, KIMBERLEY_CENTRE, type LatLng } from '@civiclink/shared';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LocateFixed } from 'lucide-react';
@@ -16,14 +16,11 @@ const pinIcon = L.divIcon({
   iconAnchor: [14, 28],
 });
 
-const inBounds = ({ lat, lng }: LatLng) =>
-  lat >= MUNICIPAL_BOUNDS.minLat && lat <= MUNICIPAL_BOUNDS.maxLat && lng >= MUNICIPAL_BOUNDS.minLng && lng <= MUNICIPAL_BOUNDS.maxLng;
-
-function Recenter({ to }: { to: LatLng }) {
+function Recenter({ to, zoom = 15 }: { to: LatLng; zoom?: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([to.lat, to.lng], Math.max(map.getZoom(), 15));
-  }, [to.lat, to.lng, map]);
+    map.setView([to.lat, to.lng], Math.max(map.getZoom(), zoom));
+  }, [to.lat, to.lng, map, zoom]);
   return null;
 }
 
@@ -32,29 +29,51 @@ function ClickToMove({ onChange }: { onChange: (p: LatLng) => void }) {
   return null;
 }
 
+type GpsState =
+  | { kind: 'idle' }
+  | { kind: 'locating' }
+  | { kind: 'ok'; accuracy: number }
+  | { kind: 'denied' | 'unavailable' | 'timeout' | 'unsupported' }
+  | { kind: 'outside'; km: number; accuracy: number };
+
+const km = (m: number) => (m >= 10_000 ? `${Math.round(m / 1000)} km` : m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`);
+
 /**
- * Location capture for a report (FR-03): GPS from the device when allowed, adjustable by dragging
- * the pin or tapping the map (ADR-0004).
+ * Location capture for a report (FR-03, BR-02): device GPS when allowed, adjustable by dragging the
+ * pin or tapping the map (ADR-0004). `focus` pans the map (e.g. to the chosen suburb) without setting
+ * a location, so a report is never filed at a guessed position.
  */
-export function LocationPicker({ value, onChange, invalid }: { value: LatLng | null; onChange: (p: LatLng) => void; invalid?: boolean }) {
-  const [gps, setGps] = useState<'idle' | 'locating' | 'denied' | 'outside'>('idle');
-  const position = value ?? KIMBERLEY_CENTRE;
+export function LocationPicker({
+  value,
+  onChange,
+  invalid,
+  focus,
+}: {
+  value: LatLng | null;
+  onChange: (p: LatLng) => void;
+  invalid?: boolean;
+  focus?: LatLng | null;
+}) {
+  const [gps, setGps] = useState<GpsState>({ kind: 'idle' });
+  const position = value ?? focus ?? KIMBERLEY_CENTRE;
 
   const locate = () => {
-    if (!navigator.geolocation) return setGps('denied');
-    setGps('locating');
+    if (!navigator.geolocation) return setGps({ kind: 'unsupported' });
+    setGps({ kind: 'locating' });
     navigator.geolocation.getCurrentPosition(
       (p) => {
         const loc = { lat: p.coords.latitude, lng: p.coords.longitude };
-        if (!inBounds(loc)) {
-          setGps('outside');
+        const accuracy = p.coords.accuracy;
+        if (!insideMunicipality(loc)) {
+          setGps({ kind: 'outside', km: distanceFromKimberley(loc), accuracy });
           return;
         }
-        setGps('idle');
+        setGps({ kind: 'ok', accuracy });
         onChange(loc);
       },
-      () => setGps('denied'),
-      { enableHighAccuracy: true, timeout: 10_000 },
+      (err) =>
+        setGps({ kind: err.code === err.PERMISSION_DENIED ? 'denied' : err.code === err.TIMEOUT ? 'timeout' : 'unavailable' }),
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
     );
   };
 
@@ -73,21 +92,34 @@ export function LocationPicker({ value, onChange, invalid }: { value: LatLng | n
       <div className={`h-64 overflow-hidden rounded-xl ring-1 ${invalid ? 'ring-red-400' : 'ring-slate-300'}`}>
         <MapContainer center={[position.lat, position.lng]} zoom={14} className="h-full w-full" scrollWheelZoom={false}>
           <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
-          <Marker position={[position.lat, position.lng]} icon={pinIcon} draggable eventHandlers={markerHandlers} />
+          <Marker position={[position.lat, position.lng]} icon={pinIcon} draggable eventHandlers={markerHandlers} opacity={value ? 1 : 0.55} />
           <ClickToMove onChange={onChange} />
-          {value && <Recenter to={value} />}
+          {value ? <Recenter to={value} /> : focus ? <Recenter to={focus} zoom={14} /> : null}
         </MapContainer>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-slate-600" data-testid="location-coords">
-          {value ? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}` : 'Tap the map or use your location'}
+          {value ? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}` : 'Tap the map or drag the pin to the incident, or use your location'}
         </p>
-        <Button type="button" variant="secondary" icon={LocateFixed} busy={gps === 'locating'} onClick={locate}>
+        <Button type="button" variant="secondary" icon={LocateFixed} busy={gps.kind === 'locating'} onClick={locate}>
           Use my location
         </Button>
       </div>
-      {gps === 'denied' && <p className="text-xs text-amber-700">Location access was blocked. Drag the pin to the incident instead.</p>}
-      {gps === 'outside' && <p className="text-xs text-amber-700">You appear to be outside Sol Plaatje. Drag the pin to the incident location.</p>}
+      <div aria-live="polite">
+        {gps.kind === 'ok' && gps.accuracy > 150 && (
+          <p className="text-xs text-amber-700">Your location is approximate (within about {km(gps.accuracy)}). Drag the pin to the exact spot.</p>
+        )}
+        {gps.kind === 'outside' && (
+          <p className="text-xs text-amber-700" data-testid="gps-outside">
+            Your device reported a position about {km(gps.km)} from Kimberley
+            {gps.accuracy > 1000 ? ` (accuracy only ±${km(gps.accuracy)}, so it is probably estimated from your internet connection)` : ''}, outside
+            Sol Plaatje. Tap the map or drag the pin to where the incident is.
+          </p>
+        )}
+        {gps.kind === 'denied' && <p className="text-xs text-amber-700">Location permission is blocked for this site. Allow it in your browser settings, or tap the map instead.</p>}
+        {gps.kind === 'timeout' && <p className="text-xs text-amber-700">Finding your location took too long. Try again outdoors, or tap the map instead.</p>}
+        {(gps.kind === 'unavailable' || gps.kind === 'unsupported') && <p className="text-xs text-amber-700">Your device could not provide a location. Tap the map instead.</p>}
+      </div>
     </div>
   );
 }

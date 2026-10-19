@@ -129,3 +129,16 @@ test('E2E-06 wrong password shows a generic error (FR-02)', async ({ page }) => 
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByText('Incorrect email or password.')).toBeVisible();
 });
+
+test('E2E-07 GPS outside Sol Plaatje is explained, not used; tapping the map sets the pin and suburb (FR-03, BR-02)', async ({ browser }) => {
+  const resident = await as(browser, ACCOUNTS.thandi, { latitude: -26.2041, longitude: 28.0473 }); // Johannesburg
+  await resident.goto('/resident/report/new');
+  await resident.getByRole('radio', { name: 'Burst Pipe' }).click();
+  await resident.getByRole('button', { name: 'Use my location' }).click();
+  await expect(resident.getByTestId('gps-outside')).toContainText('km from Kimberley');
+  await expect(resident.getByTestId('location-coords')).toContainText('Tap the map');
+  // Tap the map: the pin is placed and the suburb follows it (the map starts on the resident's suburb).
+  await resident.locator('.leaflet-container').click({ position: { x: 120, y: 90 } });
+  await expect(resident.getByTestId('location-coords')).toHaveText(/-28\.\d+, 24\.\d+/);
+  await expect(resident.getByLabel('Suburb', { exact: true })).not.toHaveValue('');
+});
