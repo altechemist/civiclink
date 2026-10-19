@@ -22,6 +22,6 @@ export default defineConfig({
         },
       },
     ],
-    coverage: { provider: 'v8', include: ['packages/shared/src/**'], reporter: ['text', 'json-summary', 'html'] },
+    coverage: { provider: 'v8', include: ['packages/shared/src/**'], reporter: ['text', 'json-summary', 'html'], thresholds: { lines: 80, branches: 75 } },
   },
 });

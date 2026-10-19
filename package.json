@@ -11,7 +11,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "firebase emulators:exec --only auth,firestore,functions,storage --ui \"npm run seed && npm run dev -w apps/web\"",
+    "dev": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage --ui \"npm run seed && npm run dev -w apps/web -- --host 127.0.0.1\"",
     "emulators": "npm run build -w functions && firebase emulators:start --only auth,firestore,functions,storage",
     "seed": "tsx scripts/seed.ts",
     "build": "npm run build -w functions && npm run build -w apps/web",
