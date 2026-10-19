@@ -2,7 +2,7 @@
 
 Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cited in the report appears in a test title, so `grep -r "<ID>"` finds the test. Results for the submitted commit are in its GitHub Actions run.
 
-**Total: 132 automated tests.**
+**Total: 136 automated tests.**
 
 ## Unit (Vitest): 30 tests
 
@@ -63,7 +63,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | RT-PHO-01 | report photos and proof are visible to the reporter, followers and staff with access (BR-17) | `tests/rules/rules.test.ts` |
 | RT-PHO-02 | other users cannot read photos, and nobody writes them directly | `tests/rules/rules.test.ts` |
 
-## Cloud Functions integration (emulator): 70 tests
+## Cloud Functions integration (emulator): 74 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -96,6 +96,10 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-CFG-03 | categories link to an existing department and can be deactivated | `functions/test/admin-alerts.test.ts` |
 | IT-CFG-04 | non-admins cannot change configuration | `functions/test/admin-alerts.test.ts` |
 | IT-ANL-01 | metrics reflect live data and are restricted to officials and admins | `functions/test/admin-alerts.test.ts` |
+| IT-HTTP-01 | a resident submits a report through the HTTP API | `functions/test/http.test.ts` |
+| IT-HTTP-02 | authentication, roles and validation behave exactly as with Cloud Functions | `functions/test/http.test.ts` |
+| IT-HTTP-03 | unknown commands and wrong methods are refused | `functions/test/http.test.ts` |
+| IT-HTTP-04 | the cron endpoint requires the secret | `functions/test/http.test.ts` |
 | IT-RPT-01 | valid submission creates a SUBMITTED report with a reference | `functions/test/reports.test.ts` |
 | IT-RPT-02 | invalid fields are rejected with field errors and nothing is written | `functions/test/reports.test.ts` |
 | IT-RPT-03 | location outside the municipality is rejected (BR-02) | `functions/test/reports.test.ts` |

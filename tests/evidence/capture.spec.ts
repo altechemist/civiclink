@@ -4,7 +4,7 @@
  * Resident/worker screens use a 430×932 phone viewport, staff screens 1440×900 (as in Phase 3).
  */
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { ACCOUNTS, signIn } from '../e2e/helpers';
+import { ACCOUNTS, addEmulatorGoogleAccount, signIn } from '../e2e/helpers';
 
 const BEFORE = 'tests/evidence/fixtures/before.jpg';
 const AFTER = 'tests/evidence/fixtures/after.jpg';
@@ -173,7 +173,7 @@ test('capture account screens', async ({ browser }) => {
   const popupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Continue with Google' }).click();
   const popup = await popupPromise;
-  await popup.getByText('Add new account').click();
+  await addEmulatorGoogleAccount(popup);
   await popup.locator('#email-input').fill(`lerato.${Date.now()}@example.com`);
   await popup.locator('#display-name-input').fill('Lerato Mokoena');
   await popup.getByRole('button', { name: /Sign in with Google/i }).click();

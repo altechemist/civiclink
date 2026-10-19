@@ -22,7 +22,8 @@
     "test:emulator": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions \"vitest run --project rules && vitest run --project functions\"",
     "test:e2e": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions \"npm run seed && playwright test\"",
     "coverage": "vitest run --project shared --coverage",
-    "evidence": "playwright test --config playwright.evidence.config.ts"
+    "evidence": "playwright test --config playwright.evidence.config.ts",
+    "test:e2e:http": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions \"npm run seed && (node scripts/api-server.mjs &) && VITE_API_BASE=/api playwright test --project chromium\""
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

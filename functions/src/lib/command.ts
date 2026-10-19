@@ -1,6 +1,6 @@
 import { fieldErrors, type Role, type UserDoc } from '@civiclink/shared';
 import { logger } from 'firebase-functions/v2';
-import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import type { z } from 'zod';
 import { col } from './firebase';
 import { toHttpsError } from './errors';
@@ -38,7 +38,7 @@ export function parse<S extends z.ZodType>(schema: S, data: unknown): z.infer<S>
   return result.data;
 }
 
-interface CommandOptions<S extends z.ZodType, R> {
+export interface CommandDefinition<S extends z.ZodType = z.ZodType, R = unknown> {
   name: string;
   schema: S;
   /**
@@ -46,37 +46,52 @@ interface CommandOptions<S extends z.ZodType, R> {
    * `'signed-in'` allows any authenticated caller even without a profile yet (first Google sign-in).
    */
   roles: readonly Role[] | 'public' | 'signed-in';
-  handler: (input: z.infer<S>, actor: Actor, request: CallableRequest) => Promise<R>;
+  handler: (input: z.infer<S>, actor: Actor) => Promise<R>;
+}
+
+/** The verified caller, from either transport (callable request or HTTP bearer token). */
+export interface Caller {
+  uid: string;
+  name?: string;
+}
+
+export function defineCommand<S extends z.ZodType, R>(def: CommandDefinition<S, R>): CommandDefinition<S, R> {
+  return def;
 }
 
 /**
- * Wraps every state-changing command: authentication → active-account check → role check (NFR-01)
- * → schema validation (NFR-03) → service → error mapping. Unexpected errors are logged (FR-23) and
- * returned as a generic message so internals are not leaked.
+ * Runs a command independently of transport: authentication → active-account check → role check
+ * (NFR-01) → schema validation (NFR-03) → service → error mapping. Unexpected errors are logged
+ * (FR-23) and returned as a generic message so internals are not leaked. Throws HttpsError.
  */
-export function command<S extends z.ZodType, R>(opts: CommandOptions<S, R>) {
-  return onCall(async (request) => {
-    try {
-      let actor: Actor;
-      if (opts.roles === 'public') {
-        actor = { uid: request.auth?.uid ?? 'anonymous', role: 'RESIDENT', name: 'Public', departmentId: null, suburb: null };
-      } else if (opts.roles === 'signed-in') {
-        if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in');
-        actor = { uid: request.auth.uid, role: 'RESIDENT', name: String(request.auth.token.name ?? ''), departmentId: null, suburb: null };
-      } else {
-        if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in');
-        actor = await loadActor(request.auth.uid);
-        if (!opts.roles.includes(actor.role)) throw new HttpsError('permission-denied', 'Your role cannot do this');
-      }
-      const input = parse(opts.schema, request.data);
-      return await opts.handler(input, actor, request);
-    } catch (err) {
-      const httpsError = toHttpsError(err);
-      if (httpsError.code === 'internal') {
-        logger.error(`${opts.name} failed`, err);
-        await writeLog('ERROR', opts.name, err instanceof Error ? err.message : String(err), request.auth?.uid).catch(() => {});
-      }
-      throw httpsError;
+export async function execute<S extends z.ZodType, R>(def: CommandDefinition<S, R>, caller: Caller | null, data: unknown): Promise<R> {
+  try {
+    let actor: Actor;
+    if (def.roles === 'public') {
+      actor = { uid: caller?.uid ?? 'anonymous', role: 'RESIDENT', name: 'Public', departmentId: null, suburb: null };
+    } else if (def.roles === 'signed-in') {
+      if (!caller) throw new HttpsError('unauthenticated', 'Please sign in');
+      actor = { uid: caller.uid, role: 'RESIDENT', name: caller.name ?? '', departmentId: null, suburb: null };
+    } else {
+      if (!caller) throw new HttpsError('unauthenticated', 'Please sign in');
+      actor = await loadActor(caller.uid);
+      if (!def.roles.includes(actor.role)) throw new HttpsError('permission-denied', 'Your role cannot do this');
     }
-  });
+    const input = parse(def.schema, data);
+    return await def.handler(input, actor);
+  } catch (err) {
+    const httpsError = toHttpsError(err);
+    if (httpsError.code === 'internal') {
+      logger.error(`${def.name} failed`, err);
+      await writeLog('ERROR', def.name, err instanceof Error ? err.message : String(err), caller?.uid).catch(() => {});
+    }
+    throw httpsError;
+  }
+}
+
+/** Cloud Functions adapter (local emulator, or a Blaze-plan deployment). */
+export function command<S extends z.ZodType, R>(def: CommandDefinition<S, R>) {
+  return onCall((request) =>
+    execute(def, request.auth ? { uid: request.auth.uid, name: request.auth.token.name as string | undefined } : null, request.data),
+  );
 }

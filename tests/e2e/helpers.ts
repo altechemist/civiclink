@@ -46,3 +46,13 @@ export async function submitReport(page: Page, opts: { category: string; descrip
   await page.getByRole('button', { name: 'Submit report' }).click();
   await expect(page.getByTestId('report-result')).toBeVisible();
 }
+
+/** Opens "Add new account" in the Auth emulator's fake Google chooser (it can be slow on a cold start). */
+export async function addEmulatorGoogleAccount(popup: Page) {
+  await popup.waitForLoadState('domcontentloaded');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await popup.getByText('Add new account').click();
+    if (await popup.locator('#email-input').isVisible({ timeout: 5_000 }).catch(() => false)) return;
+  }
+  await expect(popup.locator('#email-input')).toBeVisible();
+}

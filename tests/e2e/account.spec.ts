@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createUser } from '../support/emulator';
-import { PASSWORD, signIn } from './helpers';
+import { addEmulatorGoogleAccount, PASSWORD, signIn } from './helpers';
 
 test('E2E-08 first Google sign-in completes a resident profile (FR-29, BR-16)', async ({ page }) => {
   await page.goto('/login');
@@ -8,7 +8,7 @@ test('E2E-08 first Google sign-in completes a resident profile (FR-29, BR-16)', 
   await page.getByRole('button', { name: 'Continue with Google' }).click();
   const popup = await popupPromise;
   // Auth emulator's fake Google account chooser.
-  await popup.getByText('Add new account').click();
+  await addEmulatorGoogleAccount(popup);
   const email = `google.${Date.now()}@example.com`;
   await popup.locator('#email-input').fill(email);
   await popup.locator('#display-name-input').fill('Google Tester');
