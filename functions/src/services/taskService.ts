@@ -74,7 +74,7 @@ export class TaskService {
         actor,
         now,
         note: `Resolved by ${actor.name}: ${input.notes}`,
-        patch: { resolvedAt: ts(now), activeTaskId: null, resolutionNotes: input.notes },
+        patch: { resolvedAt: ts(now), activeTaskId: null, resolutionNotes: input.notes, resolutionPhotoPaths: input.proofPaths },
       });
       NotificationService.add(tx, [task.assignedBy], { type: 'TASK_UPDATE', title: `${task.reportRef} resolved`, body: input.notes, link: `/official/reports/${task.reportId}` }, now);
       return { status };
