@@ -10,7 +10,8 @@ test('NFT-07 mobile layouts fit a 360 px screen', async ({ page }) => {
   await signIn(page, ACCOUNTS.thandi);
   for (const path of ['/resident', '/resident/reports', '/resident/alerts', '/resident/report/new']) {
     await page.goto(path);
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h1').first()).toBeVisible();
+    await page.waitForTimeout(500); // let lists and maps lay out
     await noHorizontalScroll();
   }
   await page.getByRole('button', { name: 'Sign out' }).click();

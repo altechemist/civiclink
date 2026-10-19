@@ -101,6 +101,13 @@ describe('submitReport (FR-03, FR-04, FR-05, TX-1)', () => {
     expect((await w.resident2.call('submitReport', validReport({ location: northOf(spot, 150) }))).duplicateOf).toBeNull();
     expect((await w.resident2.call('submitReport', validReport({ location: spot, categoryId: 'electricity' }))).duplicateOf).toBeNull();
   });
+
+  it('IT-RPT-10 optional fields sent as undefined/null by the web client are accepted (DEF-02)', async () => {
+    const res = await w.resident.call('submitReport', validReport({ location: freshSpot(), landmark: undefined }));
+    expect(res.ref).toMatch(/^CL-/);
+    const res2 = await w.resident.call('submitReport', validReport({ location: freshSpot(), landmark: null }));
+    expect(res2.ref).toMatch(/^CL-/);
+  });
 });
 
 describe('triage and reject (FR-09)', () => {
