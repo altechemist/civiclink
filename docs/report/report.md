@@ -12,9 +12,9 @@ Sol Plaatje Local Municipality in Kimberley receives reports of burst pipes, pow
 
 CivicLink is a web application that connects four groups in one workflow. **Residents** report incidents from their phones with a map location, photos and a severity, receive a reference number, and follow the report live until it is fixed. **Municipal officials** triage reports for their department, assign them to field workers, escalate overdue work and broadcast alerts to specific suburbs. **Field workers** receive tasks on their phones, record progress and close each task with completion notes and a proof photo. **Administrators** manage staff accounts, departments and incident categories.
 
-The final release implements 24 of the 28 specified functional requirements, including all 13 Must-have requirements. The core lifecycle runs end to end: report, duplicate detection, triage, assignment, field completion, and resident confirmation or reopening. It is supported by real-time notifications, suburb-targeted alerts with read receipts, a privacy-safe community map, live service-delivery analytics, SLA-based automatic escalation, and a complete audit trail. Push notifications (Could-have), SMS alerts, offline drafting and scheduled alerts were deliberately deferred.
+The final release implements 28 of the 32 specified functional requirements, including all 14 Must-have requirements. The core lifecycle runs end to end: report, duplicate detection, triage, assignment, field completion, and resident confirmation or reopening. It is supported by real-time notifications, suburb-targeted alerts with read receipts, a privacy-safe community map, live service-delivery analytics, SLA-based automatic escalation, a complete audit trail, Google sign-in, and self-service account deletion that meets POPIA's right to erasure. Push notifications (Could-have), SMS alerts, offline drafting and scheduled alerts were deliberately deferred.
 
-The system is built with React and TypeScript on Firebase: Authentication, Cloud Firestore, Cloud Functions and Cloud Storage. Every state-changing operation runs on the server inside a database transaction, and access is enforced by Security Rules. The assessed system runs on the Firebase Emulator Suite, so it can be reproduced with two commands and no cloud account. It is verified by 119 automated tests (unit, security-rule, API integration, end-to-end and non-functional) running in continuous integration. All five success criteria were achieved.
+The system is built with React and TypeScript on Firebase: Authentication, Cloud Firestore, Cloud Functions and Cloud Storage. Every state-changing operation runs on the server inside a database transaction, and access is enforced by Security Rules. The assessed system runs on the Firebase Emulator Suite, so it can be reproduced with two commands and no cloud account. It is verified by 132 automated tests (unit, security-rule, API integration, end-to-end and non-functional) running in continuous integration. All five success criteria were achieved.
 
 # PROJECT CONTEXT
 
@@ -98,6 +98,7 @@ Table: Final release scope
 | Service-delivery analytics | FR-19 | Should |
 | Department and category configuration | FR-21 | Should |
 | Internal staff comments; system log | FR-22, FR-23 | Could |
+| Google sign-in; password reset; profile editing; POPIA account deletion | FR-29–FR-32 | Should |
 
 ## Excluded and Deferred Capabilities
 
@@ -127,11 +128,10 @@ Table: Known limitations
 | Scheduled rules (FR-13, FR-14) | The local emulator does not fire scheduled functions | In the local demo, escalation and auto-close run when an administrator selects "Run SLA & auto-close now" | When deployed, Cloud Scheduler runs them hourly and daily |
 | Alert broadcast (FR-16) | Delivery records are written in batches after the alert document, not in one transaction | A failure during a broadcast could leave the recipient count higher than the stored delivery records | Acceptable at municipal scale; records can be re-derived from the suburb query |
 | Location (FR-03) | No street address; location is a map pin plus suburb and optional landmark | Officials rely on the pin and the landmark text | Deliberate (decision D4) |
-| Photos | Images are not compressed before upload (≤ 5 MB) | Slower uploads on poor connections | Possible future improvement |
 
 # SYSTEM REQUIREMENTS SPECIFICATION
 
-The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-21 in `docs/baseline/change-log.md`.
+The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-26 in `docs/baseline/change-log.md`.
 
 ## Functional Requirements
 
@@ -167,6 +167,10 @@ Table: Functional requirements
 | FR-26 | The system shall allow an Official to export the filtered report queue as CSV. | Could Have | Included |
 | FR-27 | The system shall let residents draft reports offline and submit them when connectivity returns. | Won't Have (this release) | Deferred |
 | FR-28 | The system shall allow alerts to be scheduled for a future time. | Won't Have (this release) | Deferred |
+| FR-29 | The system shall allow users to sign in with a Google account; on first sign-in a new user completes a resident profile. | Should Have | Included |
+| FR-30 | The system shall allow users to request a password-reset email without revealing whether an account exists. | Should Have | Included |
+| FR-31 | The system shall allow users to update their name and phone number, and residents their suburb. | Should Have | Included |
+| FR-32 | The system shall allow a Resident to delete their account; personal data is erased and their reports are kept anonymised. | Should Have | Included |
 
 ## Non-Functional Requirements
 
@@ -215,6 +219,8 @@ Table: Business rules
 | BR-18 | Internal comments are visible only to staff. |
 | BR-19 | Inactive departments and categories cannot be selected for new reports, triage or assignment. |
 | BR-20 | Officials may act only on reports of their own department; Administrators may act on any. |
+| BR-21 | A resident may submit at most N reports in any rolling hour; N is set by an Administrator (1–100, default 10). |
+| BR-22 | When a resident deletes their account, their name, email, phone, photos, notifications, alert receipts, profile and sign-in are erased; their reports are kept for service records as "Former resident". Staff accounts are deactivated, never self-deleted. |
 
 ## Acceptance Criteria for Included Requirements
 
@@ -258,7 +264,15 @@ Table: Business rules
 
 **FR-20 User administration.** Staff accounts are created with the correct role and department. Role changes and deactivation take effect immediately. Administrators cannot demote or deactivate themselves. Non-administrators are refused.
 
-**FR-21 Configuration.** SLA hours must be a whole number from 1 to 720. Names are unique. A deactivated category disappears from the report form.
+**FR-21 Configuration.** SLA hours must be a whole number from 1 to 720. Names are unique. A deactivated category disappears from the report form. The hourly report limit (BR-21) must be from 1 to 100.
+
+**FR-29 Google sign-in.** A first-time Google user is taken to a profile step that needs a name and a suburb, and always becomes a Resident. An existing profile cannot be re-created.
+
+**FR-30 Password reset.** The same confirmation is shown whether or not the email is registered.
+
+**FR-31 Profile.** An invalid SA phone number is refused. A resident who changes suburb receives that suburb's alerts. Staff have no suburb.
+
+**FR-32 Account deletion.** It requires typing DELETE. Afterwards the user cannot sign in. Their reports show "Former resident" without photos and generate no notifications. Staff cannot self-delete.
 
 # SYSTEM DESIGN SPECIFICATION
 
@@ -396,6 +410,8 @@ Table: User interface evidence
 | 22 | Administrator | User and role management | FR-20 |
 | 23 | Resident | Permission denied when opening an official page | NFR-01 |
 | 24 | Official | Empty state in the report queue | FR-08 |
+| 25 | New resident | First Google sign-in completes the profile | FR-29 |
+| 26 | Resident | Profile editing and POPIA account deletion | FR-31, FR-32 |
 
 ![Figure: Sign in (all roles)](docs/evidence/01-login.png){width=2.6}
 
@@ -425,9 +441,13 @@ Table: User interface evidence
 
 ![Figure: Empty state in the report queue](docs/evidence/22-queue-empty-state.png)
 
+![Figure: First Google sign-in, profile completion](docs/evidence/16-google-welcome.png){width=2.6}
+
+![Figure: Resident profile with POPIA account deletion](docs/evidence/17-profile-popia.png){width=2.6}
+
 ## Data Design
 
-CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in **Cloud Storage**, and the database holds only their paths. Figure 25 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
+CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in **Cloud Storage**, and the database holds only their paths. Figure 27 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
 
 ![Figure: Firestore document model](docs/diagrams/data-model.png)
 
@@ -464,6 +484,7 @@ Table: Data dictionary (principal collections)
 | **users/{uid}/notifications/{id}** | | auto id | type, title, body, link, readAt, createdAt |
 | **departments/{id}**, **categories/{id}** | | slug id | name (unique), slaHours (1–720) / icon and departmentId (FK), isActive |
 | **counters/reports-{year}** | | year | next reference sequence |
+| **settings/app** | | fixed id | reportsPerHour (BR-21) |
 | **systemLogs/{id}** | | auto id | level, source, message, actorId, createdAt |
 
 **Integrity mechanisms.** Firestore enforces no schema, so integrity is enforced in five ways:
@@ -486,7 +507,8 @@ Table: Role / permission matrix (✓ allowed; scope in brackets)
 
 | Function | Resident | Official | Field Worker | Administrator |
 |---|---|---|---|---|
-| Register, sign in | ✓ | sign in | sign in | sign in |
+| Register, sign in (password or Google), reset password, edit own profile | ✓ | ✓ (no registration) | ✓ (no registration) | ✓ (no registration) |
+| Delete own account (POPIA) | ✓ | — | — | — |
 | Submit report; view own reports; confirm/reopen | ✓ | — | — | — |
 | View community map | ✓ | ✓ | — | ✓ |
 | View report queue and full report details | — | ✓ (own dept) | ✓ (assigned) | ✓ |
@@ -502,13 +524,15 @@ Table: Security controls
 
 | Area | Risk | Implemented control |
 |---|---|---|
-| Authentication | Unauthorised access | Firebase Authentication with email and password (minimum 8 characters); signed ID tokens on every request |
+| Authentication | Unauthorised access | Firebase Authentication with email/password (minimum 8 characters) or Google; signed ID tokens on every request; new Google users can only become Residents |
+| Account enumeration | Attackers discover which emails are registered | Password reset and sign-in errors give the same message whether or not an account exists |
+| Abuse | Flooding the queue with fake reports | Configurable per-resident hourly limit enforced inside the submission transaction (BR-21) |
 | Authorisation | A user reaches another role's data or functions | Firestore and Storage Security Rules per the matrix; role and department checks in every command; client route guards for usability only |
 | Account lifecycle | A deactivated user keeps access | Auth account disabled, refresh tokens revoked, profile check on every command |
 | Input | Malicious or invalid data | Zod schemas on the server; geographic bounds; length limits; photo type and size enforced by Storage rules |
 | Integrity | Race conditions or partial updates | Firestore transactions TX-1 to TX-3; append-only history; no client writes |
 | File uploads | Malware, oversized files, writing to others' folders | Only images ≤ 5 MB in the uploader's own folder; the server checks that the paths belong to the caller |
-| Sensitive data (POPIA) | Exposure of residents' identity, location or photos | Reports readable only by the reporter, followers and staff; public map uses an anonymised projection with location rounded to about 100 m; minimal data collected; processing region africa-south1 |
+| Sensitive data (POPIA) | Exposure or indefinite retention of residents' identity, location or photos | Reports readable only by the reporter, followers and staff; public map uses an anonymised projection with location rounded to about 100 m; minimal data collected; processing region africa-south1; residents can erase their personal data (FR-32), leaving anonymised service records (BR-22) |
 | Secrets | API key or credential exposure | No secrets in the repository; emulator demo configuration; `.env.example`; gitleaks scan in CI |
 | Error handling | Leaking internals | Unexpected errors return a generic message and are written to the system log |
 | Logging and audit | Unaccountable actions | Immutable status history with actor; administrator actions and errors in the system log |
@@ -524,7 +548,7 @@ Table: Security controls
 
 ## Deployment and Runtime Design
 
-The assessed system **runs locally**. The web application is served by Vite. Authentication, Firestore, Cloud Functions and Storage run in the Firebase Emulator Suite on the same machine, with ports listed in Figure 26. The browser loads map tiles from OpenStreetMap over HTTPS. The same code can be deployed unchanged to a Firebase project (Hosting, Cloud Functions in africa-south1, Firestore, Storage, Auth), but that cloud deployment is optional and is not part of the assessed configuration.
+The assessed system **runs locally**. The web application is served by Vite. Authentication, Firestore, Cloud Functions and Storage run in the Firebase Emulator Suite on the same machine, with ports listed in Figure 28. The browser loads map tiles from OpenStreetMap over HTTPS. The same code can be deployed unchanged to a Firebase project (Hosting, Cloud Functions in africa-south1, Firestore, Storage, Auth), but that cloud deployment is optional and is not part of the assessed configuration.
 
 ![Figure: Deployment diagram](docs/diagrams/deployment.png)
 
@@ -561,6 +585,7 @@ Table: Capability implementation
 | Field completion | FR-11 | WorkerHome, TaskPage; `updateTask`, `completeTask` → TaskService (TX-3), TaskStateMachine; tasks, reports, Storage `proofs/` |
 | Confirm, reopen, SLA | FR-13, FR-14 | ResidentReportPage; ReportService.confirm/reopen; MaintenanceService with `escalateOverdue` and `autoCloseResolved` schedules and admin `runMaintenance` |
 | Alerts | FR-16–FR-18 | NewAlertPage, AlertsAdminPage, AlertsFeedPage, useResidentAlerts; AlertService; alerts, recipients |
+| Accounts | FR-01, FR-02, FR-29–FR-32 | LoginPage, RegisterPage, WelcomePage, ProfilePage, AuthProvider (Google popup, password reset); `registerResident`, `completeProfile`, `updateProfile`, `deleteMyAccount` → UserService; users, Auth claims, Storage |
 | Insight and administration | FR-19–FR-23, FR-26 | AnalyticsPage → AnalyticsService → computeAnalytics; UsersPage → UserService; ConfigPage → ConfigService; LogsPage, logService; CommentService; toCsv |
 
 **Validation.** Forms validate on the client with the same Zod schemas the server uses, and show field-level messages that clear as the user corrects them. The `command()` wrapper validates every request again and returns `invalid-argument` with a `fields` map, which the client displays against the matching inputs.
@@ -580,6 +605,9 @@ Table: Callable command API
 | Command | Roles | Purpose | Notable errors |
 |---|---|---|---|
 | registerResident | public | Create resident account | already-exists, invalid-argument |
+| completeProfile | signed in, no profile yet | Finish first Google sign-in as a Resident | already-exists |
+| updateProfile | any role | Own name, phone; residents' suburb | invalid-argument, permission-denied |
+| deleteMyAccount | Resident | POPIA erasure with anonymisation | invalid-argument (confirmation) |
 | submitReport | Resident | TX-1 submission | invalid-argument, permission-denied |
 | triageReport, rejectReport, escalateReport | Official, Admin | Lifecycle actions | failed-precondition, permission-denied |
 | assignReport, reassignTask | Official, Admin | TX-2 dispatch | failed-precondition, invalid-argument |
@@ -589,7 +617,7 @@ Table: Callable command API
 | broadcastAlert, deactivateAlert | Official, Admin | Alerts | invalid-argument |
 | markAlertRead | Resident | Read receipt | not-found |
 | createStaffUser, setUserRole, setUserActive | Admin | Accounts | permission-denied (self) |
-| upsertDepartment, upsertCategory | Admin | Configuration | invalid-argument |
+| upsertDepartment, upsertCategory, updateSettings | Admin | Configuration, report limit | invalid-argument |
 | getAnalytics | Official, Admin | Metrics | — |
 | runMaintenance | Admin | Run SLA/auto-close on demand | — |
 
@@ -613,17 +641,17 @@ Table: Test levels
 
 | Level | Tool | Scope | Count |
 |---|---|---|---|
-| Unit | Vitest | Shared domain: schemas, state machines, duplicate/SLA/resolution policies, references, analytics, CSV (97.9% line coverage) | 28 |
+| Unit | Vitest | Shared domain: schemas, state machines, duplicate/SLA/resolution policies, location helpers, references, analytics, CSV (≈ 98% line coverage) | 29 |
 | Security rules | @firebase/rules-unit-testing on the emulator | Allow and deny case for every permission-matrix cell, Firestore and Storage | 20 |
-| API integration | Vitest + Firebase client SDK against the emulators | Every command: success, validation, boundary, authorisation, state conflict and concurrency | 62 |
-| End-to-end | Playwright (Chromium and Firefox; 360 px mobile) | Full lifecycle across three browser sessions, duplicates, alerts, access control, validation | 7 + 2 non-functional |
+| API integration | Vitest + Firebase client SDK against the emulators | Every command: success, validation, boundary, authorisation, state conflict and concurrency | 70 |
+| End-to-end | Playwright (Chromium and Firefox; 360 px mobile) | Full lifecycle across three browser sessions, duplicates, alerts, access control, validation, out-of-area GPS, Google sign-in, password reset, profile and account deletion | 10 + 3 non-functional |
 | Non-functional | Playwright timing, axe-core, gitleaks, ESLint, TypeScript | NFR-04 to NFR-09, NFR-12 | — |
 
 Everything except visual review was tested automatically. **Manual testing** consisted of exploratory sessions in each role and a review of every screenshot in Section 5.5, including mobile layouts. Seeded data (`scripts/seed.ts`) gives every test run the same starting state.
 
 ## Functional and Business-Rule Verification
 
-The table below lists the principal test cases. The complete list of 119 automated tests, with their results, is produced by CI for the submitted commit (Appendix 11.3). All tests listed passed. "As expected" means the actual result matched the expected result exactly.
+The table below lists the principal test cases. The complete list of 132 automated tests, with their results, is produced by CI for the submitted commit (Appendix 11.3). All tests listed passed. "As expected" means the actual result matched the expected result exactly.
 
 Table: Functional and business-rule test results
 
@@ -665,6 +693,12 @@ Table: Functional and business-rule test results
 | IT-ANL-01, UT-ANL-01 | FR-19, SC-05 | Metrics on fixture and after a new report | Integration | Counts, averages and SLA % exact; no NaN on empty data | As expected | Pass |
 | E2E-04 | NFR-01 | Each role opens other roles' pages | End-to-end | Access-denied page; anonymous → login | As expected | Pass |
 | E2E-05 | BR-02 | Submit report with short text, no location and no severity | Validation | Three field messages; cannot proceed | As expected | Pass |
+| E2E-07 | FR-03, BR-02 | Device GPS reports Johannesburg | Boundary | Distance explained; no location set; tapping the map sets the pin and suburb | As expected | Pass |
+| IT-RPT-11 | BR-21 | Limit set to 2; resident submits 3 reports | Boundary | Third refused (resource-exhausted) | As expected | Pass |
+| IT-AUTH-04, E2E-08 | FR-29, BR-16 | First Google sign-in; client sends role ADMIN | Authorisation | Profile step required; account is a Resident; second completion refused | As expected | Pass |
+| E2E-09 | FR-30 | Reset for a registered and an unregistered email | Security | Identical confirmation for both | As expected | Pass |
+| IT-DEL-01, E2E-10 | FR-32, BR-22 | Resident deletes account (wrong confirmation, then DELETE) | Integration | Refused, then reports anonymised; photos, profile, receipts and Auth account removed; sign-in fails | As expected | Pass |
+| IT-DEL-02 | BR-22 | Staff self-delete; triage an anonymised report | Authorisation | Refused; anonymised report progresses without notifications | As expected | Pass |
 
 ## Non-Functional and Security Verification
 
@@ -696,6 +730,7 @@ Table: Significant defects found and resolved
 | DEF-01 | IT-CFG-02 | Creating a department whose name produced an existing identifier silently overwrote that department | Creation now refuses existing identifiers; updates require an existing record |
 | DEF-02 | E2E-01 | Submissions with an empty optional field were rejected, because the callable protocol sends `undefined` as `null` | The command wrapper treats top-level nulls as absent; regression test IT-RPT-10 |
 | DEF-03 | NFT-08 | Three text styles were below the WCAG AA contrast ratio | Darker text colours |
+| DEF-05 | E2E-10 | The profile form opened with an empty name, because it read the profile before it had loaded | The form is rendered only after the profile loads |
 | DEF-04 | CI on a clean checkout | An over-broad `lib/` ignore rule had kept two source folders out of the repository | Ignore rule narrowed to the build output; CI now builds from a clean clone on every push |
 
 There are no unresolved defects. The limitations of included functionality are listed in Section 3.4.
@@ -802,6 +837,6 @@ Not applicable. The assessed system runs locally on the Firebase Emulator Suite 
 - **Complete automated test results:** the GitHub Actions run for commit {{COMMIT}} (tab "Actions"). It includes the Playwright HTML report and the coverage report as downloadable artefacts.
 - **Traceability matrix** (requirement → rule → screen → code → data → test): `docs/trackers/traceability-matrix.md`.
 - **Full test catalogue:** `docs/trackers/test-catalog.md`; **defect log:** `docs/trackers/defect-log.md`.
-- **Baseline change log** reconciling Phases 1–3 (CR-01 to CR-21): `docs/baseline/change-log.md`.
+- **Baseline change log** reconciling Phases 1–3 (CR-01 to CR-26): `docs/baseline/change-log.md`.
 - **Architecture decision records:** `docs/adr/README.md`.
 - **Diagram sources** (PlantUML): `docs/diagrams/src/`; **all 31 UI screenshots:** `docs/evidence/`.

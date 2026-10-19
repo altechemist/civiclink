@@ -74,7 +74,6 @@ Supporting: reassignment, escalation (manual + SLA-automatic), resident reopen/c
 | Scheduled rules (FR-13, FR-14) | The emulator does not fire schedules on its own | In the local demo, escalation and auto-close run when an admin presses "Run SLA & auto-close now" | Deployed Cloud Scheduler runs them hourly/daily |
 | Alert broadcast (FR-16) | Recipient records are written in batches after the alert document, so they are not one atomic unit | A crash mid-broadcast could leave `recipientCount` higher than the stored delivery records | Acceptable at municipal scale; recipients can be re-derived from the suburb query |
 | Location (FR-03) | No reverse geocoding; address = suburb + optional landmark | Officials rely on the map pin and landmark text | Deliberate (ADR-0004) |
-| Photos | Images are uploaded at full size (≤ 5 MB) without client compression | Slower uploads on low-end connections | Possible future improvement |
 
 
 ## 4. Functional requirements
@@ -111,6 +110,10 @@ Priority uses MoSCoW. Release status is *Planned* until the freeze, then becomes
 | FR-26 | The system shall allow an Official to export the filtered report queue as CSV. | Official | Could | Included | — |
 | FR-27 | The system shall let residents draft reports offline and submit when connectivity returns. | Resident | Won't (this release) | Deferred | — |
 | FR-28 | The system shall allow alerts to be scheduled for a future time. | Official | Won't (this release) | Deferred | — |
+| FR-29 | The system shall allow users to sign in with a Google account; on first sign-in a new user completes a resident profile (name, suburb, optional phone). | Resident | Should | Included | BR-16 |
+| FR-30 | The system shall allow users to request a password-reset email without revealing whether an account exists. | All | Should | Included | — |
+| FR-31 | The system shall allow users to update their name and phone number, and residents their suburb. | All | Should | Included | BR-14, BR-16 |
+| FR-32 | The system shall allow a Resident to delete their account; personal data is erased and their reports are kept anonymised. | Resident | Should | Included | BR-22 |
 
 ## 5. Non-functional requirements
 
@@ -155,6 +158,8 @@ All are verified in the assessment environment: local Firebase Emulator Suite, s
 | BR-18 | Internal comments are visible only to Officials, Field Workers and Admins. |
 | BR-19 | Inactive departments and categories cannot be selected for new reports or assignments. Existing records keep their reference. |
 | BR-20 | Officials may triage, assign and escalate reports only for their own department. Admins may act on any department. |
+| BR-21 | A resident may submit at most N reports in any rolling hour (N set by an Administrator, 1–100, default 10). |
+| BR-22 | When a resident deletes their account, their name, email, phone, photos, notifications, alert receipts, profile and sign-in are erased. Their reports are retained for service records with the reporter replaced by "Former resident". Staff accounts are deactivated, never self-deleted. |
 
 ### Critical transactions (integrity rules)
 
@@ -221,5 +226,13 @@ Task: ASSIGNED → ACCEPTED → IN_PROGRESS → COMPLETED. Any active state goes
 **FR-19 Analytics.** For the seeded dataset the counts, average resolution hours and SLA compliance percentages equal the precomputed expected values. The empty department case shows "no data" rather than NaN.
 
 **FR-20 User admin.** Creating a staff account sets claims and a profile. Deactivation blocks sign-in and function calls immediately. A role change takes effect on the user's next token refresh (forced). An admin cannot deactivate or demote themselves. Non-admins are refused.
+
+**FR-29 Google sign-in.** "Continue with Google" signs the user in. A first-time user is sent to a profile step, which needs a name and a suburb. The account is always created as a Resident. An existing profile cannot be re-created.
+
+**FR-30 Password reset.** With an email entered, the same confirmation is shown whether or not the account exists. Without an email, the user is asked to enter one.
+
+**FR-31 Profile.** Name and phone can be changed, with an invalid SA number refused. A resident who changes suburb receives alerts for the new suburb. Staff have no suburb.
+
+**FR-32 Account deletion.** It requires typing DELETE. Afterwards the user cannot sign in. Their reports show "Former resident" without photos, and no notifications are sent for them. Staff cannot self-delete.
 
 **FR-21 Configuration.** SLA hours must be a whole number from 1 to 720. Deactivating a category hides it from the report form. Deactivating a department hides it from assignment. Names are unique.

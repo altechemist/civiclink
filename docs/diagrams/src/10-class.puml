@@ -77,6 +77,9 @@ package "Domain entities (shared models → Firestore documents)" {
   class Comment <<reports/{id}/comments>> {
     authorId, authorRole, text, createdAt
   }
+  class Settings <<settings/app>> {
+    reportsPerHour: int
+  }
   class PublicReport <<publicReports>> {
     ref, categoryId, status
     location «≈100 m», suburb
@@ -143,10 +146,14 @@ package "Application services (functions/src/services)" {
     +createStaff(input, actor)
     +setRole(input, actor)
     +setActive(uid, active, actor)
+    +completeProfile(uid, input)
+    +updateProfile(input, actor)
+    +deleteMyAccount(actor)
   }
   class ConfigService {
     +upsertDepartment(input, actor)
     +upsertCategory(input, actor)
+    +updateSettings(input, actor)
   }
   class MaintenanceService {
     +escalateOverdue(): number
@@ -201,4 +208,5 @@ ReportService ..> Report
 TaskService ..> Task
 AlertService ..> Alert
 UserService ..> User
+ReportService ..> Settings : reads limit (BR-21)
 @enduml

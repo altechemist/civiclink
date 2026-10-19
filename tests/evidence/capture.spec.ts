@@ -166,3 +166,22 @@ test('capture resident resolution screens', async ({ browser }) => {
   await r.getByText('Progress history').scrollIntoViewIfNeeded();
   await shot(r, '12-report-timeline');
 });
+
+test('capture account screens', async ({ browser }) => {
+  const page = await open(browser, null, PHONE);
+  await page.goto('/login');
+  const popupPromise = page.waitForEvent('popup');
+  await page.getByRole('button', { name: 'Continue with Google' }).click();
+  const popup = await popupPromise;
+  await popup.getByText('Add new account').click();
+  await popup.locator('#email-input').fill(`lerato.${Date.now()}@example.com`);
+  await popup.locator('#display-name-input').fill('Lerato Mokoena');
+  await popup.getByRole('button', { name: /Sign in with Google/i }).click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await shot(page, '16-google-welcome');
+
+  const r = await open(browser, ACCOUNTS.thandi, PHONE);
+  await r.goto('/profile');
+  await expect(r.getByRole('button', { name: 'Save changes' })).toBeVisible();
+  await shot(r, '17-profile-popia');
+});

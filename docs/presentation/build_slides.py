@@ -80,12 +80,13 @@ picture(s, 'docs/evidence/03-resident-home.png', 7.6, 1.5, height=5.3)
 picture(s, 'docs/evidence/13-resident-alerts.png', 10.2, 1.5, height=5.3)
 
 # 2. Solution & scope
-s = slide('Four roles, one lifecycle: 24 of 28 requirements delivered', 'Solution and final scope')
+s = slide('Four roles, one lifecycle: 28 of 32 requirements delivered', 'Solution and final scope')
 bullets(s, [
     'Residents|report in 3 steps (map pin, photos, severity), get a reference, follow it live, confirm or reopen',
     'Officials|department queue, triage, assign, escalate, suburb alerts, live analytics',
     'Field workers|accept, start and complete with notes and proof photos',
     'Administrators|staff accounts, roles, departments, SLA targets, system log',
+    'Accounts|Google sign-in, password reset, profile, POPIA self-deletion with anonymised records',
     'Deferred on purpose|push and SMS, offline drafts, scheduled alerts: not verifiable in the assessment environment',
 ], width=7.4, size=17)
 picture(s, 'docs/diagrams/state-report.png', 8.2, 1.6, width=4.7)
@@ -109,12 +110,12 @@ bullets(s, [
 ], width=12, size=18)
 
 # 5. Verification
-s = slide('119 automated tests, all green in CI', 'Verification')
+s = slide('132 automated tests, all green in CI', 'Verification')
 bullets(s, [
-    'Unit (28)|state machines, duplicate boundaries 99/100/101 m and 71/72/73 h, SLA, analytics; 97.9% coverage',
+    'Unit (29)|state machines, duplicate boundaries 99/100/101 m and 71/72/73 h, SLA, analytics; 97.9% coverage',
     'Security rules (20)|every cell of the permission matrix, allow and deny',
-    'API integration (62)|validation, authorisation, wrong-state and concurrency for every command',
-    'End-to-end (9)|full lifecycle across 3 browsers, duplicates, alerts, access denied; Chrome and Firefox; 360 px',
+    'API integration (70)|validation, authorisation, wrong-state and concurrency for every command',
+    'End-to-end (13)|full lifecycle across 3 browsers, duplicates, alerts, access denied, Google sign-in, POPIA deletion; Chrome and Firefox; 360 px',
     'NFRs|update reaches the resident in 2.5 s (target 5 s), screens < 1.1 s, p95 command 28 ms, 0 WCAG violations',
 ], width=7.6, size=16)
 picture(s, 'docs/evidence/23-triage-assign.png', 8.4, 1.7, width=4.5)

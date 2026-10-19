@@ -37,10 +37,14 @@ package "Application services (functions/src/services)" {
     +createStaff(input, actor)
     +setRole(input, actor)
     +setActive(uid, active, actor)
+    +completeProfile(uid, input)
+    +updateProfile(input, actor)
+    +deleteMyAccount(actor)
   }
   class ConfigService {
     +upsertDepartment(input, actor)
     +upsertCategory(input, actor)
+    +updateSettings(input, actor)
   }
   class MaintenanceService {
     +escalateOverdue(): number
@@ -89,6 +93,7 @@ package "Domain entities (see part 1)" {
   class Task
   class Alert
   class User
+  class Settings
 }
 Command ..> ReportService
 Command ..> TaskService
@@ -111,4 +116,5 @@ ReportService ..> Report
 TaskService ..> Task
 AlertService ..> Alert
 UserService ..> User
+ReportService ..> Settings : reads limit (BR-21)
 @enduml

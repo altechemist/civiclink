@@ -2,6 +2,7 @@
 # Renders every PlantUML source in docs/diagrams/src to PNG and SVG in docs/diagrams/.
 # Requires Java 17+. Downloads PlantUML 1.2026.8 to ~/.cache/plantuml on first run.
 set -euo pipefail
+python3 "$(dirname "$0")/split_class.py"
 cd "$(dirname "$0")"
 JAR="$HOME/.cache/plantuml/plantuml-1.2026.8.jar"
 if [ ! -f "$JAR" ]; then

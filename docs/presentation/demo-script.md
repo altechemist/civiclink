@@ -17,10 +17,10 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
 ## Slides (≤ 5 min), see `CivicLink_Presentation.pptx`
 
 1. **Problem:** the 31 March strike; phone and WhatsApp reporting; no tracking; no alerts.
-2. **Solution and scope:** four roles; 24 of 28 requirements included (all Must-haves); deferred items and why.
+2. **Solution and scope:** four roles; 28 of 32 requirements included (all 14 Must-haves); deferred items and why.
 3. **Architecture:** React SPA → callable commands → transactions; Security Rules; shared domain package (Figure 9).
 4. **Two key decisions:** server-side commands with transactions (D1); emulator as the assessed runtime (D3).
-5. **Verification:** 119 automated tests, CI green, NFR measurements, SC-01 to SC-05 all achieved.
+5. **Verification:** 132 automated tests, CI green, NFR measurements, SC-01 to SC-05 all achieved.
 
 ## Principal workflow (≈ 5 min, 2 marks)
 
@@ -65,6 +65,11 @@ For every included requirement and rule: how to show it, and a failure case to s
 | FR-22 / BR-18 | Official adds an internal note | Resident never sees notes (rules RT-CMT-01) |
 | FR-23 | System log entries for admin actions | — |
 | FR-26 | Export CSV | — |
+| FR-29 | Login → Continue with Google → emulator account chooser → "Add new account" → welcome step | Finish without a suburb → field error; account is always a Resident |
+| FR-30 | Forgot password with an email | Unknown email → the same message (no account enumeration) |
+| FR-31 | Profile → change suburb → alerts feed follows | Phone "123" → error |
+| FR-32 / BR-22 | Profile → type DELETE → delete; sign-in now fails | Show that the old report now reads "Former resident" (official view) |
+| BR-21 | Admin → config → limit 2; resident submits a third report | "You have submitted 2 reports in the last hour" |
 | NFR-01 | As resident, open /official → 403 page | Even with the guard bypassed, rules deny the data (show the RT test) |
 | NFR-07 | DevTools 360 px | No horizontal scroll |
 

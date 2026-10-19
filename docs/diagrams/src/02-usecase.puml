@@ -10,7 +10,9 @@ actor "Scheduler\n(system clock)" as S
 rectangle CivicLink {
   package "Reporting & tracking" {
     usecase "Register (FR-01)" as UC1
-    usecase "Sign in (FR-02)" as UC2
+    usecase "Sign in: password or Google;\nreset password\n(FR-02, FR-29, FR-30)" as UC2
+    usecase "Edit my profile (FR-31)" as UC24
+    usecase "Delete my account,\nPOPIA (FR-32)" as UC25
     usecase "Submit incident report\n(FR-03, FR-04)" as UC3
     usecase "Detect duplicate (FR-05)" as UC4
     usecase "Track my reports (FR-06)" as UC5
@@ -38,6 +40,7 @@ rectangle CivicLink {
     usecase "Manage users and roles (FR-20)" as UC20
     usecase "Configure departments\nand categories (FR-21)" as UC21
     usecase "View system log (FR-23)" as UC22
+    usecase "Set report limit (BR-21)" as UC26
   }
 }
 
@@ -55,9 +58,12 @@ R --> UC6
 R --> UC7
 R --> UC8
 R --> UC9
+R --> UC24
+R --> UC25
 S --> UC23
 
 UC2 <-- O
+UC24 <-- O
 UC13 <-- O
 UC10 <-- O
 UC11 <-- O
@@ -76,4 +82,5 @@ UC9 <-- W
 UC20 <-- A
 UC21 <-- A
 UC22 <-- A
+UC26 <-- A
 @enduml
