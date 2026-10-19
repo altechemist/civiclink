@@ -1,0 +1,71 @@
+@startuml usecase
+!include _style.iuml
+title CivicLink: Use Cases (Final Release)
+left to right direction
+
+actor Resident as R
+actor "Official" as O
+actor "Field Worker" as W
+actor Administrator as A
+actor "Scheduler\n(system clock)" as S
+A -|> O
+
+rectangle CivicLink {
+  usecase "Register (FR-01)" as UC1
+  usecase "Sign in (FR-02)" as UC2
+  usecase "Submit incident report\n(FR-03, FR-04)" as UC3
+  usecase "Detect duplicate (FR-05)" as UC4
+  usecase "Track my reports (FR-06)" as UC5
+  usecase "Confirm / reopen resolution\n(FR-14)" as UC6
+  usecase "View community map (FR-07)" as UC7
+  usecase "View suburb alerts (FR-17)" as UC8
+  usecase "Receive notifications (FR-15)" as UC9
+  usecase "Triage / reject report (FR-09)" as UC10
+  usecase "Assign / reassign field worker\n(FR-10, FR-12)" as UC11
+  usecase "Escalate report (FR-13)" as UC12
+  usecase "Manage report queue (FR-08, FR-26)" as UC13
+  usecase "Broadcast alert (FR-16)" as UC14
+  usecase "Review alert delivery (FR-18)" as UC15
+  usecase "View analytics (FR-19)" as UC16
+  usecase "Add internal note (FR-22)" as UC17
+  usecase "Accept / start task (FR-11)" as UC18
+  usecase "Complete task with proof (FR-11)" as UC19
+  usecase "Manage users and roles (FR-20)" as UC20
+  usecase "Configure departments\nand categories (FR-21)" as UC21
+  usecase "View system log (FR-23)" as UC22
+  usecase "Auto-escalate overdue /\nauto-close resolved (FR-13, FR-14)" as UC23
+}
+
+R --> UC1
+R --> UC2
+R --> UC3
+UC3 .> UC4 : <<include>>
+R --> UC5
+R --> UC6
+R --> UC7
+R --> UC8
+R --> UC9
+
+O --> UC2
+O --> UC13
+O --> UC10
+O --> UC11
+O --> UC12
+O --> UC14
+O --> UC15
+O --> UC16
+O --> UC17
+O --> UC7
+O --> UC9
+
+W --> UC2
+W --> UC18
+W --> UC19
+W --> UC17
+W --> UC9
+
+A --> UC20
+A --> UC21
+A --> UC22
+S --> UC23
+@enduml

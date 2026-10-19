@@ -1,0 +1,52 @@
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowColor #334155
+skinparam BorderColor #0b4f6c
+skinparam BackgroundColor white
+skinparam titleFontSize 16
+skinparam titleFontStyle bold
+skinparam ActorBorderColor #0b4f6c
+skinparam ActorBackgroundColor #eef7fb
+skinparam usecase {
+  BackgroundColor #eef7fb
+  BorderColor #0b4f6c
+}
+skinparam rectangle {
+  BackgroundColor #f8fafc
+  BorderColor #0b4f6c
+}
+skinparam component {
+  BackgroundColor #eef7fb
+  BorderColor #0b4f6c
+}
+skinparam database {
+  BackgroundColor #fefce8
+  BorderColor #a16207
+}
+skinparam class {
+  BackgroundColor #f8fafc
+  BorderColor #0b4f6c
+  HeaderBackgroundColor #d5ebf4
+}
+skinparam state {
+  BackgroundColor #eef7fb
+  BorderColor #0b4f6c
+}
+skinparam activity {
+  BackgroundColor #eef7fb
+  BorderColor #0b4f6c
+  DiamondBackgroundColor #fff7ed
+  DiamondBorderColor #c2410c
+}
+skinparam sequence {
+  ParticipantBackgroundColor #eef7fb
+  ParticipantBorderColor #0b4f6c
+  LifeLineBorderColor #94a3b8
+  GroupBackgroundColor #f1f5f9
+}
+skinparam note {
+  BackgroundColor #fffbeb
+  BorderColor #d97706
+}

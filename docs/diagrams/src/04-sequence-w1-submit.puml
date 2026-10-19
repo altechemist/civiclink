@@ -1,0 +1,64 @@
+@startuml sequence-w1
+!include _style.iuml
+title W1: Submit incident report, sequence (TX-1)
+autonumber
+
+actor Resident
+participant "NewReportPage\n(React)" as UI
+participant "Cloud Storage" as ST
+participant "submitReport\n(callable)" as API
+participant "ReportService" as RS
+participant "DuplicatePolicy\n(shared)" as DP
+database "Firestore" as DB
+
+Resident -> UI : complete steps 1–3, Submit
+UI -> UI : submitReportSchema.safeParse()
+alt client validation fails
+  UI --> Resident : field errors (no request sent)
+else valid
+  loop each photo (0–3)
+    UI -> ST : uploadBytes(reports/{uid}/{uuid}.jpg)
+    alt rule violation (type/size/owner)
+      ST --> UI : storage/unauthorized
+      UI --> Resident : upload error
+    end
+  end
+  UI -> API : submitReport(input, ID token)
+  API -> DB : get users/{uid}
+  alt not active RESIDENT
+    API --> UI : permission-denied
+  else
+    API -> API : parse(submitReportSchema)
+    alt invalid
+      API --> UI : invalid-argument {fields}
+      UI --> Resident : field errors
+    else
+      API -> RS : submit(input, actor)
+      RS -> ST : file(path).exists() for each photo
+      RS -> DB : runTransaction
+      activate DB
+      RS -> DB : get category, department
+      RS -> DB : query reports by geohash ranges (100 m)
+      RS -> DP : findParent(new, candidates, now)
+      DP --> RS : parent | null
+      RS -> DB : get counters/reports-YYYY
+      opt not a duplicate
+        RS -> DB : query active officials of department
+      end
+      RS -> DB : set counter, report, history
+      alt duplicate
+        RS -> DB : update parent (affectedCount+1, followerIds)
+      else new report
+        RS -> DB : set publicReports/{id}
+        RS -> DB : set users/{official}/notifications
+      end
+      DB --> RS : commit (or retry on contention)
+      deactivate DB
+      RS --> API : {reportId, ref, duplicateOf}
+      API --> UI : result
+      UI --> Resident : reference number or "already reported"
+      DB -->> UI : onSnapshot: officials' queues update live
+    end
+  end
+end
+@enduml
