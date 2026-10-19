@@ -5,11 +5,16 @@ import {
   createStaffUserSchema,
   fieldErrors,
   photoFileSchema,
+  photoInputSchema,
+  sniffImageType,
   registerResidentSchema,
   submitReportSchema,
   upsertDepartmentSchema,
   validateAlertExpiry,
 } from '../src';
+
+const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+const png = { contentType: 'image/png', data: PNG_B64 };
 
 const validReport = {
   categoryId: 'burst-pipe',
@@ -17,7 +22,7 @@ const validReport = {
   location: { lat: -28.74, lng: 24.76 },
   suburb: 'Galeshewe',
   severity: 'HIGH',
-  photoPaths: [],
+  photos: [],
 };
 
 describe('submitReportSchema', () => {
@@ -31,12 +36,17 @@ describe('submitReportSchema', () => {
 
   it('UT-SCH-02 photo count 0/3/4 and file size and type', () => {
     const photos = (n: number) =>
-      submitReportSchema.safeParse({ ...validReport, photoPaths: Array.from({ length: n }, (_, i) => `p${i}`) }).success;
+      submitReportSchema.safeParse({ ...validReport, photos: Array.from({ length: n }, () => png) }).success;
     expect(photos(0)).toBe(true);
     expect(photos(3)).toBe(true);
     expect(photos(4)).toBe(false);
-    expect(photoFileSchema.safeParse({ type: 'image/jpeg', size: 5 * 1024 * 1024 }).success).toBe(true);
-    expect(photoFileSchema.safeParse({ type: 'image/jpeg', size: 5 * 1024 * 1024 + 1 }).success).toBe(false);
+    expect(photoFileSchema.safeParse({ type: 'image/jpeg', size: 15 * 1024 * 1024 }).success).toBe(true);
+    expect(photoFileSchema.safeParse({ type: 'image/jpeg', size: 15 * 1024 * 1024 + 1 }).success).toBe(false);
+    // Stored photo limit (700 KB decoded) and base64 shape.
+    expect(photoInputSchema.safeParse({ contentType: 'image/png', data: 'A'.repeat(Math.ceil((700 * 1024 * 4) / 3)) }).success).toBe(true);
+    expect(photoInputSchema.safeParse({ contentType: 'image/png', data: 'A'.repeat(Math.ceil((700 * 1024 * 4) / 3) + 8) }).success).toBe(false);
+    expect(photoInputSchema.safeParse({ contentType: 'image/png', data: 'not base64!' }).success).toBe(false);
+    expect(photoInputSchema.safeParse({ contentType: 'image/gif', data: PNG_B64 }).success).toBe(false);
     expect(photoFileSchema.safeParse({ type: 'image/gif', size: 100 }).success).toBe(false);
     expect(photoFileSchema.safeParse({ type: 'image/webp', size: 100 }).success).toBe(true);
   });
@@ -72,11 +82,11 @@ describe('registerResidentSchema', () => {
 
 describe('completeTaskSchema', () => {
   it('UT-SCH-06 completion requires notes ≥10 and 1–3 proof photos (BR-09)', () => {
-    const ok = { taskId: 't1', notes: 'Pipe joint replaced', proofPaths: ['a'] };
+    const ok = { taskId: 't1', notes: 'Pipe joint replaced', proofs: [png] };
     expect(completeTaskSchema.safeParse(ok).success).toBe(true);
     expect(completeTaskSchema.safeParse({ ...ok, notes: 'too short' }).success).toBe(false);
-    expect(completeTaskSchema.safeParse({ ...ok, proofPaths: [] }).success).toBe(false);
-    expect(completeTaskSchema.safeParse({ ...ok, proofPaths: ['a', 'b', 'c', 'd'] }).success).toBe(false);
+    expect(completeTaskSchema.safeParse({ ...ok, proofs: [] }).success).toBe(false);
+    expect(completeTaskSchema.safeParse({ ...ok, proofs: [png, png, png, png] }).success).toBe(false);
   });
 });
 
@@ -123,5 +133,15 @@ describe('admin schemas', () => {
     expect(d(720)).toBe(true);
     expect(d(721)).toBe(false);
     expect(d(2.5)).toBe(false);
+  });
+});
+
+describe('image sniffing (BR-02)', () => {
+  it('UT-SCH-09 real type is detected from magic bytes', () => {
+    expect(sniffImageType(Uint8Array.from(Buffer.from(PNG_B64, 'base64')))).toBe('image/png');
+    expect(sniffImageType(Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0, 0]))).toBe('image/jpeg');
+    expect(sniffImageType(Uint8Array.from(Buffer.from('RIFF\0\0\0\0WEBPVP8 ')))).toBe('image/webp');
+    expect(sniffImageType(Uint8Array.from(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg">')))).toBeNull();
+    expect(sniffImageType(Uint8Array.from(Buffer.from('%PDF-1.7')))).toBeNull();
   });
 });

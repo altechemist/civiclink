@@ -26,23 +26,12 @@ import type {
 } from '@civiclink/shared';
 import type { Actor } from '../lib/command';
 import { DomainError, denied, invalid, notFound, precondition } from '../lib/errors';
-import { bucket, col, ts } from '../lib/firebase';
+import { col, ts } from '../lib/firebase';
+import { decodePhotos, writePhotos } from './photoService';
 import { NotificationService } from './notificationService';
 import { applyTransition, assertDepartmentAccess, getReport, type ReportWithId } from './reportLifecycle';
 
 type SubmitInput = z.infer<typeof submitReportSchema>;
-
-const ownPhotoPath = (prefix: string) => new RegExp(`^${prefix}/[A-Za-z0-9_-]{1,64}\\.(jpe?g|png|webp)$`);
-
-/** Photos must have been uploaded by the caller (Storage rules enforce type/size at upload). */
-export async function assertPhotosExist(paths: string[], prefix: string, field: string) {
-  const pattern = ownPhotoPath(prefix);
-  for (const p of paths) {
-    if (!pattern.test(p)) throw invalid(field, 'Photo was not uploaded by you');
-    const [exists] = await bucket().file(p).exists();
-    if (!exists) throw invalid(field, 'Photo upload not found, please re-attach it');
-  }
-}
 
 export class ReportService {
   constructor(private readonly clock: () => number = Date.now) {}
@@ -52,7 +41,7 @@ export class ReportService {
    * and writes report + history + public projection + notifications atomically.
    */
   async submit(input: SubmitInput, actor: Actor) {
-    await assertPhotosExist(input.photoPaths, `reports/${actor.uid}`, 'photoPaths');
+    const photos = decodePhotos(input.photos, 'photos');
     const { lat, lng } = input.location;
     const geohash = geohashForLocation([lat, lng]);
     const bounds = geohashQueryBounds([lat, lng], LIMITS.duplicateRadiusM);
@@ -108,7 +97,7 @@ export class ReportService {
         suburb: input.suburb,
         landmark: input.landmark || null,
         severity: input.severity,
-        photoPaths: input.photoPaths,
+        photoIds: [],
         status: parent ? 'DUPLICATE' : 'SUBMITTED',
         assignedWorkerId: null,
         assignedWorkerName: null,
@@ -123,6 +112,7 @@ export class ReportService {
         escalatedAt: null,
         closedAt: null,
       };
+      report.photoIds = writePhotos(tx, photos, { reportId: reportRef.id, ownerId: actor.uid, kind: 'EVIDENCE' }, now);
       tx.set(reportRef, report);
 
       const history: HistoryDoc = {
@@ -246,7 +236,7 @@ export class ReportService {
       suburb: report.suburb,
       notes: notes || null,
       completionNotes: null,
-      proofPaths: [],
+      proofIds: [],
       assignedAt: ts(now),
       acceptedAt: null,
       startedAt: null,

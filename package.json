@@ -11,16 +11,16 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage --ui \"npm run seed && npm run dev -w apps/web -- --host 127.0.0.1\"",
-    "emulators": "npm run build -w functions && firebase emulators:start --only auth,firestore,functions,storage",
+    "dev": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions --ui \"npm run seed && npm run dev -w apps/web -- --host 127.0.0.1\"",
+    "emulators": "npm run build -w functions && firebase emulators:start --only auth,firestore,functions",
     "seed": "tsx scripts/seed.ts",
     "build": "npm run build -w functions && npm run build -w apps/web",
     "typecheck": "npm run typecheck --workspaces --if-present && tsc -p tests/tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "npm run test:unit && npm run test:emulator",
     "test:unit": "vitest run --project shared",
-    "test:emulator": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage \"vitest run --project rules && vitest run --project functions\"",
-    "test:e2e": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage \"npm run seed && playwright test\"",
+    "test:emulator": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions \"vitest run --project rules && vitest run --project functions\"",
+    "test:e2e": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions \"npm run seed && playwright test\"",
     "coverage": "vitest run --project shared --coverage",
     "evidence": "playwright test --config playwright.evidence.config.ts"
   },

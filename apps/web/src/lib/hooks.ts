@@ -1,13 +1,15 @@
+import type { PhotoDoc } from '@civiclink/shared';
 import {
   doc,
+  getDoc,
   onSnapshot,
+  type Bytes,
   type DocumentData,
   type DocumentReference,
   type Query,
 } from 'firebase/firestore';
-import { getDownloadURL, ref } from 'firebase/storage';
 import { useEffect, useState } from 'react';
-import { db, storage } from './firebase';
+import { db } from './firebase';
 
 export type WithId<T> = T & { id: string };
 
@@ -51,18 +53,28 @@ export function useLiveDoc<T>(path: string | null): LiveState<WithId<T> | null> 
   return state;
 }
 
-/** Resolves Storage paths to download URLs (access is checked by Storage rules). */
-export function useDownloadUrls(paths: string[] | undefined): string[] {
+/** Loads photo documents (binary, ADR-0006) as object URLs; access is checked by Security Rules. */
+export function usePhotoUrls(ids: string[] | undefined): string[] {
   const [urls, setUrls] = useState<string[]>([]);
-  const key = (paths ?? []).join('|');
+  const key = (ids ?? []).join('|');
   useEffect(() => {
     let alive = true;
-    Promise.all((paths ?? []).map((p) => getDownloadURL(ref(storage, p)).catch(() => '')))
-      .then((u) => alive && setUrls(u.filter(Boolean)));
+    const created: string[] = [];
+    Promise.all(
+      (ids ?? []).map(async (id) => {
+        const snap = await getDoc(doc(db, 'photos', id)).catch(() => null);
+        const data = snap?.data() as PhotoDoc<Bytes> | undefined;
+        if (!data) return '';
+        const url = URL.createObjectURL(new Blob([data.data.toUint8Array() as BlobPart], { type: data.contentType }));
+        created.push(url);
+        return url;
+      }),
+    ).then((u) => alive && setUrls(u.filter(Boolean)));
     return () => {
       alive = false;
+      created.forEach((u) => URL.revokeObjectURL(u));
     };
-    // Dependencies are intentionally the caller-supplied key, not the (unstable) query object.
+    // Dependencies are intentionally the caller-supplied key, not the (unstable) id array.
   }, [key]);
   return urls;
 }

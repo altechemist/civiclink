@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { HistoryDoc, ReportDoc, TaskDoc } from '@civiclink/shared';
-import { adminDb, CBD, expectCode, northOf, Timestamp } from '../../tests/support/emulator';
+import { adminDb, CBD, expectCode, northOf, PHOTO, PNG_B64, Timestamp } from '../../tests/support/emulator';
 import { assignedReport, setupWorld, teardown, validReport, type World } from './fixtures';
 
 let w: World;
@@ -25,12 +25,15 @@ const freshSpot = () => {
 
 describe('submitReport (FR-03, FR-04, FR-05, TX-1)', () => {
   it('IT-RPT-01 valid submission creates a SUBMITTED report with a reference', async () => {
-    const photo = await w.resident.upload(`reports/${w.resident.uid}/pic1.png`);
-    const res = await w.resident.call('submitReport', validReport({ location: freshSpot(), photoPaths: [photo], landmark: 'Next to the clinic' }));
+    const res = await w.resident.call('submitReport', validReport({ location: freshSpot(), photos: [PHOTO], landmark: 'Next to the clinic' }));
     expect(res.ref).toMatch(/^CL-\d{4}-\d{4}$/);
     expect(res.duplicateOf).toBeNull();
     const r = await report(res.reportId);
-    expect(r).toMatchObject({ status: 'SUBMITTED', reporterId: w.resident.uid, photoPaths: [photo], affectedCount: 1 });
+    expect(r).toMatchObject({ status: 'SUBMITTED', reporterId: w.resident.uid, affectedCount: 1 });
+    expect(r.photoIds).toHaveLength(1);
+    const photo = (await adminDb.collection('photos').doc(r.photoIds[0]!).get()).data()!;
+    expect(photo).toMatchObject({ reportId: res.reportId, ownerId: w.resident.uid, kind: 'EVIDENCE', contentType: 'image/png' });
+    expect(Buffer.from(photo.data as Uint8Array).toString('base64')).toBe(PNG_B64);
   });
 
   it('IT-RPT-02 invalid fields are rejected with field errors and nothing is written', async () => {
@@ -45,11 +48,13 @@ describe('submitReport (FR-03, FR-04, FR-05, TX-1)', () => {
     await expectCode(w.resident.call('submitReport', validReport({ location: { lat: -26.2, lng: 28.04 } })), 'invalid-argument');
   });
 
-  it("IT-RPT-04 photo paths must be the caller's own existing uploads", async () => {
-    await expectCode(w.resident.call('submitReport', validReport({ location: freshSpot(), photoPaths: [`reports/${w.resident2.uid}/x.png`] })), 'invalid-argument');
-    await expectCode(w.resident.call('submitReport', validReport({ location: freshSpot(), photoPaths: [`reports/${w.resident.uid}/missing.png`] })), 'invalid-argument');
+  it('IT-RPT-04 photos must really be images of the declared type and within the size limit', async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>').toString('base64');
+    await expectCode(w.resident.call('submitReport', validReport({ location: freshSpot(), photos: [{ contentType: 'image/png', data: svg }] })), 'invalid-argument');
+    await expectCode(w.resident.call('submitReport', validReport({ location: freshSpot(), photos: [{ contentType: 'image/jpeg', data: PNG_B64 }] })), 'invalid-argument');
+    const big = Buffer.concat([Buffer.from(PNG_B64, 'base64'), Buffer.alloc(701 * 1024)]).toString('base64');
+    await expectCode(w.resident.call('submitReport', validReport({ location: freshSpot(), photos: [{ contentType: 'image/png', data: big }] })), 'invalid-argument');
   });
-
   it('IT-RPT-05 inactive category is refused (BR-19)', async () => {
     await adminDb.collection('categories').doc('vandalism').update({ isActive: false });
     await expectCode(w.resident.call('submitReport', validReport({ categoryId: 'vandalism', location: freshSpot() })), 'invalid-argument');
@@ -204,8 +209,7 @@ describe('field worker tasks (FR-11, TX-3)', () => {
     const { reportId, taskId } = await assignedReport(w, freshSpot());
     expect((await w.worker.call('updateTask', { taskId, action: 'accept' })).status).toBe('ACCEPTED');
     expect((await w.worker.call('updateTask', { taskId, action: 'start' })).status).toBe('IN_PROGRESS');
-    const proof = await w.worker.upload(`proofs/${reportId}/${w.worker.uid}/after.png`);
-    expect((await w.worker.call('completeTask', { taskId, notes: 'Pipe joint replaced and tested', proofPaths: [proof] })).status).toBe('COMPLETED');
+    expect((await w.worker.call('completeTask', { taskId, notes: 'Pipe joint replaced and tested', proofs: [PHOTO] })).status).toBe('COMPLETED');
     const r = await report(reportId);
     expect(r.status).toBe('RESOLVED');
     expect(r.resolvedAt).toBeTruthy();
@@ -218,21 +222,20 @@ describe('field worker tasks (FR-11, TX-3)', () => {
     await expectCode(w.worker2.call('updateTask', { taskId, action: 'accept' }), 'permission-denied');
   });
   it('IT-TSK-03 steps cannot be skipped (BR-08)', async () => {
-    const { reportId, taskId } = await assignedReport(w, freshSpot());
+    const { taskId } = await assignedReport(w, freshSpot());
     await expectCode(w.worker.call('updateTask', { taskId, action: 'start' }), 'failed-precondition');
-    const proof = await w.worker.upload(`proofs/${reportId}/${w.worker.uid}/p.png`);
-    await expectCode(w.worker.call('completeTask', { taskId, notes: 'Done and dusted here', proofPaths: [proof] }), 'failed-precondition');
+    await expectCode(w.worker.call('completeTask', { taskId, notes: 'Done and dusted here', proofs: [PHOTO] }), 'failed-precondition');
   });
   it('IT-TSK-04 completion without notes or proof is refused (BR-09)', async () => {
     const { taskId } = await assignedReport(w, freshSpot());
-    await expectCode(w.worker.call('completeTask', { taskId, notes: 'ok', proofPaths: [] }), 'invalid-argument');
+    await expectCode(w.worker.call('completeTask', { taskId, notes: 'ok', proofs: [] }), 'invalid-argument');
   });
-  it('IT-TSK-05 proof must be uploaded by the worker under the report path', async () => {
-    const { reportId, taskId } = await assignedReport(w, freshSpot());
+  it('IT-TSK-05 proof photos must match their declared type', async () => {
+    const { taskId } = await assignedReport(w, freshSpot());
     await w.worker.call('updateTask', { taskId, action: 'accept' });
     await w.worker.call('updateTask', { taskId, action: 'start' });
     await expectCode(
-      w.worker.call('completeTask', { taskId, notes: 'Pipe joint replaced', proofPaths: [`proofs/${reportId}/${w.worker2.uid}/x.png`] }),
+      w.worker.call('completeTask', { taskId, notes: 'Pipe joint replaced', proofs: [{ contentType: 'image/webp', data: PNG_B64 }] }),
       'invalid-argument',
     );
   });
@@ -241,13 +244,12 @@ describe('field worker tasks (FR-11, TX-3)', () => {
     await w.worker.call('updateTask', { taskId, action: 'accept' });
     await w.worker.call('updateTask', { taskId, action: 'start' });
     await w.officialWater.call('reassignTask', { reportId, workerId: w.worker2.uid });
-    const proof = await w.worker.upload(`proofs/${reportId}/${w.worker.uid}/late.png`);
-    await expectCode(w.worker.call('completeTask', { taskId, notes: 'Finished anyway today', proofPaths: [proof] }), 'failed-precondition');
+    await expectCode(w.worker.call('completeTask', { taskId, notes: 'Finished anyway today', proofs: [PHOTO] }), 'failed-precondition');
     expect((await report(reportId)).status).toBe('IN_PROGRESS');
   });
   it('IT-TSK-07 officials and residents cannot complete tasks', async () => {
     const { taskId } = await assignedReport(w, freshSpot());
-    await expectCode(w.officialWater.call('completeTask', { taskId, notes: 'Pipe joint replaced', proofPaths: ['x'] }), 'permission-denied');
+    await expectCode(w.officialWater.call('completeTask', { taskId, notes: 'Pipe joint replaced', proofs: [PHOTO] }), 'permission-denied');
     await expectCode(w.resident.call('updateTask', { taskId, action: 'accept' }), 'permission-denied');
   });
 });
@@ -279,8 +281,7 @@ describe('escalation and resolution (FR-13, FR-14)', () => {
     const { reportId, taskId } = await assignedReport(w, freshSpot());
     await w.worker.call('updateTask', { taskId, action: 'accept' });
     await w.worker.call('updateTask', { taskId, action: 'start' });
-    const proof = await w.worker.upload(`proofs/${reportId}/${w.worker.uid}/done.png`);
-    await w.worker.call('completeTask', { taskId, notes: 'Pipe joint replaced and tested', proofPaths: [proof] });
+    await w.worker.call('completeTask', { taskId, notes: 'Pipe joint replaced and tested', proofs: [PHOTO] });
     return reportId;
   }
   it('IT-RES-01 the reporter can confirm a resolved report (→ CLOSED)', async () => {

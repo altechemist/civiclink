@@ -18,7 +18,7 @@ import { useSession } from '../../auth/AuthProvider';
 import { CategoryIcon, useCategories } from '../../components/domain';
 import { Button, cx, ErrorState, Field, Input, LoadingState, Notice, PageHeader, Select, Textarea } from '../../components/ui';
 import { call } from '../../lib/api';
-import { checkPhoto, uploadPhotos } from '../../lib/upload';
+import { checkPhoto, toPhotoInputs } from '../../lib/upload';
 
 const LocationPicker = lazy(() => import('../../components/maps').then((m) => ({ default: m.LocationPicker })));
 
@@ -31,7 +31,7 @@ const SEVERITY_HELP: Record<Severity, string> = {
 
 /** FR-03/04/05: report an incident in three steps (NFR-07). */
 export function NewReportPage() {
-  const { uid, claims } = useSession();
+  const { claims } = useSession();
   const categories = useCategories();
   const [step, setStep] = useState<Step>(1);
   const [categoryId, setCategoryId] = useState('');
@@ -52,7 +52,7 @@ export function NewReportPage() {
   const clear = (field: string) => setErrors(({ [field]: _, ...rest }) => rest);
   const active = categories.data.filter((c) => c.isActive);
   const category = active.find((c) => c.id === categoryId);
-  const draft = () => ({ categoryId, description, location, suburb, landmark: landmark || undefined, severity, photoPaths: photos.map(() => 'pending') });
+  const draft = () => ({ categoryId, description, location, suburb, landmark: landmark || undefined, severity, photos: [] });
 
   const validateDetails = () => {
     const parsed = submitReportSchema.safeParse(draft());
@@ -67,11 +67,11 @@ export function NewReportPage() {
     const next = [...photos];
     for (const f of Array.from(files)) {
       const problem = checkPhoto(f);
-      if (problem) return setErrors((e) => ({ ...e, photoPaths: `${f.name}: ${problem}` }));
+      if (problem) return setErrors((e) => ({ ...e, photos: `${f.name}: ${problem}` }));
       next.push(f);
     }
-    if (next.length > LIMITS.photosMax) return setErrors((e) => ({ ...e, photoPaths: `At most ${LIMITS.photosMax} photos` }));
-    setErrors(({ photoPaths: _, ...rest }) => rest);
+    if (next.length > LIMITS.photosMax) return setErrors((e) => ({ ...e, photos: `At most ${LIMITS.photosMax} photos` }));
+    setErrors(({ photos: _, ...rest }) => rest);
     setPhotos(next);
   };
 
@@ -81,8 +81,7 @@ export function NewReportPage() {
     setBusy(true);
     setFormError(null);
     try {
-      const photoPaths = await uploadPhotos(`reports/${uid}`, photos);
-      setResult(await call('submitReport', { ...draft(), photoPaths }));
+      setResult(await call('submitReport', { ...draft(), photos: await toPhotoInputs(photos) }));
     } catch (err) {
       const apiErr = err as { fields?: Record<string, string>; message: string };
       if (apiErr.fields && Object.keys(apiErr.fields).length) {
@@ -241,7 +240,7 @@ export function NewReportPage() {
             </div>
             {errors.severity && <p role="alert" className="mt-1 text-sm font-medium text-red-700">Choose how serious it is</p>}
           </fieldset>
-          <Field label={`Photos (optional, up to ${LIMITS.photosMax})`} htmlFor="photos" error={errors.photoPaths} hint="JPEG, PNG or WebP, 5 MB max each">
+          <Field label={`Photos (optional, up to ${LIMITS.photosMax})`} htmlFor="photos" error={errors.photos} hint="JPEG, PNG or WebP; large photos are compressed automatically">
             <div className="flex flex-wrap gap-2">
               {photos.map((p, i) => (
                 <div key={i} className="relative">

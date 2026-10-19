@@ -56,7 +56,8 @@ export interface ReportDoc {
   suburb: string;
   landmark?: string | null;
   severity: Severity;
-  photoPaths: string[];
+  /** Ids of `photos` documents (evidence). */
+  photoIds: string[];
   status: ReportStatus;
   assignedWorkerId?: string | null;
   assignedWorkerName?: string | null;
@@ -67,7 +68,8 @@ export interface ReportDoc {
   /** Residents whose duplicate reports point here; they receive this report's status updates (FR-15). */
   followerIds: string[];
   resolutionNotes?: string | null;
-  resolutionPhotoPaths?: string[];
+  /** Ids of `photos` documents (proof of repair), copied from the completed task. */
+  resolutionPhotoIds?: string[];
   createdAt: TimestampLike;
   updatedAt: TimestampLike;
   resolvedAt?: TimestampLike | null;
@@ -112,12 +114,23 @@ export interface TaskDoc {
   suburb: string;
   notes?: string | null;
   completionNotes?: string | null;
-  proofPaths: string[];
+  proofIds: string[];
   assignedAt: TimestampLike;
   acceptedAt?: TimestampLike | null;
   startedAt?: TimestampLike | null;
   completedAt?: TimestampLike | null;
   endedAt?: TimestampLike | null;
+}
+
+/** A compressed photo stored as binary in Firestore (ADR-0006). Readable by whoever can read its report. */
+export interface PhotoDoc<B = unknown> {
+  reportId: string;
+  ownerId: string;
+  kind: 'EVIDENCE' | 'PROOF';
+  contentType: string;
+  size: number;
+  data: B;
+  createdAt: TimestampLike;
 }
 
 export interface AlertDoc {

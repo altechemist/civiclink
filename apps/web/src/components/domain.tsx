@@ -18,7 +18,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../auth/AuthProvider';
 import { db } from '../lib/firebase';
 import { formatDateTime, LIFECYCLE, STATUS_LABEL, timeAgo } from '../lib/format';
-import { useDownloadUrls, useLiveQuery, type WithId } from '../lib/hooks';
+import { usePhotoUrls, useLiveQuery, type WithId } from '../lib/hooks';
 import { cx } from './ui';
 
 const ICONS: Record<string, LucideIcon> = {
@@ -94,9 +94,9 @@ export function Timeline({ items }: { items: WithId<HistoryDoc>[] }) {
   );
 }
 
-export function PhotoGrid({ paths, label }: { paths: string[]; label: string }) {
-  const urls = useDownloadUrls(paths);
-  if (!paths.length) return null;
+export function PhotoGrid({ ids, label }: { ids: string[] | undefined; label: string }) {
+  const urls = usePhotoUrls(ids);
+  if (!ids?.length) return null;
   return (
     <div className="grid grid-cols-3 gap-2" aria-label={label}>
       {urls.map((u, i) => (

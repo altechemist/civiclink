@@ -177,7 +177,7 @@ async function main() {
         task = {
           reportId: reportRef.id, reportRef: ref, workerId: worker.uid, workerName: worker.name, assignedBy: official.uid, departmentId: dept,
           categoryName: a.category.name, priority: a.severity, status: 'ASSIGNED', location: a.location, suburb: a.suburb, notes: null,
-          completionNotes: null, proofPaths: [], assignedAt: Timestamp.fromMillis(t), acceptedAt: null, startedAt: null, completedAt: null, endedAt: null,
+          completionNotes: null, proofIds: [], assignedAt: Timestamp.fromMillis(t), acceptedAt: null, startedAt: null, completedAt: null, endedAt: null,
         };
         patch.assignedWorkerId = worker.uid;
         patch.assignedWorkerName = worker.name;
@@ -195,7 +195,7 @@ async function main() {
               const notes = pick(COMPLETION);
               step('completeTask', 'FIELD_WORKER', worker, `Resolved by ${worker.name}: ${notes}`);
               Object.assign(task, { status: 'COMPLETED', completionNotes: notes, completedAt: Timestamp.fromMillis(t), endedAt: Timestamp.fromMillis(t) });
-              Object.assign(patch, { resolvedAt: Timestamp.fromMillis(t), activeTaskId: null, resolutionNotes: notes, resolutionPhotoPaths: [] });
+              Object.assign(patch, { resolvedAt: Timestamp.fromMillis(t), activeTaskId: null, resolutionNotes: notes, resolutionPhotoIds: [] });
               const resolvedAt = t;
               if (rand() < 0.5 && advance(2, 72)) {
                 step('confirm', 'RESIDENT', a.reporter, 'Resident confirmed the fix');
@@ -222,7 +222,7 @@ async function main() {
     const report: ReportDoc = {
       ref, reporterId: a.reporter.uid, reporterName: a.reporter.name, categoryId: a.category.id, categoryName: a.category.name, departmentId: dept,
       description, location: a.location, geohash: geohashForLocation([a.location.lat, a.location.lng]), suburb: a.suburb, landmark: null,
-      severity: a.severity, photoPaths: [], status: finalStatus, assignedWorkerId: null, assignedWorkerName: null, activeTaskId: null,
+      severity: a.severity, photoIds: [], status: finalStatus, assignedWorkerId: null, assignedWorkerName: null, activeTaskId: null,
       parentReportId: null, parentRef: null, affectedCount: 1 + (rand() < 0.15 ? Math.floor(between(1, 5)) : 0), followerIds: [],
       createdAt: Timestamp.fromMillis(a.created), updatedAt: Timestamp.fromMillis(t), resolvedAt: null, escalatedAt: null, closedAt: null,
       ...patch,
