@@ -7,27 +7,22 @@ import { deleteApp, initializeApp as initClient, type FirebaseApp } from 'fireba
 import { connectAuthEmulator, getAuth as getClientAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore as getClientDb, type Firestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
-import { connectStorageEmulator, getStorage as getClientStorage, ref, uploadBytes, type FirebaseStorage } from 'firebase/storage';
 import { getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
 import type { CallableResults, Role } from '@civiclink/shared';
 
 export const PROJECT_ID = 'demo-civiclink';
-export const BUCKET = `${PROJECT_ID}.appspot.com`;
 export const REGION = 'africa-south1';
-const HOSTS = { auth: '127.0.0.1:9099', firestore: '127.0.0.1:8080', functions: '127.0.0.1:5001', storage: '127.0.0.1:9199' };
+const HOSTS = { auth: '127.0.0.1:9099', firestore: '127.0.0.1:8080', functions: '127.0.0.1:5001' };
 
 process.env.FIRESTORE_EMULATOR_HOST ??= HOSTS.firestore;
 process.env.FIREBASE_AUTH_EMULATOR_HOST ??= HOSTS.auth;
-process.env.FIREBASE_STORAGE_EMULATOR_HOST ??= HOSTS.storage;
 process.env.GCLOUD_PROJECT ??= PROJECT_ID;
 
-export const adminApp: App = getApps()[0] ?? initializeApp({ projectId: PROJECT_ID, storageBucket: BUCKET });
+export const adminApp: App = getApps()[0] ?? initializeApp({ projectId: PROJECT_ID });
 export const adminDb = getFirestore(adminApp);
 export const adminAuth = getAuth(adminApp);
-export const adminBucket = () => getStorage(adminApp).bucket(BUCKET);
 export { Timestamp };
 
 export async function resetEmulators() {
@@ -101,14 +96,12 @@ export interface Session {
   app: FirebaseApp;
   db: Firestore;
   functions: Functions;
-  storage: FirebaseStorage;
   call<K extends keyof CallableResults>(name: K, data?: unknown): Promise<CallableResults[K]>;
-  upload(path: string, bytes?: Uint8Array, contentType?: string): Promise<string>;
   close(): Promise<void>;
 }
 
 let appCounter = 0;
-const clientConfig = { projectId: PROJECT_ID, apiKey: 'demo-api-key', storageBucket: BUCKET, authDomain: `${PROJECT_ID}.firebaseapp.com` };
+const clientConfig = { projectId: PROJECT_ID, apiKey: 'demo-api-key', authDomain: `${PROJECT_ID}.firebaseapp.com` };
 
 /** A client session (optionally signed in) talking to the emulators. */
 export async function session(email?: string, password = DEFAULT_PASSWORD): Promise<Session> {
@@ -119,8 +112,6 @@ export async function session(email?: string, password = DEFAULT_PASSWORD): Prom
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   const functions = getFunctions(app, REGION);
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-  const storage = getClientStorage(app);
-  connectStorageEmulator(storage, '127.0.0.1', 9199);
   let uid = '';
   if (email) {
     uid = (await signInWithEmailAndPassword(auth, email, password)).user.uid;
@@ -131,22 +122,17 @@ export async function session(email?: string, password = DEFAULT_PASSWORD): Prom
     app,
     db,
     functions,
-    storage,
     async call(name, data) {
       return (await httpsCallable(functions, name)(data ?? {})).data as never;
-    },
-    async upload(path, bytes = TINY_PNG, contentType = 'image/png') {
-      await uploadBytes(ref(storage, path), bytes, { contentType });
-      return path;
     },
     close: () => deleteApp(app),
   };
 }
 
-/** 1×1 transparent PNG. */
-export const TINY_PNG = Uint8Array.from(
-  Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'),
-);
+/** 1×1 transparent PNG (base64), and as a photo input for commands. */
+export const PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+export const PHOTO = { contentType: 'image/png' as const, data: PNG_B64 };
 
 /** Kimberley CBD reference point and a helper to offset by metres north. */
 export const CBD = { lat: -28.7382, lng: 24.7638 };

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ReportDoc } from '@civiclink/shared';
-import { adminAuth, adminBucket, adminDb, CBD, createUser, DEFAULT_PASSWORD, expectCode, northOf, session } from '../../tests/support/emulator';
+import { adminAuth, adminDb, CBD, createUser, DEFAULT_PASSWORD, expectCode, northOf, PHOTO, session } from '../../tests/support/emulator';
 import { setupWorld, teardown, validReport, type World } from './fixtures';
 
 let w: World;
@@ -48,8 +48,8 @@ describe('POPIA account deletion (FR-32, BR-22)', () => {
     const email = 'leaving@test.local';
     const uid = await createUser({ email, name: 'Leaving Resident', role: 'RESIDENT', suburb: 'Galeshewe' });
     const s = await session(email);
-    const photo = await s.upload(`reports/${uid}/p1.png`);
-    const { reportId } = await s.call('submitReport', validReport({ location: northOf(CBD, 5000), photoPaths: [photo] }));
+    const { reportId } = await s.call('submitReport', validReport({ location: northOf(CBD, 5000), photos: [PHOTO] }));
+    const photoId = ((await adminDb.collection('reports').doc(reportId).get()).data() as ReportDoc).photoIds[0]!;
     // Also follow someone else's report through a duplicate.
     const parent = await w.resident.call('submitReport', validReport({ categoryId: 'water-leak', location: northOf(CBD, 6000) }));
     await s.call('submitReport', validReport({ categoryId: 'water-leak', location: northOf(CBD, 6020) }));
@@ -59,10 +59,10 @@ describe('POPIA account deletion (FR-32, BR-22)', () => {
     expect(res.anonymisedReports).toBe(2);
 
     const r = (await adminDb.collection('reports').doc(reportId).get()).data() as ReportDoc;
-    expect(r).toMatchObject({ reporterId: 'deleted-user', reporterName: 'Former resident', photoPaths: [] });
+    expect(r).toMatchObject({ reporterId: 'deleted-user', reporterName: 'Former resident', photoIds: [] });
     expect(((await adminDb.collection('reports').doc(parent.reportId).get()).data() as ReportDoc).followerIds).not.toContain(uid);
     expect((await adminDb.collection('users').doc(uid).get()).exists).toBe(false);
-    expect((await adminBucket().file(photo).exists())[0]).toBe(false);
+    expect((await adminDb.collection('photos').doc(photoId).get()).exists).toBe(false);
     await expect(adminAuth.getUser(uid)).rejects.toThrow();
     await s.close();
   });

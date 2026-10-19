@@ -85,7 +85,10 @@ export const LIMITS = {
   descriptionMax: 300,
   landmarkMax: 120,
   photosMax: 3,
-  photoBytesMax: 5 * 1024 * 1024,
+  /** Original file a resident may pick (before compression). */
+  photoBytesMax: 15 * 1024 * 1024,
+  /** Stored photo after compression (Firestore document limit is 1 MiB). */
+  storedPhotoBytesMax: 700 * 1024,
   photoTypes: ['image/jpeg', 'image/png', 'image/webp'],
   reasonMin: 10,
   reasonMax: 300,
@@ -104,7 +107,7 @@ export const LIMITS = {
   /** Default for BR-21 when settings/app has no value. */
   reportsPerHour: 10,
   reportsPerHourMax: 100,
-  photoMaxPixels: 1600,
+  photoMaxPixels: 1280,
 } as const;
 
 /** Rounding used for the public map projection (~110 m). BR-17, NFR-11. */

@@ -10,7 +10,7 @@ import { call, type ApiError } from '../../lib/api';
 import { db } from '../../lib/firebase';
 import { TASK_LABEL, timeAgo } from '../../lib/format';
 import { useLiveDoc, useLiveQuery } from '../../lib/hooks';
-import { checkPhoto, uploadPhotos } from '../../lib/upload';
+import { checkPhoto, toPhotoInputs } from '../../lib/upload';
 
 const IncidentMap = lazy(() => import('../../components/maps').then((m) => ({ default: m.IncidentMap })));
 
@@ -52,8 +52,8 @@ export function TaskPage() {
     setBusy('complete');
     setError(null);
     try {
-      const proofPaths = await uploadPhotos(`proofs/${t.reportId}/${uid}`, proof);
-      await call('completeTask', { taskId: id, notes, proofPaths });
+      const proofs = await toPhotoInputs(proof);
+      await call('completeTask', { taskId: id, notes, proofs });
     } catch (err) {
       setError(err as ApiError);
     } finally {
@@ -113,7 +113,7 @@ export function TaskPage() {
             <Field label="What did you do?" htmlFor="notes" error={error?.fields.notes} hint={`At least ${LIMITS.completionNotesMin} characters`}>
               <Textarea id="notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} invalid={!!error?.fields.notes} placeholder="e.g. Pipe joint replaced and pressure tested. No further leakage." />
             </Field>
-            <Field label="Proof photos" htmlFor="proof" error={photoError ?? error?.fields.proofPaths} hint="At least one photo of the completed work">
+            <Field label="Proof photos" htmlFor="proof" error={photoError ?? error?.fields.proofs} hint="At least one photo of the completed work">
               <div className="flex flex-wrap gap-2">
                 {proof.map((p, i) => (
                   <div key={i} className="relative">
@@ -143,7 +143,7 @@ export function TaskPage() {
           <h2 className="font-semibold text-emerald-800">Completed {timeAgo(t.completedAt)}</h2>
           <p className="mt-1 text-sm text-slate-700">{t.completionNotes}</p>
           <div className="mt-3">
-            <PhotoGrid paths={t.proofPaths} label="Proof" />
+            <PhotoGrid ids={t.proofIds} label="Proof" />
           </div>
         </Card>
       )}
@@ -158,7 +158,7 @@ export function TaskPage() {
           <>
             <p className="whitespace-pre-line text-slate-800">{r.description}</p>
             <div className="mt-3">
-              <PhotoGrid paths={r.photoPaths} label="Resident photo" />
+              <PhotoGrid ids={r.photoIds} label="Resident photo" />
             </div>
           </>
         ) : (

@@ -7,7 +7,7 @@ import { DomainError, denied, invalid, notFound } from '../lib/errors';
 
 /** Placeholder identity left on reports after a resident deletes their account (BR-22). */
 export const DELETED_REPORTER = 'deleted-user';
-import { auth, bucket, col, db, ts } from '../lib/firebase';
+import { auth, col, db, ts } from '../lib/firebase';
 import { writeLog } from './logService';
 
 const claimsFor = (u: Pick<UserDoc, 'role' | 'departmentId' | 'suburb' | 'isActive'>): Claims => ({
@@ -155,10 +155,11 @@ export class UserService {
 
     const own = await col.reports().where('reporterId', '==', actor.uid).get();
     for (const d of own.docs) {
-      writes.push((b) => b.update(d.ref, { reporterId: DELETED_REPORTER, reporterName: 'Former resident', photoPaths: [] }));
+      writes.push((b) => b.update(d.ref, { reporterId: DELETED_REPORTER, reporterName: 'Former resident', photoIds: [] }));
     }
     const followed = await col.reports().where('followerIds', 'array-contains', actor.uid).get();
     for (const d of followed.docs) writes.push((b) => b.update(d.ref, { followerIds: FieldValue.arrayRemove(actor.uid) }));
+    for (const d of (await col.photos().where('ownerId', '==', actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
     for (const d of (await col.notifications(actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
     for (const d of (await db.collectionGroup('recipients').where('uid', '==', actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
     writes.push((b) => b.delete(ref));
@@ -168,7 +169,6 @@ export class UserService {
       writes.slice(i, i + 400).forEach((w) => w(batch));
       await batch.commit();
     }
-    await bucket().deleteFiles({ prefix: `reports/${actor.uid}/` }).catch(() => {});
     await auth.deleteUser(actor.uid);
     await writeLog('INFO', 'user.deleteMyAccount', `A resident deleted their account; ${own.size} report(s) anonymised`, null);
     return { ok: true as const, anonymisedReports: own.size };

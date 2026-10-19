@@ -1,13 +1,11 @@
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
 
 if (getApps().length === 0) initializeApp();
 
 export const db = getFirestore();
 export const auth = getAuth();
-export const bucket = () => getStorage().bucket();
 export const ts = (ms: number) => Timestamp.fromMillis(ms);
 export const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
 
@@ -26,4 +24,5 @@ export const col = {
   counters: () => db.collection('counters'),
   systemLogs: () => db.collection('systemLogs'),
   settings: () => db.collection('settings').doc('app'),
+  photos: () => db.collection('photos'),
 };

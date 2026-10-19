@@ -53,7 +53,7 @@ export const validReport = (over: Record<string, unknown> = {}) => ({
   location: CBD,
   suburb: 'Kimberley CBD',
   severity: 'HIGH',
-  photoPaths: [],
+  photos: [],
   ...over,
 });
 

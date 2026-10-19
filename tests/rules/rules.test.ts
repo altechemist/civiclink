@@ -3,8 +3,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
-import { getBytes, ref, uploadBytes } from 'firebase/storage';
+import { Bytes, collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 
 let env: RulesTestEnvironment;
@@ -23,13 +22,12 @@ type Who = keyof typeof claims;
 const as = (who: Who) => env.authenticatedContext(who, claims[who]);
 const db = (who: Who) => as(who).firestore();
 const anonDb = () => env.unauthenticatedContext().firestore();
-const PNG = new Uint8Array([137, 80, 78, 71]);
+const PNG = Bytes.fromUint8Array(new Uint8Array([137, 80, 78, 71]));
 
 beforeAll(async () => {
   env = await initializeTestEnvironment({
     projectId: 'demo-civiclink',
     firestore: { rules: readFileSync('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8080 },
-    storage: { rules: readFileSync('storage.rules', 'utf8'), host: '127.0.0.1', port: 9199 },
   });
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
@@ -43,7 +41,7 @@ beforeAll(async () => {
     await setDoc(doc(f, 'users/resident/notifications/n1'), { title: 't', readAt: null });
     const report = {
       reporterId: 'resident', departmentId: 'water', assignedWorkerId: 'worker', followerIds: ['resident2'],
-      status: 'IN_PROGRESS', description: 'secret', photoPaths: [],
+      status: 'IN_PROGRESS', description: 'secret', photoIds: ['ph1'],
     };
     await setDoc(doc(f, 'reports/r1'), report);
     await setDoc(doc(f, 'reports/r2'), { ...report, reporterId: 'resident2', followerIds: [], assignedWorkerId: null });
@@ -57,11 +55,9 @@ beforeAll(async () => {
     await setDoc(doc(f, 'departments/water'), { name: 'Water', slaHours: 48, isActive: true });
     await setDoc(doc(f, 'counters/reports-2026'), { next: 5 });
     await setDoc(doc(f, 'systemLogs/l1'), { message: 'x' });
-  });
-  await env.withSecurityRulesDisabled(async (ctx) => {
-    const s = ctx.storage();
-    await uploadBytes(ref(s, 'reports/resident/a.png'), PNG, { contentType: 'image/png' });
-    await uploadBytes(ref(s, 'proofs/r1/worker/p.png'), PNG, { contentType: 'image/png' });
+    await setDoc(doc(f, 'photos/ph1'), { reportId: 'r1', ownerId: 'resident', kind: 'EVIDENCE', contentType: 'image/png', data: PNG });
+    await setDoc(doc(f, 'photos/ph2'), { reportId: 'r1', ownerId: 'worker', kind: 'PROOF', contentType: 'image/png', data: PNG });
+    await setDoc(doc(f, 'photos/ph3'), { reportId: 'r2', ownerId: 'resident2', kind: 'EVIDENCE', contentType: 'image/png', data: PNG });
   });
 });
 afterAll(() => env?.cleanup());
@@ -167,24 +163,19 @@ describe('tasks, alerts, config', () => {
   });
 });
 
-describe('storage', () => {
-  const s = (who: Who) => as(who).storage();
-  it('RT-STO-01 residents upload images ≤ 5 MB into their own folder only', async () => {
-    await assertSucceeds(uploadBytes(ref(s('resident'), 'reports/resident/new.png'), PNG, { contentType: 'image/png' }));
-    await assertFails(uploadBytes(ref(s('resident'), 'reports/resident2/new.png'), PNG, { contentType: 'image/png' }));
-    await assertFails(uploadBytes(ref(s('resident'), 'reports/resident/doc.pdf'), PNG, { contentType: 'application/pdf' }));
-    await assertFails(uploadBytes(ref(s('resident'), 'reports/resident/big.png'), new Uint8Array(5 * 1024 * 1024 + 1), { contentType: 'image/png' }));
-    await assertFails(uploadBytes(ref(s('official'), 'reports/official/x.png'), PNG, { contentType: 'image/png' }));
+describe('photos (ADR-0006)', () => {
+  it('RT-PHO-01 report photos and proof are visible to the reporter, followers and staff with access (BR-17)', async () => {
+    await assertSucceeds(getDoc(doc(db('resident'), 'photos/ph1')));
+    await assertSucceeds(getDoc(doc(db('resident'), 'photos/ph2')));
+    await assertSucceeds(getDoc(doc(db('resident2'), 'photos/ph1'))); // follower of r1
+    await assertSucceeds(getDoc(doc(db('worker'), 'photos/ph1')));
+    await assertSucceeds(getDoc(doc(db('official'), 'photos/ph3')));
   });
-  it('RT-STO-02 report photos are visible to the reporter and staff only (BR-17)', async () => {
-    await assertSucceeds(getBytes(ref(s('resident'), 'reports/resident/a.png')));
-    await assertSucceeds(getBytes(ref(s('worker'), 'reports/resident/a.png')));
-    await assertFails(getBytes(ref(s('resident2'), 'reports/resident/a.png')));
-  });
-  it('RT-STO-03 proof uploads by the worker; the reporter can view proof of their report', async () => {
-    await assertSucceeds(uploadBytes(ref(s('worker'), 'proofs/r1/worker/q.png'), PNG, { contentType: 'image/png' }));
-    await assertFails(uploadBytes(ref(s('worker'), 'proofs/r1/worker2/q.png'), PNG, { contentType: 'image/png' }));
-    await assertSucceeds(getBytes(ref(s('resident'), 'proofs/r1/worker/p.png')));
-    await assertFails(getBytes(ref(s('resident2'), 'proofs/r1/worker/p.png')));
+  it('RT-PHO-02 other users cannot read photos, and nobody writes them directly', async () => {
+    await assertFails(getDoc(doc(db('resident'), 'photos/ph3')));
+    await assertFails(getDoc(doc(db('officialRoads'), 'photos/ph1')));
+    await assertFails(getDoc(doc(db('worker2'), 'photos/ph1')));
+    await assertFails(getDocs(collection(db('resident'), 'photos')));
+    await assertFails(setDoc(doc(db('resident'), 'photos/new'), { reportId: 'r1', ownerId: 'resident', data: PNG }));
   });
 });

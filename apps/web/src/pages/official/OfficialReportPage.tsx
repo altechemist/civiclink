@@ -141,7 +141,7 @@ export function OfficialReportPage() {
           <Card>
             <p className="whitespace-pre-line text-slate-800">{r.description}</p>
             <div className="mt-3">
-              <PhotoGrid paths={r.photoPaths} label="Resident photo" />
+              <PhotoGrid ids={r.photoIds} label="Resident photo" />
             </div>
             <div className="mt-4">
               <Suspense fallback={<LoadingState label="Loading map" />}>
@@ -162,7 +162,7 @@ export function OfficialReportPage() {
               <h2 className="font-semibold text-emerald-800">Resolution</h2>
               <p className="mt-1 text-sm text-slate-700">{r.resolutionNotes}</p>
               <div className="mt-3">
-                <PhotoGrid paths={r.resolutionPhotoPaths ?? []} label="Proof of repair" />
+                <PhotoGrid ids={r.resolutionPhotoIds} label="Proof of repair" />
               </div>
             </Card>
           )}

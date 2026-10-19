@@ -7,7 +7,7 @@ import { denied, notFound, precondition } from '../lib/errors';
 import { col, ts } from '../lib/firebase';
 import { NotificationService } from './notificationService';
 import { applyTransition } from './reportLifecycle';
-import { assertPhotosExist } from './reportService';
+import { decodePhotos, writePhotos } from './photoService';
 
 export class TaskService {
   constructor(private readonly clock: () => number = Date.now) {}
@@ -52,10 +52,7 @@ export class TaskService {
    * disagree. Refused if the report is no longer waiting on this task.
    */
   async complete(input: z.infer<typeof completeTaskSchema>, actor: Actor) {
-    // Read the task once outside the transaction only to build the expected proof path prefix.
-    const pre = (await col.tasks().doc(input.taskId).get()).data() as TaskDoc | undefined;
-    if (!pre) throw notFound('Task');
-    await assertPhotosExist(input.proofPaths, `proofs/${pre.reportId}/${actor.uid}`, 'proofPaths');
+    const proofs = decodePhotos(input.proofs, 'proofs');
 
     return col.tasks().firestore.runTransaction(async (tx) => {
       const now = this.clock();
@@ -66,7 +63,8 @@ export class TaskService {
       if (report.activeTaskId !== input.taskId) throw precondition('This task is no longer active for the report');
       const status = TaskStateMachine.next(task.status, 'complete');
 
-      tx.update(ref, { status, completionNotes: input.notes, proofPaths: input.proofPaths, completedAt: ts(now), endedAt: ts(now) });
+      const proofIds = writePhotos(tx, proofs, { reportId: task.reportId, ownerId: actor.uid, kind: 'PROOF' }, now);
+      tx.update(ref, { status, completionNotes: input.notes, proofIds, completedAt: ts(now), endedAt: ts(now) });
       applyTransition(tx, {
         ref: reportRef,
         report: { id: reportRef.id, ...report },
@@ -74,7 +72,7 @@ export class TaskService {
         actor,
         now,
         note: `Resolved by ${actor.name}: ${input.notes}`,
-        patch: { resolvedAt: ts(now), activeTaskId: null, resolutionNotes: input.notes, resolutionPhotoPaths: input.proofPaths },
+        patch: { resolvedAt: ts(now), activeTaskId: null, resolutionNotes: input.notes, resolutionPhotoIds: proofIds },
       });
       NotificationService.add(tx, [task.assignedBy], { type: 'TASK_UPDATE', title: `${task.reportRef} resolved`, body: input.notes, link: `/official/reports/${task.reportId}` }, now);
       return { status };

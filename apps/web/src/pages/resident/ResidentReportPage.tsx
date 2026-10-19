@@ -80,7 +80,7 @@ export function ResidentReportPage() {
         )}
         <p className="mt-4 whitespace-pre-line text-slate-800">{r.description}</p>
         <div className="mt-3">
-          <PhotoGrid paths={r.photoPaths} label="Report photo" />
+          <PhotoGrid ids={r.photoIds} label="Report photo" />
         </div>
         {r.assignedWorkerName && r.status !== 'RESOLVED' && r.status !== 'CLOSED' && (
           <p className="mt-3 text-sm text-slate-600">Assigned to field worker {r.assignedWorkerName}</p>
@@ -94,7 +94,7 @@ export function ResidentReportPage() {
           </h2>
           <p className="mt-2 text-sm text-slate-700">{r.resolutionNotes}</p>
           <div className="mt-3">
-            <PhotoGrid paths={r.resolutionPhotoPaths ?? []} label="Proof of repair" />
+            <PhotoGrid ids={r.resolutionPhotoIds} label="Proof of repair" />
           </div>
         </Card>
       )}

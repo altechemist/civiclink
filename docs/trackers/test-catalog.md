@@ -4,7 +4,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 
 **Total: 132 automated tests.**
 
-## Unit (Vitest): 29 tests
+## Unit (Vitest): 30 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -37,8 +37,9 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | UT-SCH-ALR-02 | expiry must be future and within 30 days | `packages/shared/test/schemas.test.ts` |
 | UT-SCH-07 | staff users need a department unless admin | `packages/shared/test/schemas.test.ts` |
 | UT-SCH-08 | department SLA hours 1–720 whole numbers | `packages/shared/test/schemas.test.ts` |
+| UT-SCH-09 | real type is detected from magic bytes | `packages/shared/test/schemas.test.ts` |
 
-## Security rules (emulator): 20 tests
+## Security rules (emulator): 19 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -59,9 +60,8 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | RT-ALR-01 | signed-in users read alerts; nobody writes them directly | `tests/rules/rules.test.ts` |
 | RT-ALR-02 | residents read only their own delivery record; officials read all | `tests/rules/rules.test.ts` |
 | RT-CFG-01 | configuration is readable, never client-writable; counters and logs locked | `tests/rules/rules.test.ts` |
-| RT-STO-01 | residents upload images ≤ 5 MB into their own folder only | `tests/rules/rules.test.ts` |
-| RT-STO-02 | report photos are visible to the reporter and staff only (BR-17) | `tests/rules/rules.test.ts` |
-| RT-STO-03 | proof uploads by the worker; the reporter can view proof of their report | `tests/rules/rules.test.ts` |
+| RT-PHO-01 | report photos and proof are visible to the reporter, followers and staff with access (BR-17) | `tests/rules/rules.test.ts` |
+| RT-PHO-02 | other users cannot read photos, and nobody writes them directly | `tests/rules/rules.test.ts` |
 
 ## Cloud Functions integration (emulator): 70 tests
 
@@ -99,7 +99,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-RPT-01 | valid submission creates a SUBMITTED report with a reference | `functions/test/reports.test.ts` |
 | IT-RPT-02 | invalid fields are rejected with field errors and nothing is written | `functions/test/reports.test.ts` |
 | IT-RPT-03 | location outside the municipality is rejected (BR-02) | `functions/test/reports.test.ts` |
-| IT-RPT-04 | photo paths must be the caller's own existing uploads | `functions/test/reports.test.ts` |
+| IT-RPT-04 | photos must really be images of the declared type and within the size limit | `functions/test/reports.test.ts` |
 | IT-RPT-05 | inactive category is refused (BR-19) | `functions/test/reports.test.ts` |
 | IT-RPT-06 | only residents may submit (BR-01) | `functions/test/reports.test.ts` |
 | IT-RPT-07 | default department from category, one history entry, officials notified | `functions/test/reports.test.ts` |
@@ -125,7 +125,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-TSK-02 | another worker cannot act on the task (BR-08) | `functions/test/reports.test.ts` |
 | IT-TSK-03 | steps cannot be skipped (BR-08) | `functions/test/reports.test.ts` |
 | IT-TSK-04 | completion without notes or proof is refused (BR-09) | `functions/test/reports.test.ts` |
-| IT-TSK-05 | proof must be uploaded by the worker under the report path | `functions/test/reports.test.ts` |
+| IT-TSK-05 | proof photos must match their declared type | `functions/test/reports.test.ts` |
 | IT-TSK-06 | a reassigned (stale) task cannot be completed | `functions/test/reports.test.ts` |
 | IT-TSK-07 | officials and residents cannot complete tasks | `functions/test/reports.test.ts` |
 | IT-ESC-01 | the schedule escalates reports past their SLA once, and is idempotent | `functions/test/reports.test.ts` |

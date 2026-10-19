@@ -52,6 +52,12 @@ service cloud.firestore {
       }
     }
 
+    // Photos are stored as binary documents (ADR-0006) and are visible to whoever can read the
+    // report they belong to: reporter, followers, the department's officials, the assignee, admins.
+    match /photos/{photoId} {
+      allow read: if canReadReport(get(/databases/$(database)/documents/reports/$(resource.data.reportId)).data);
+    }
+
     // Privacy-safe projection for the community map (no reporter, description or photos).
     match /publicReports/{id} {
       allow read: if active() && (role() == 'RESIDENT' || isOfficial() || isAdmin());

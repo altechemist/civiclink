@@ -21,11 +21,33 @@ export const locationSchema = z
 
 export const suburbSchema = z.enum(SUBURBS, { error: 'Choose a suburb from the list' });
 
-/** Client-side photo check (BR-02); the server re-checks via Storage rules and metadata. */
+/** Client-side check of a picked file (BR-02) before it is compressed. */
 export const photoFileSchema = z.object({
   type: z.enum(LIMITS.photoTypes, { error: 'Photos must be JPEG, PNG or WebP' }),
-  size: z.number().max(LIMITS.photoBytesMax, 'Each photo must be 5 MB or smaller'),
+  size: z.number().max(LIMITS.photoBytesMax, 'Each photo must be 15 MB or smaller'),
 });
+
+/**
+ * A compressed photo in transit (base64). Stored server-side as binary in its own Firestore
+ * document (ADR-0006); the server verifies the decoded size and the real file type (magic bytes).
+ */
+export const photoInputSchema = z.object({
+  contentType: z.enum(LIMITS.photoTypes, { error: 'Photos must be JPEG, PNG or WebP' }),
+  data: z
+    .string()
+    .regex(/^[A-Za-z0-9+/]+={0,2}$/, 'Photo data is corrupted')
+    .max(Math.ceil((LIMITS.storedPhotoBytesMax * 4) / 3) + 4, 'Photo is too large after compression'),
+});
+export type PhotoInput = z.infer<typeof photoInputSchema>;
+
+/** Detects the real image type from its first bytes (server-side content sniffing). */
+export function sniffImageType(bytes: Uint8Array): (typeof LIMITS.photoTypes)[number] | null {
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+  const ascii = (a: number, b: number) => String.fromCharCode(...bytes.slice(a, b));
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') return 'image/webp';
+  return null;
+}
 
 export const registerResidentSchema = z.object({
   name: z.string().trim().min(2, 'Enter your full name').max(80),
@@ -75,7 +97,7 @@ export const submitReportSchema = z.object({
   suburb: suburbSchema,
   landmark: z.string().trim().max(LIMITS.landmarkMax).optional(),
   severity: z.enum(SEVERITIES),
-  photoPaths: z.array(z.string().min(1)).max(LIMITS.photosMax, `At most ${LIMITS.photosMax} photos`).default([]),
+  photos: z.array(photoInputSchema).max(LIMITS.photosMax, `At most ${LIMITS.photosMax} photos`).default([]),
 });
 
 export const triageReportSchema = z.object({ reportId: id, departmentId: id.optional() });
@@ -91,8 +113,8 @@ export const completeTaskSchema = z.object({
     .trim()
     .min(LIMITS.completionNotesMin, `Describe the work done (at least ${LIMITS.completionNotesMin} characters)`)
     .max(LIMITS.completionNotesMax),
-  proofPaths: z
-    .array(z.string().min(1))
+  proofs: z
+    .array(photoInputSchema)
     .min(1, 'Add at least one proof photo')
     .max(LIMITS.photosMax, `At most ${LIMITS.photosMax} photos`),
 });
