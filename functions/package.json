@@ -1,0 +1,20 @@
+{
+  "name": "@civiclink/functions",
+  "version": "1.0.0",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": { "node": "22" },
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=cjs --outfile=lib/index.js --external:firebase-admin --external:firebase-functions --sourcemap",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "firebase-admin": "14.5.0",
+    "firebase-functions": "7.4.0",
+    "geofire-common": "6.0.0"
+  },
+  "devDependencies": {
+    "@civiclink/shared": "1.0.0",
+    "esbuild": "0.28.2"
+  }
+}

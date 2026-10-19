@@ -1,0 +1,42 @@
+{
+  "name": "civiclink",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "functions",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "firebase emulators:exec --only auth,firestore,functions,storage --ui \"npm run seed && npm run dev -w apps/web\"",
+    "emulators": "npm run build -w functions && firebase emulators:start --only auth,firestore,functions,storage",
+    "seed": "tsx scripts/seed.ts",
+    "build": "npm run build -w functions && npm run build -w apps/web",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p tests/tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "npm run test:unit && npm run test:emulator",
+    "test:unit": "vitest run --project shared",
+    "test:emulator": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage \"vitest run --project rules --project functions\"",
+    "test:e2e": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions,storage \"npm run seed && playwright test\"",
+    "coverage": "vitest run --project shared --coverage"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@firebase/rules-unit-testing": "5.0.2",
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.5",
+    "@vitest/coverage-v8": "5.0.3",
+    "eslint": "10.12.0",
+    "firebase": "12.19.0",
+    "firebase-admin": "14.5.0",
+    "firebase-tools": "15.32.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.0.3"
+  },
+  "packageManager": "npm@11.6.2"
+}
