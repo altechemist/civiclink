@@ -46,6 +46,23 @@ export class ReportService {
     const geohash = geohashForLocation([lat, lng]);
     const bounds = geohashQueryBounds([lat, lng], LIMITS.duplicateRadiusM);
 
+    // Reads that need no transactional isolation happen first, keeping TX-1's lock set small so
+    // concurrent submissions only contend on the reference counter (NFR-10).
+    const [reporterSnap, settingsSnap, categorySnapPre] = await Promise.all([
+      col.users().doc(actor.uid).get(),
+      col.settings().get(),
+      col.categories().doc(input.categoryId).get(),
+    ]);
+    const reporter = reporterSnap.data() as UserDoc;
+    // BR-21: abuse prevention, at most N reports per resident per rolling hour (admin-configurable).
+    const perHour = (settingsSnap.data()?.reportsPerHour as number | undefined) ?? LIMITS.reportsPerHour;
+    const recent = await col.reports().where('reporterId', '==', actor.uid).where('createdAt', '>=', ts(this.clock() - 3600_000)).count().get();
+    if (recent.data().count >= perHour) {
+      throw new DomainError('resource-exhausted', `You have submitted ${perHour} reports in the last hour. Please wait before reporting again.`);
+    }
+    const preDepartment = (categorySnapPre.data() as CategoryDoc | undefined)?.departmentId;
+    const officialsOfDept = preDepartment ? await NotificationService.departmentOfficialsNow(preDepartment) : [];
+
     return col.reports().firestore.runTransaction(async (tx) => {
       const now = this.clock();
       // ---- reads ----
@@ -69,16 +86,7 @@ export class ReportService {
       const year = new Date(now).getUTCFullYear();
       const counterRef = col.counters().doc(`reports-${year}`);
       const sequence = (((await tx.get(counterRef)).data()?.next as number | undefined) ?? 0) + 1;
-      const reporter = (await tx.get(col.users().doc(actor.uid))).data() as UserDoc;
-      // BR-21: abuse prevention, at most N reports per resident per rolling hour (admin-configurable).
-      const perHour = ((await tx.get(col.settings())).data()?.reportsPerHour as number | undefined) ?? LIMITS.reportsPerHour;
-      const recent = await tx.get(
-        col.reports().where('reporterId', '==', actor.uid).where('createdAt', '>=', ts(now - 3600_000)).limit(perHour),
-      );
-      if (recent.size >= perHour) {
-        throw new DomainError('resource-exhausted', `You have submitted ${perHour} reports in the last hour. Please wait before reporting again.`);
-      }
-      const officials = parent ? [] : await NotificationService.departmentOfficials(tx, category.departmentId);
+      const officials = parent ? [] : officialsOfDept;
 
       // ---- writes ----
       const ref = formatReference(year, sequence);

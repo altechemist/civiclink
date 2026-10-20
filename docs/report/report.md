@@ -739,6 +739,7 @@ Table: Significant defects found and resolved
 | DEF-02 | E2E-01 | Submissions with an empty optional field were rejected, because the callable protocol sends `undefined` as `null` | The command wrapper treats top-level nulls as absent; regression test IT-RPT-10 |
 | DEF-03 | NFT-08 | Three text styles were below the WCAG AA contrast ratio | Darker text colours |
 | DEF-05 | E2E-10 | The profile form opened with an empty name, because it read the profile before it had loaded | The form is rendered only after the profile loads |
+| DEF-06 | IT-RPT-08 in CI | Under concurrency, extra reads inside the submission transaction (rate-limit count, profile, settings, officials) caused lock timeouts | Those reads moved before the transaction; it now contends only on the reference counter |
 | DEF-04 | CI on a clean checkout | An over-broad `lib/` ignore rule had kept two source folders out of the repository | Ignore rule narrowed to the build output; CI now builds from a clean clone on every push |
 
 There are no unresolved defects. The limitations of included functionality are listed in Section 3.4.
