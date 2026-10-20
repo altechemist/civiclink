@@ -4,18 +4,24 @@ title CivicLink: Deployment and Runtime
 
 node "User device\n(Chrome, Firefox, mobile Chrome)" as Browser {
   artifact "CivicLink SPA" as SPA
+  artifact "Service worker sw.js\n(app shell, map tiles, push)" as SW
+  database "IndexedDB outbox +\nFirestore offline cache" as IDB
 }
 
 cloud "Deployed configuration (free tier, ADR-0006)" {
   node "Vercel (Hobby)" as Vercel {
-    artifact "Static SPA\n(apps/web/dist, CDN)" as Static
-    component "Serverless functions, region cpt1\napi/[command].js · api/cron/maintenance.js\n(functions/lib/http.js)" as VApi
+    node "Edge CDN\n(immutable assets, cached /api/public/stats,\nCSP + HSTS headers)" as CDN {
+      artifact "Static SPA\n(apps/web/dist)" as Static
+    }
+    component "Serverless functions, region cpt1\napi/[command].js · api/cron/maintenance.js ·\napi/public/stats.js (functions/lib/http.js)" as VApi
   }
   node "Firebase Spark: civiclink-2ae84" as Fb {
     component "Firebase Authentication\n(password, Google)" as FA
     database "Cloud Firestore (africa-south1)\n+ Security Rules\n(incl. photos)" as FF
   }
   node "GitHub Actions\n(hourly schedule)" as GHA
+  cloud "Firebase Cloud Messaging" as FCM
+  cloud "Twilio SMS API\n(optional; simulated if unset)" as TW
 }
 
 node "Developer / assessor machine (local configuration)" as PC {
@@ -28,8 +34,14 @@ node "Developer / assessor machine (local configuration)" as PC {
 }
 cloud "tile.openstreetmap.org" as OSM
 
-SPA --> Static : HTTPS
+SPA --> CDN : HTTPS
+SPA --> SW
+SPA --> IDB
 SPA --> VApi : HTTPS POST /api/<command>\n(ID token)
+CDN --> VApi : GET /api/public/stats\n(on cache miss)
+VApi --> FCM : push
+FCM --> SW : web push
+VApi --> TW : SMS (REST)
 SPA --> FA : HTTPS
 SPA --> FF : HTTPS listeners (reads)
 VApi --> FF : Admin SDK\n(service-account key)

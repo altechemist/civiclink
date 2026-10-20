@@ -11,6 +11,7 @@ package "Domain entities (shared models → Firestore documents)" {
     role: Role
     departmentId?: string
     suburb?: Suburb
+    smsAlerts?: boolean
     isActive: boolean
     createdAt, lastLoginAt
   }
@@ -30,6 +31,7 @@ package "Domain entities (shared models → Firestore documents)" {
     parentReportId?, affectedCount
     followerIds: string[]
     resolutionNotes?, resolutionPhotoIds
+    rating?: 1..5, feedback?
     createdAt, resolvedAt?, escalatedAt?, closedAt?
   }
   class HistoryEntry <<reports/{id}/history>> {
@@ -54,8 +56,20 @@ package "Domain entities (shared models → Firestore documents)" {
     title, message
     targetSuburbs: string[]
     isActive: boolean
-    recipientCount, readCount
+    recipientCount, readCount, smsCount?
     createdAt, expiresAt
+  }
+  class ScheduledAlert <<scheduledAlerts>> {
+    type, title, message, targetSuburbs
+    publishAt, expiresAt
+    status: SCHEDULED | PUBLISHED | CANCELLED
+    publishedAt?, recipientCount?
+  }
+  class SmsMessage <<smsOutbox>> {
+    uid, to: E.164, body ≤ 160
+    alertId
+    status: QUEUED | SENT | SIMULATED | FAILED
+    gateway, providerId?, error?
   }
   class AlertRecipient <<alerts/{id}/recipients>> {
     uid, alertId
@@ -111,4 +125,7 @@ User "1" *-- "0..*" Notification
 User "1" *-- "0..*" PushToken : devices >
 User "1" -- "0..*" Alert : creates >
 
+ScheduledAlert "1" -- "0..1" Alert : published as (same id) >
+Alert "1" -- "0..*" SmsMessage : emergency SMS >
+User "1" -- "0..*" SmsMessage : receives >
 @enduml

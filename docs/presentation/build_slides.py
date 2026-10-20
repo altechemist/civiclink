@@ -2,6 +2,7 @@
 """Builds the 6-slide presentation (docs/presentation/CivicLink_Presentation.pptx).
 Requires python-pptx 1.0.2. Run from the repository root:  python3 docs/presentation/build_slides.py
 """
+import json
 from pathlib import Path
 
 from pptx import Presentation
@@ -10,6 +11,9 @@ from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'docs/presentation/CivicLink_Presentation.pptx'
+# Test counts come from the latest full run (scripts/test-results.py).
+RESULTS = json.loads((ROOT / 'docs/evidence/test-results.json').read_text())
+count = lambda prefix: sum(1 for t in RESULTS['tests'] if t['suite'].startswith(prefix))
 BRAND = RGBColor(0x0B, 0x4F, 0x6C)
 INK = RGBColor(0x1E, 0x29, 0x3B)
 MUTED = RGBColor(0x47, 0x55, 0x69)
@@ -80,15 +84,15 @@ picture(s, 'docs/evidence/03-resident-home.png', 7.6, 1.5, height=5.3)
 picture(s, 'docs/evidence/13-resident-alerts.png', 10.2, 1.5, height=5.3)
 
 # 2. Solution & scope
-s = slide('Four roles, one lifecycle: 31 of 34 requirements delivered', 'Solution and final scope')
+s = slide('Four roles, one lifecycle: all 37 requirements delivered', 'Solution and final scope')
 bullets(s, [
-    'Residents|report in 3 steps (map pin, photos, severity), get a reference, follow it live, confirm or reopen',
-    'Officials|department queue, triage, assign, escalate, suburb alerts, live analytics',
+    'Residents|report in 3 steps (map pin, photos, severity), even offline; get a reference, follow it live, confirm with a rating or reopen',
+    'Officials|department queue, triage, assign (one or many), escalate, suburb alerts now or scheduled, live analytics',
     'Field workers|accept, start and complete with notes and proof photos',
     'Administrators|staff accounts, roles, departments, SLA targets, system log',
     'Accounts|Google sign-in, password reset, profile, POPIA self-deletion with anonymised records',
-    'Reach|web push to phones, "Me too" on the map, installable app that opens offline',
-    'Deferred on purpose|push and SMS, offline drafts, scheduled alerts: not verifiable in the assessment environment',
+    'Reach|web push, SMS for emergencies, "Me too" on the map, installable app that saves reports offline',
+    'Transparency|a public page with time-to-fix, SLA compliance and satisfaction, served from the CDN',
 ], width=7.4, size=17)
 picture(s, 'docs/diagrams/state-report.png', 8.2, 1.6, width=4.7)
 
@@ -97,27 +101,28 @@ s = slide('Commands on the server, real-time reads in the browser', 'Architectur
 picture(s, 'docs/diagrams/architecture.png', 0.6, 1.6, height=5.2)
 bullets(s, [
     'React SPA|reads Firestore through live listeners, under Security Rules',
-    'Node command API|one registry of 26 commands: auth, roles, Zod validation, transactions; served by Vercel (deployed) or Cloud Functions (local)',
+    'Node command API|one registry of 31 commands: auth, roles, Zod validation, transactions; served by Vercel (deployed) or Cloud Functions (local)',
     'Shared domain package|state machines, duplicate/SLA policies, used on both sides',
     'Free tier|Vercel + Firebase Spark; photos stored in Firestore; emulator for offline demo and tests',
 ], left=8.5, width=4.3, size=15)
 
 # 4. Decisions
-s = slide('Two decisions that shaped the system', 'Engineering decisions')
+s = slide('Decisions that shaped the system', 'Engineering decisions')
 bullets(s, [
     'D1: Every state change is a server command in a transaction|Rules alone cannot enforce "one active task", reference counters or the 100 m duplicate search. TX-1 submit, TX-2 assign, TX-3 complete are atomic; two simultaneous assignments → exactly one wins.',
     'D3: Free-tier deployment without Cloud Functions|Firebase Spark + a Node API on Vercel; photos compressed to ≤ 700 KB and stored in Firestore with real-type checks. One command registry, two adapters, and CI runs every E2E test through both.',
-    'Also:|Leaflet + OpenStreetMap instead of Google Maps (no billing); React SPA instead of Next.js (no server rendering needed).',
+    'D5: Offline reports through an outbox and idempotent commands|Saved on the phone (IndexedDB) and sent on reconnect with a device-chosen id, so a resend is stored once. Works in every browser, unlike Background Sync.',
+    'Also:|public figures from the CDN cache (D6); enforced CSP + HSTS; Leaflet + OpenStreetMap instead of Google Maps; React SPA instead of Next.js.',
 ], width=12, size=18)
 
 # 5. Verification
-s = slide('143 automated tests, all green in CI', 'Verification')
+s = slide(f"{RESULTS['total']} automated tests, all green", 'Verification')
 bullets(s, [
-    'Unit (30)|state machines, duplicate boundaries 99/100/101 m and 71/72/73 h, SLA, analytics; 97.9% coverage',
-    'Security rules (20)|every cell of the permission matrix, allow and deny',
-    'API integration (79)|validation, authorisation, wrong-state and concurrency for every command; push with a fake sender',
-    'End-to-end + PWA (15)|full lifecycle across 3 browsers, duplicates, Me too, alerts, access denied, Google sign-in, POPIA deletion, offline install; Chrome and Firefox',
-    'NFRs|update reaches the resident in 2.5 s (target 5 s), screens < 1.1 s, p95 command 28 ms, 0 WCAG violations',
+    f"Unit ({count('Unit')})|state machines, duplicate boundaries 99/100/101 m and 71/72/73 h, SLA, schedules, ratings, SMS text; 97.9% coverage",
+    f"Security rules ({count('Security rules')})|every cell of the permission matrix, allow and deny",
+    f"API integration ({count('Integration')})|validation, authorisation, wrong-state and concurrency for every command; push and SMS with fake gateways",
+    f"End-to-end, PWA, live site ({count('E2E') + count('PWA') + count('Deployed')})|full lifecycle across 3 browsers, offline drafts, scheduled alerts, bulk assign, transparency, access denied, Google sign-in; CDN and CSP on the live site",
+    'NFRs|update reaches the resident in 2.5 s (target 5 s), screens < 1.1 s, p95 command 28 ms, 0 WCAG and 0 CSP violations',
 ], width=7.6, size=16)
 picture(s, 'docs/evidence/23-triage-assign.png', 8.4, 1.7, width=4.5)
 
@@ -129,7 +134,7 @@ bullets(s, [
     'SC-03 Access control|20 rule tests + authorisation tests + E2E-04',
     'SC-04 Timely information|0.09 s to the official, 2.47 s to the resident',
     'SC-05 Live visibility|analytics verified against the dataset',
-    'Next|push and SMS for residents who are not in the app; a pilot with one department',
+    'Next|a paid SMS gateway with a send queue; Cloud Scheduler for exact alert times; a pilot with one department',
 ], width=12, size=18)
 
 prs.save(OUT)

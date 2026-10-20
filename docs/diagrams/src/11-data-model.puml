@@ -10,6 +10,7 @@ entity "users/{uid}" as users {
   * name : string
   * email : string <<unique via Auth>>
   phone : string
+  smsAlerts : boolean
   * role : RESIDENT|OFFICIAL|FIELD_WORKER|ADMIN
   departmentId : string <<FK departments>>
   suburb : string
@@ -36,7 +37,7 @@ entity "reports/{id}" as reports {
   * geohash : string <<indexed>>
   * suburb : string
   * severity : HIGH|MEDIUM|LOW
-  * photoPaths : string[0..3]
+  * photoIds : string[0..3] <<FK photos>>
   * status : ReportStatus
   assignedWorkerId : string <<FK users>>
   activeTaskId : string <<FK tasks>>
@@ -45,6 +46,8 @@ entity "reports/{id}" as reports {
   * followerIds : string[] <<FK users>>
   * createdAt, updatedAt : timestamp
   resolvedAt, escalatedAt, closedAt : timestamp
+  rating : int (1–5)
+  feedback : string (≤300)
 }
 entity "reports/{id}/history/{id}" as history {
   * id <<PK>>
@@ -81,7 +84,7 @@ entity "tasks/{id}" as tasks {
   * departmentId <<FK departments>>
   * priority, status : enum
   notes, completionNotes : string
-  * proofPaths : string[]
+  * proofIds : string[] <<FK photos>>
   * assignedAt : timestamp
   acceptedAt, startedAt, completedAt, endedAt
 }
@@ -94,7 +97,41 @@ entity "alerts/{id}" as alerts {
   * createdBy <<FK users>>
   * isActive : boolean
   * recipientCount, readCount : int
+  smsCount : int
   * createdAt, expiresAt : timestamp
+}
+entity "scheduledAlerts/{id}" as sched {
+  * id <<PK, = alert id once published>>
+  --
+  * type, title, message, targetSuburbs
+  * createdBy <<FK users>>
+  * publishAt, expiresAt : timestamp
+  * status : SCHEDULED|PUBLISHED|CANCELLED
+  publishedAt : timestamp
+  recipientCount : int
+}
+entity "smsOutbox/{id}" as sms {
+  * id <<PK>>
+  --
+  * uid <<FK users>>
+  * alertId <<FK alerts>>
+  * to : string (E.164)
+  * body : string (≤160)
+  * status : QUEUED|SENT|SIMULATED|FAILED
+  * gateway : string
+  providerId, error : string
+  * createdAt : timestamp
+  sentAt : timestamp
+}
+entity "photos/{id}" as photos {
+  * id <<PK>>
+  --
+  * reportId <<FK reports>>
+  * ownerId <<FK users>>
+  * kind : EVIDENCE|PROOF
+  * contentType : string
+  * data : bytes (≤700 KB)
+  * createdAt : timestamp
 }
 entity "alerts/{id}/recipients/{uid}" as rec {
   * uid <<PK, FK users>>
@@ -153,4 +190,9 @@ alerts ||--o{ rec
 users ||--o{ rec
 users ||--o{ alerts : createdBy
 dept ||--o{ users : departmentId
+sched |o--o| alerts : published as
+alerts ||--o{ sms
+users ||--o{ sms
+reports ||--o{ photos
+tasks ||--o{ photos : proofIds
 @enduml

@@ -117,7 +117,7 @@ function BulkAssignBar({ reports, onDone }: { reports: WithId<ReportDoc>[]; onDo
         <p className="text-sm text-slate-700">Select at most {LIMITS.bulkAssignMax} reports at a time.</p>
       ) : (
         <>
-          <Select aria-label="Assign selected to" value={workerId} onChange={(e) => setWorkerId(e.target.value)} className="w-auto">
+          <Select aria-label="Assign selected to" value={workerId} onChange={(e) => setWorkerId(e.target.value)} className="w-full sm:w-64">
             <option value="">Choose a field worker…</option>
             {workers.data.map((w) => (
               <option key={w.id} value={w.id}>{w.name}</option>

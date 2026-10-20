@@ -13,6 +13,7 @@ package "Domain entities (shared models → Firestore documents)" {
     role: Role
     departmentId?: string
     suburb?: Suburb
+    smsAlerts?: boolean
     isActive: boolean
     createdAt, lastLoginAt
   }
@@ -32,6 +33,7 @@ package "Domain entities (shared models → Firestore documents)" {
     parentReportId?, affectedCount
     followerIds: string[]
     resolutionNotes?, resolutionPhotoIds
+    rating?: 1..5, feedback?
     createdAt, resolvedAt?, escalatedAt?, closedAt?
   }
   class HistoryEntry <<reports/{id}/history>> {
@@ -56,8 +58,20 @@ package "Domain entities (shared models → Firestore documents)" {
     title, message
     targetSuburbs: string[]
     isActive: boolean
-    recipientCount, readCount
+    recipientCount, readCount, smsCount?
     createdAt, expiresAt
+  }
+  class ScheduledAlert <<scheduledAlerts>> {
+    type, title, message, targetSuburbs
+    publishAt, expiresAt
+    status: SCHEDULED | PUBLISHED | CANCELLED
+    publishedAt?, recipientCount?
+  }
+  class SmsMessage <<smsOutbox>> {
+    uid, to: E.164, body ≤ 160
+    alertId
+    status: QUEUED | SENT | SIMULATED | FAILED
+    gateway, providerId?, error?
   }
   class AlertRecipient <<alerts/{id}/recipients>> {
     uid, alertId
@@ -124,13 +138,14 @@ package "Domain logic (packages/shared)" {
 package "Application services (functions/src/services)" {
   class ReportService {
     -clock: () => number
-    +submit(input, actor)  «TX-1»
+    +submit(input, actor)  «TX-1, idempotent by clientId»
     +triage(input, actor)
     +reject(input, actor)
     +escalate(input, actor)
     +assign(input, actor)  «TX-2»
+    +assignMany(input, actor)  «TX-2 per report»
     +reassign(input, actor)
-    +confirm(reportId, actor)
+    +confirm(input, actor)  «with rating»
     +reopen(input, actor)
     +affirm(reportId, actor)
   }
@@ -147,7 +162,10 @@ package "Application services (functions/src/services)" {
     +departmentOfficials(tx, deptId)
   }
   class AlertService {
-    +broadcast(input, actor)
+    +broadcast(input, actor)  «now or scheduled»
+    +publishDue(): number
+    +cancelScheduled(id, actor)
+    -publish(alertId, content, now)
     +deactivate(alertId)
     +markRead(alertId, actor)
   }
@@ -166,6 +184,7 @@ package "Application services (functions/src/services)" {
     +updateSettings(input, actor)
   }
   class MaintenanceService {
+    +runAll(): {escalated, closed, published}
     +escalateOverdue(): number
     +autoCloseResolved(): number
   }
@@ -174,6 +193,17 @@ package "Application services (functions/src/services)" {
   }
   class CommentService {
     +add(reportId, text, actor)
+  }
+  class PublicStatsService {
+    -cached: PublicStats  «1 min»
+    +get(): PublicStats
+  }
+  class smsService <<module>> {
+    +sendAlertSms(alertId, alert, recipients, now)
+    +setSmsGateway(g)
+  }
+  interface SmsGateway {
+    +send(to, body): {id, simulated?}
   }
   class CommandRegistry <<commands.ts>> {
     +COMMANDS: Record<name, CommandDefinition>
@@ -186,6 +216,8 @@ package "Application services (functions/src/services)" {
     +handleHttp(req, res)
     -verifyCaller(): Caller
     -maintenance(): cron
+    -stats(): GET /api/public/stats
+    -publishDueAlertsInBackground()
   }
   class CallableAdapter <<index.ts, Cloud Functions>> {
     +command(def): onCall
@@ -219,7 +251,17 @@ User "1" *-- "0..*" Notification
 User "1" *-- "0..*" PushToken : devices >
 User "1" -- "0..*" Alert : creates >
 
+ScheduledAlert "1" -- "0..1" Alert : published as (same id) >
+Alert "1" -- "0..*" SmsMessage : emergency SMS >
+User "1" -- "0..*" SmsMessage : receives >
 HttpAdapter ..> CommandRegistry
+HttpAdapter ..> PublicStatsService
+HttpAdapter ..> AlertService : background publishDue
+MaintenanceService ..> AlertService : publishDue
+AlertService ..> smsService
+smsService ..> SmsGateway
+AlertService ..> ScheduledAlert
+smsService ..> SmsMessage
 CallableAdapter ..> CommandRegistry
 CommandRegistry ..> ReportService
 CommandRegistry ..> TaskService
