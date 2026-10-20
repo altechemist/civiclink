@@ -10,3 +10,5 @@ emulator-data/
 *.docx
 *.pptx
 *.log
+.env*
+!.env.example
