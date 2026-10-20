@@ -17,10 +17,10 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
 ## Slides (≤ 5 min), see `CivicLink_Presentation.pptx`
 
 1. **Problem:** the 31 March strike; phone and WhatsApp reporting; no tracking; no alerts.
-2. **Solution and scope:** four roles; 28 of 32 requirements included (all 14 Must-haves); deferred items and why.
+2. **Solution and scope:** four roles; 31 of 34 requirements included (all 14 Must-haves); deferred items and why.
 3. **Architecture:** React SPA → callable commands → transactions; Security Rules; shared domain package (Figure 9).
 4. **Two key decisions:** server-side commands with transactions (D1); free-tier deployment, with a Node API on Vercel and photos in Firestore (D3).
-5. **Verification:** 136 automated tests, CI green, NFR measurements, SC-01 to SC-05 all achieved.
+5. **Verification:** 143 automated tests, CI green, NFR measurements, SC-01 to SC-05 all achieved.
 
 ## Principal workflow (≈ 5 min, 2 marks)
 
@@ -33,7 +33,7 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
 | 5 | C Worker | Task appears → Accept → Start → notes + photo → Mark as resolved | "TX-3: the task and the report are resolved together or not at all." |
 | 6 | A | The status turns *Resolved* live, with the proof photo → **Yes, it's fixed** → *Closed* | "Resident confirms within 7 days, or it closes automatically." |
 | 7 | B | **Broadcast alert** → Emergency → "Strike: CBD closures" → Galeshewe → Broadcast | "Delivery records are created per resident in the suburb." |
-| 8 | A | Alerts tab shows it, pinned first | "Read receipts are counted back on the official's alert history." |
+| 8 | A | Alerts tab shows it, pinned first (and the phone receives a push) | "Read receipts are counted back on the official's alert history; push is sent only after the command commits." |
 
 ## Lecturer-selected checks: drill sheet (4 marks)
 
@@ -68,6 +68,9 @@ For every included requirement and rule: how to show it, and a failure case to s
 | FR-29 | Login → Continue with Google → emulator account chooser → "Add new account" → welcome step | Finish without a suburb → field error; account is always a Resident |
 | FR-30 | Forgot password with an email | Unknown email → the same message (no account enumeration) |
 | FR-31 | Profile → change suburb → alerts feed follows | Phone "123" → error |
+| FR-24 | Phone with push on (Profile → Turn on) → official assigns the report → notification on the phone; tap opens the report | Push off → no notification, in-app bell still updates |
+| FR-33 / BR-23 | Resident: Map → tap an open issue → Me too → count rises | Tap again → "already confirmed"; own report → refused |
+| FR-34 | Phone: Install CivicLink → airplane mode → open the app → saved reports + offline notice | Report form → Submit disabled ("Waiting for a connection") |
 | FR-32 / BR-22 | Profile → type DELETE → delete; sign-in now fails | Show that the old report now reads "Former resident" (official view) |
 | BR-21 | Admin → config → limit 2; resident submits a third report | "You have submitted 2 reports in the last hour" |
 | NFR-01 | As resident, open /official → 403 page | Even with the guard bypassed, rules deny the data (show the RT test) |
