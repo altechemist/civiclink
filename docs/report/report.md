@@ -130,7 +130,7 @@ Table: Known limitations
 | Area | Limitation | Impact | Status / workaround |
 |---|---|---|---|
 | Push (FR-24) | Push is best-effort and per device; on iPhone it works only for the installed app (iOS 16.4+) | A resident who has not turned push on sees updates only in the app | In-app notifications remain the guaranteed channel; emergency alerts can also go by SMS |
-| SMS (FR-25) | No paid gateway in the demo; SMS are sent inside the alert request | Messages are recorded as Simulated; a very large emergency broadcast would make the official wait | Twilio by configuration; a queue at production scale |
+| SMS (FR-25) | No paid gateway in the demo (a Twilio trial only sends predefined templates); SMS are sent inside the alert request | Messages are recorded as Simulated; a very large emergency broadcast would make the official wait | Twilio by configuration; a queue at production scale |
 | Offline (FR-27, FR-34) | Offline, only new reports can be saved; other actions need a connection, and the map shows only areas viewed before | A saved report gets its reference number when it is sent | Sent automatically on reconnect, stored once |
 | Scheduled rules (FR-13, FR-14, FR-28) | The emulator does not fire schedules; the free deployment's schedule runs hourly | Locally an administrator selects "Run scheduled rules now"; a scheduled alert can be up to an hour late when nobody is using the site | While the site is in use, due alerts are published within about a minute (background check after API requests) |
 | Alert broadcast (FR-16) | Delivery records are written in batches after the alert document, not in one transaction | A failure during a broadcast could leave the recipient count higher than the stored delivery records | Acceptable at municipal scale; records can be re-derived from the suburb query |
@@ -906,6 +906,7 @@ Timings were measured on the development laptop running the emulators, Vite and 
 | E2E-11 to E2E-17 ("Me too", offline drafts, scheduled alerts, bulk assignment, transparency page, public home with guest reporting and account) | Pass |
 | NFT-08 accessibility, including the public home and transparency pages | 0 serious or critical violations |
 | NFT-11 CDN caching, NFT-12 security headers | Pass; public figures served from the edge cache after the first request |
+| SMS gateway (FR-25), administrator test SMS with Twilio credentials configured | Reached Twilio and authenticated (gateway `twilio`); Twilio refused delivery because trial accounts may only send predefined template messages, and the refusal was recorded as Failed with Twilio's reason. Real delivery needs an upgraded (paid) Twilio account; CivicLink needs no change |
 | Web push (FR-24), manual | An alert broadcast by an official appeared as a system notification in a separate signed-in browser about 5 s later; the test alert was then ended |
 
 ## Defects and Known Issues
