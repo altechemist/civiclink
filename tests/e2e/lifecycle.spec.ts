@@ -3,7 +3,10 @@ import { ACCOUNTS, as, PNG, submitReport } from './helpers';
 
 // Locations away from seeded data, offset per browser project (~550 m apart) so runs in
 // different browsers never trigger duplicate detection against each other.
-const offset = () => (test.info().project.name === 'firefox' ? 0.005 : 0);
+// Against a deployed site data persists between runs, so each run also gets a random offset (≤ ~2 km)
+// to avoid matching its own earlier reports as duplicates.
+const RUN_JITTER = process.env.E2E_BASE_URL ? Math.random() * 0.02 : 0;
+const offset = () => (test.info().project.name === 'firefox' ? 0.005 : 0) + RUN_JITTER;
 const SPOT_A = () => ({ latitude: -28.6802 - offset(), longitude: 24.6921 });
 const SPOT_B = () => ({ latitude: -28.6855 - offset(), longitude: 24.6991 });
 
