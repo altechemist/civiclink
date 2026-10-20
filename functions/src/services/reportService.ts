@@ -1,5 +1,6 @@
 import {
   approximateLocation,
+  OPEN_REPORT_STATUSES,
   DuplicatePolicy,
   formatReference,
   LIMITS,
@@ -340,6 +341,30 @@ export class ReportService {
       });
       NotificationService.add(tx, officials, { type: 'NEW_REPORT', title: `${report.ref} reopened`, body: input.reason, link: `/official/reports/${report.id}` }, now);
       return { status };
+    });
+  }
+
+  /**
+   * FR-33 / BR-23 ("Me too"): a resident confirms an existing open issue instead of filing a duplicate.
+   * One confirmation per resident; not for your own report; only open reports. Idempotent.
+   */
+  async affirm(reportId: string, actor: Actor) {
+    return col.reports().firestore.runTransaction(async (tx) => {
+      const now = this.clock();
+      const { ref, report } = await getReport(tx, reportId);
+      if (report.reporterId === actor.uid) throw precondition('This is your own report; you are already following it');
+      if (!OPEN_REPORT_STATUSES.includes(report.status)) throw precondition('Only open issues can be confirmed');
+      if ((report.followerIds ?? []).includes(actor.uid)) return { affectedCount: report.affectedCount, alreadyConfirmed: true };
+      const affectedCount = report.affectedCount + 1;
+      tx.update(ref, { affectedCount: FieldValue.increment(1), followerIds: FieldValue.arrayUnion(actor.uid), updatedAt: ts(now) });
+      tx.set(col.publicReports().doc(reportId), { affectedCount: FieldValue.increment(1) }, { merge: true });
+      // Shown on the timeline without changing the status (same pattern as task progress, CR-16).
+      tx.set(col.history(reportId).doc(), {
+        from: report.status, to: report.status, event: 'affirm',
+        actorId: actor.uid, actorRole: 'RESIDENT', actorName: 'A resident',
+        note: `Another resident confirmed this issue (${affectedCount} affected)`, at: ts(now),
+      });
+      return { affectedCount, alreadyConfirmed: false };
     });
   }
 }

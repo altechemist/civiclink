@@ -119,6 +119,8 @@ export const completeTaskSchema = z.object({
     .max(LIMITS.photosMax, `At most ${LIMITS.photosMax} photos`),
 });
 export const confirmResolutionSchema = z.object({ reportId: id });
+/** FR-33: a resident confirms an existing open issue ("Me too"). */
+export const affirmReportSchema = z.object({ reportId: id });
 export const reopenReportSchema = z.object({ reportId: id, reason });
 export const addCommentSchema = z.object({ reportId: id, text: z.string().trim().min(1).max(LIMITS.commentMax) });
 

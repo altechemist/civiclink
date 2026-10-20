@@ -2,7 +2,7 @@
 
 Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cited in the report appears in a test title, so `grep -r "<ID>"` finds the test. Results for the submitted commit are in its GitHub Actions run.
 
-**Total: 136 automated tests.**
+**Total: 139 automated tests.**
 
 ## Unit (Vitest): 30 tests
 
@@ -63,7 +63,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | RT-PHO-01 | report photos and proof are visible to the reporter, followers and staff with access (BR-17) | `tests/rules/rules.test.ts` |
 | RT-PHO-02 | other users cannot read photos, and nobody writes them directly | `tests/rules/rules.test.ts` |
 
-## Cloud Functions integration (emulator): 74 tests
+## Cloud Functions integration (emulator): 76 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -140,9 +140,11 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-RES-03 | after 7 days confirm/reopen are refused and the schedule closes the report | `functions/test/reports.test.ts` |
 | IT-RES-04 | another resident cannot confirm or reopen | `functions/test/reports.test.ts` |
 | IT-RES-05 | confirming an unresolved report is refused | `functions/test/reports.test.ts` |
+| IT-AFF-01 | a resident confirms an open issue: count, follower and timeline update once | `functions/test/reports.test.ts` |
+| IT-AFF-02 | own reports, closed reports and staff are refused | `functions/test/reports.test.ts` |
 | IT-CMT-01 | staff with access can comment; residents and other departments cannot | `functions/test/reports.test.ts` |
 
-## End-to-end and non-functional (Playwright): 13 tests
+## End-to-end and non-functional (Playwright): 14 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -156,6 +158,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | E2E-05 | invalid report input is rejected with field messages (BR-02, NFR-03) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-06 | wrong password shows a generic error (FR-02) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-07 | GPS outside Sol Plaatje is explained, not used; tapping the map sets the pin and suburb (FR-03, BR-02) | `tests/e2e/lifecycle.spec.ts` |
+| E2E-11 | "Me too" from the community map raises the affected count (FR-33, BR-23) | `tests/e2e/lifecycle.spec.ts` |
 | NFT-07 | mobile layouts fit a 360 px screen | `tests/e2e/mobile.spec.ts` |
 | NFT-08 | accessibility of login, report form, my reports and queue | `tests/e2e/quality.spec.ts` |
 | NFT-06 | responsiveness: screens interactive < 3 s, p95 command < 2 s | `tests/e2e/quality.spec.ts` |

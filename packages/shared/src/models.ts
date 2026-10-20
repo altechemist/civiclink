@@ -206,6 +206,7 @@ export interface CallableResults {
   upsertCategory: { id: string };
   getAnalytics: import('./analytics').AnalyticsSummary;
   completeProfile: { ok: true };
+  affirmReport: { affectedCount: number; alreadyConfirmed: boolean };
   updateSettings: { ok: true };
   updateProfile: { ok: true };
   deleteMyAccount: { ok: true; anonymisedReports: number };

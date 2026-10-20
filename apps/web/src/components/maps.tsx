@@ -139,7 +139,7 @@ export function IncidentMap({ points, height = 'h-80', zoom = 13, center }: { po
       <MapContainer center={[c.lat, c.lng]} zoom={zoom} className="h-full w-full">
         <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
         {points.map((p) => (
-          <CircleMarker key={p.id} center={[p.location.lat, p.location.lng]} radius={9} pathOptions={{ color: 'white', weight: 2, fillColor: p.colour, fillOpacity: 0.9 }}>
+          <CircleMarker key={p.id} center={[p.location.lat, p.location.lng]} radius={9} pathOptions={{ color: 'white', weight: 2, fillColor: p.colour, fillOpacity: 0.9, className: `incident-marker incident-${p.id}` }}>
             <Popup>{p.popup}</Popup>
           </CircleMarker>
         ))}
