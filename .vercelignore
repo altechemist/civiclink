@@ -1,0 +1,12 @@
+# Only the sources needed to build the web app and the API are uploaded.
+docs/
+tests/
+scripts/
+playwright-report/
+test-results/
+coverage/
+emulator-data/
+*.pdf
+*.docx
+*.pptx
+*.log
