@@ -1,11 +1,58 @@
 import { fieldErrors, SUBURBS, updateProfileSchema, type UserDoc } from '@civiclink/shared';
-import { Save, Trash2 } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { BellRing, Save, Trash2 } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth, useSession } from '../../auth/AuthProvider';
 import { Button, Card, Field, Input, LoadingState, Notice, PageHeader, Select } from '../../components/ui';
 import { call, type ApiError } from '../../lib/api';
+import { disablePush, enablePush, pushAvailable, pushEnabledHere } from '../../lib/push';
 
 const ROLE_LABEL = { RESIDENT: 'Resident', OFFICIAL: 'Municipal official', FIELD_WORKER: 'Field worker', ADMIN: 'Administrator' } as const;
+
+/** FR-24: push notifications for this device (shown only where web push is available). */
+function PushCard() {
+  const [available, setAvailable] = useState(false);
+  const [enabled, setEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  useEffect(() => {
+    void pushAvailable().then((a) => {
+      setAvailable(a);
+      setEnabled(a && pushEnabledHere());
+    });
+  }, []);
+  if (!available) return null;
+  const toggle = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      if (enabled) {
+        await disablePush();
+        setEnabled(false);
+        setMessage({ tone: 'success', text: 'Push notifications are off on this device.' });
+      } else {
+        await enablePush();
+        setEnabled(true);
+        setMessage({ tone: 'success', text: "Push notifications are on. You'll be alerted even when CivicLink is closed." });
+      }
+    } catch (err) {
+      setMessage({ tone: 'error', text: (err as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card>
+      <h2 className="flex items-center gap-2 font-semibold text-slate-900">
+        <BellRing className="size-4" aria-hidden /> Push notifications on this device
+      </h2>
+      <p className="mt-1 text-sm text-slate-600">Status changes on your reports, new tasks and suburb alerts arrive as phone or desktop notifications.</p>
+      {message && <div className="mt-3"><Notice tone={message.tone}>{message.text}</Notice></div>}
+      <Button className="mt-3" variant={enabled ? 'secondary' : 'primary'} busy={busy} onClick={toggle} data-testid="push-toggle">
+        {enabled ? 'Turn off' : 'Turn on'}
+      </Button>
+    </Card>
+  );
+}
 
 /** FR-31 (own details) and FR-32 (POPIA account deletion for residents). */
 export function ProfilePage() {
@@ -89,6 +136,8 @@ function ProfileEditor({ profile }: { profile: UserDoc }) {
           </Button>
         </form>
       </Card>
+
+      <PushCard />
 
       {isResident && (
         <Card className="ring-red-200">

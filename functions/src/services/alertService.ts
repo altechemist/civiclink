@@ -5,6 +5,7 @@ import type { broadcastAlertSchema } from '@civiclink/shared';
 import type { Actor } from '../lib/command';
 import { invalid, notFound } from '../lib/errors';
 import { col, db, ts } from '../lib/firebase';
+import { recordPush } from './pushService';
 
 const BATCH_LIMIT = 450;
 
@@ -47,6 +48,9 @@ export class AlertService {
         batch.set(col.recipients(alertRef.id).doc(uid), r);
       }
       await batch.commit();
+    }
+    for (const uid of recipients) {
+      recordPush({ uid, title: `${input.type === 'EMERGENCY' ? 'Emergency: ' : ''}${input.title}`, body: input.message, link: '/resident/alerts' });
     }
     return { alertId: alertRef.id, recipientCount: recipients.length };
   }

@@ -119,6 +119,9 @@ export const completeTaskSchema = z.object({
     .max(LIMITS.photosMax, `At most ${LIMITS.photosMax} photos`),
 });
 export const confirmResolutionSchema = z.object({ reportId: id });
+/** FR-24: a browser push subscription token for this device. */
+export const pushTokenSchema = z.object({ token: z.string().trim().min(20, 'Invalid push token').max(4096) });
+
 /** FR-33: a resident confirms an existing open issue ("Me too"). */
 export const affirmReportSchema = z.object({ reportId: id });
 export const reopenReportSchema = z.object({ reportId: id, reason });

@@ -161,6 +161,7 @@ export class UserService {
     for (const d of followed.docs) writes.push((b) => b.update(d.ref, { followerIds: FieldValue.arrayRemove(actor.uid) }));
     for (const d of (await col.photos().where('ownerId', '==', actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
     for (const d of (await col.notifications(actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
+    for (const d of (await col.users().doc(actor.uid).collection('pushTokens').get()).docs) writes.push((b) => b.delete(d.ref));
     for (const d of (await db.collectionGroup('recipients').where('uid', '==', actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
     writes.push((b) => b.delete(ref));
 

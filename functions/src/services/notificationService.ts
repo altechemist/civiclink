@@ -1,6 +1,7 @@
 import type { NotificationDoc, NotificationType } from '@civiclink/shared';
 import type { Transaction } from 'firebase-admin/firestore';
 import { col, ts } from '../lib/firebase';
+import { recordPush } from './pushService';
 
 export interface NotificationInput {
   type: NotificationType;
@@ -16,6 +17,7 @@ export const NotificationService = {
       if (uid === 'deleted-user') continue; // reporter deleted their account (BR-22)
       const doc: NotificationDoc = { ...n, readAt: null, createdAt: ts(now) };
       tx.set(col.notifications(uid).doc(), doc);
+      recordPush({ uid, title: n.title, body: n.body, link: n.link }); // FR-24, sent after commit
     }
   },
 
