@@ -122,6 +122,13 @@ entity "categories/{id}" as cat {
 entity "counters/reports-{year}" as counter {
   * next : int
 }
+entity "users/{uid}/pushTokens/{hash}" as push {
+  * hash <<PK, sha256(token)>>
+  --
+  * uid <<FK users>>
+  * token : string
+  * createdAt : timestamp
+}
 entity "settings/app" as settings {
   * reportsPerHour : int (1–100)
 }
@@ -131,6 +138,7 @@ entity "systemLogs/{id}" as logs {
 }
 
 users ||--o{ notif
+users ||--o{ push
 users ||--o{ reports : reporterId
 reports ||--|{ history
 reports ||--o{ comments

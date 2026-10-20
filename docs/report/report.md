@@ -12,9 +12,9 @@ Sol Plaatje Local Municipality in Kimberley receives reports of burst pipes, pow
 
 CivicLink is a web application that connects four groups in one workflow. **Residents** report incidents from their phones with a map location, photos and a severity, receive a reference number, and follow the report live until it is fixed. **Municipal officials** triage reports for their department, assign them to field workers, escalate overdue work and broadcast alerts to specific suburbs. **Field workers** receive tasks on their phones, record progress and close each task with completion notes and a proof photo. **Administrators** manage staff accounts, departments and incident categories.
 
-The final release implements 28 of the 32 specified functional requirements, including all 14 Must-have requirements. The core lifecycle runs end to end: report, duplicate detection, triage, assignment, field completion, and resident confirmation or reopening. It is supported by real-time notifications, suburb-targeted alerts with read receipts, a privacy-safe community map, live service-delivery analytics, SLA-based automatic escalation, a complete audit trail, Google sign-in, and self-service account deletion that meets POPIA's right to erasure. Push notifications (Could-have), SMS alerts, offline drafting and scheduled alerts were deliberately deferred.
+The final release implements 31 of the 34 specified functional requirements, including all 14 Must-have requirements. The core lifecycle runs end to end: report, duplicate detection, triage, assignment, field completion, and resident confirmation or reopening. It is supported by real-time notifications, suburb-targeted alerts with read receipts, a privacy-safe community map, live service-delivery analytics, SLA-based automatic escalation, a complete audit trail, web push notifications, a "Me too" button to confirm existing issues, an installable app that opens offline, Google sign-in, and self-service account deletion that meets POPIA's right to erasure. SMS alerts, offline drafting and scheduled alerts were deliberately deferred.
 
-The system is built with React and TypeScript on Firebase Authentication and Cloud Firestore, with a Node.js command API. Every state-changing operation runs on the server inside a database transaction, and access is enforced by Security Rules. It runs entirely on free tiers: the deployed system uses Vercel and Firebase's free Spark plan, and a local configuration using the Firebase Emulator Suite can be reproduced with two commands and no cloud account. It is verified by 136 automated tests (unit, security-rule, API integration, end-to-end and non-functional) running in continuous integration. All five success criteria were achieved.
+The system is built with React and TypeScript on Firebase Authentication and Cloud Firestore, with a Node.js command API. Every state-changing operation runs on the server inside a database transaction, and access is enforced by Security Rules. It runs entirely on free tiers: the deployed system uses Vercel and Firebase's free Spark plan, and a local configuration using the Firebase Emulator Suite can be reproduced with two commands and no cloud account. It is verified by 143 automated tests (unit, security-rule, API integration, end-to-end and non-functional) running in continuous integration. All five success criteria were achieved.
 
 # PROJECT CONTEXT
 
@@ -99,6 +99,8 @@ Table: Final release scope
 | Department and category configuration | FR-21 | Should |
 | Internal staff comments; system log | FR-22, FR-23 | Could |
 | Google sign-in; password reset; profile editing; POPIA account deletion | FR-29–FR-32 | Should |
+| "Me too" confirmation of open issues; installable app with offline shell | FR-33, FR-34 | Should |
+| Web push notifications | FR-24 | Could |
 
 ## Excluded and Deferred Capabilities
 
@@ -106,7 +108,6 @@ Table: Excluded and deferred capabilities
 
 | Capability | Status | Reason |
 |---|---|---|
-| Web push notifications via Firebase Cloud Messaging (FR-24) | Deferred | Could-have. Push delivery cannot be demonstrated in the emulator environment; in-app real-time notifications meet the feedback need |
 | SMS alerts for residents without data (FR-25) | Deferred | Paid external service (e.g. Twilio); cannot be verified in the assessment environment |
 | Offline report drafting with synchronisation (FR-27) | Deferred | Conflict handling for drafts and uploads exceeds the time available |
 | Scheduled (future-dated) alerts (FR-28) | Deferred | Low value for the MVP; immediate alerts cover the strike scenario |
@@ -124,14 +125,15 @@ Table: Known limitations
 
 | Area | Limitation | Impact | Status / workaround |
 |---|---|---|---|
-| Notifications (FR-15) | Notifications are in-app only | A resident who does not open CivicLink is not alerted | Push (FR-24) and SMS (FR-25) deferred |
+| Push (FR-24) | Push is best-effort and per device; on iPhone it works only for the installed app (iOS 16.4+) | A resident who has not turned push on sees updates only in the app | In-app notifications remain the guaranteed channel; SMS (FR-25) deferred |
+| Offline (FR-34) | Offline mode is read-only | New reports cannot be queued without signal | Submit is disabled with an explanation; offline drafts (FR-27) deferred |
 | Scheduled rules (FR-13, FR-14) | The local emulator does not fire scheduled functions | In the local demo, escalation and auto-close run when an administrator selects "Run SLA & auto-close now" | When deployed, Cloud Scheduler runs them hourly and daily |
 | Alert broadcast (FR-16) | Delivery records are written in batches after the alert document, not in one transaction | A failure during a broadcast could leave the recipient count higher than the stored delivery records | Acceptable at municipal scale; records can be re-derived from the suburb query |
 | Location (FR-03) | No street address; location is a map pin plus suburb and optional landmark | Officials rely on the pin and the landmark text | Deliberate (decision D4) |
 
 # SYSTEM REQUIREMENTS SPECIFICATION
 
-The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-28 in `docs/baseline/change-log.md`.
+The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-32 in `docs/baseline/change-log.md`.
 
 ## Functional Requirements
 
@@ -162,7 +164,7 @@ Table: Functional requirements
 | FR-21 | The system shall allow an Administrator to manage departments (name, SLA hours, active) and categories (name, default department, active). | Should Have | Included |
 | FR-22 | The system shall allow Officials and Field Workers to add internal comments to a report that residents cannot see. | Could Have | Included |
 | FR-23 | The system shall record significant system events and show them to Administrators. | Could Have | Included |
-| FR-24 | The system shall send web push notifications for status changes and alerts. | Could Have | Deferred |
+| FR-24 | The system shall send web push notifications for status changes, task assignments and suburb alerts to devices where the user has turned them on. | Could Have | Included |
 | FR-25 | The system shall send SMS alerts to residents without data access. | Won't Have (this release) | Deferred |
 | FR-26 | The system shall allow an Official to export the filtered report queue as CSV. | Could Have | Included |
 | FR-27 | The system shall let residents draft reports offline and submit them when connectivity returns. | Won't Have (this release) | Deferred |
@@ -171,6 +173,8 @@ Table: Functional requirements
 | FR-30 | The system shall allow users to request a password-reset email without revealing whether an account exists. | Should Have | Included |
 | FR-31 | The system shall allow users to update their name and phone number, and residents their suburb. | Should Have | Included |
 | FR-32 | The system shall allow a Resident to delete their account; personal data is erased and their reports are kept anonymised. | Should Have | Included |
+| FR-33 | The system shall allow a Resident to confirm an existing open issue from the community map ("Me too"), raising its affected count and following its progress. | Should Have | Included |
+| FR-34 | The system shall be installable on a phone's home screen and shall open, with previously viewed information, without a connection. | Should Have | Included |
 
 ## Non-Functional Requirements
 
@@ -220,6 +224,7 @@ Table: Business rules
 | BR-19 | Inactive departments and categories cannot be selected for new reports, triage or assignment. |
 | BR-20 | Officials may act only on reports of their own department; Administrators may act on any. |
 | BR-21 | A resident may submit at most N reports in any rolling hour; N is set by an Administrator (1–100, default 10). |
+| BR-23 | A resident may confirm ("Me too") an issue once, only while it is open, and not their own report. |
 | BR-22 | When a resident deletes their account, their name, email, phone, photos, notifications, alert receipts, profile and sign-in are erased; their reports are kept for service records as "Former resident". Staff accounts are deactivated, never self-deleted. |
 
 ## Acceptance Criteria for Included Requirements
@@ -271,6 +276,12 @@ Table: Business rules
 **FR-23 System log.** Administrative actions (account, role, configuration and settings changes), scheduled runs and unexpected server errors are recorded with level, source, time and actor. Only Administrators can view the log. Entries are never edited.
 
 **FR-26 CSV export.** The export contains exactly the reports matching the current queue filters and search, with reference, category, department, suburb, severity, status, assignee, affected count and submitted/resolved times. Values with commas, quotes or line breaks are quoted correctly. The button is disabled when no reports match.
+
+**FR-24 Web push.** With push turned on, a committed status change, new task or suburb alert produces one notification per device, and clicking it opens the related screen. A failed command sends nothing. Turning push off, or deleting the account, removes the device. The option is hidden where push is unavailable.
+
+**FR-33 Me too.** From the map popup of an open issue, a resident confirms it once: the affected count increases, they follow its progress, and the timeline notes it. A repeat reports "already confirmed". Their own report, closed issues and staff callers are refused.
+
+**FR-34 Installable and offline.** The browser offers to install CivicLink. With no connection, the app opens, previously viewed information still shows, and an offline notice explains that new reports need a connection (Submit is disabled).
 
 **FR-29 Google sign-in.** A first-time Google user is taken to a profile step that needs a name and a suburb, and always becomes a Resident. An existing profile cannot be re-created.
 
@@ -490,6 +501,7 @@ Table: Data dictionary (principal collections)
 | **alerts/{id}/recipients/{uid}** | | uid (PK, FK users) | Delivery record: channel, deliveredAt, readAt |
 | **users/{uid}/notifications/{id}** | | auto id | type, title, body, link, readAt, createdAt |
 | **departments/{id}**, **categories/{id}** | | slug id | name (unique), slaHours (1–720) / icon and departmentId (FK), isActive |
+| **users/{uid}/pushTokens/{hash}** | | SHA-256 of token | uid, token, createdAt (FR-24; server-only) |
 | **photos/{id}** | | auto id | reportId (FK), ownerId (FK users), kind EVIDENCE/PROOF, contentType, size, data (bytes ≤ 700 KB), createdAt; readable by whoever can read the report |
 | **counters/reports-{year}** | | year | next reference sequence |
 | **settings/app** | | fixed id | reportsPerHour (BR-21) |
@@ -517,6 +529,8 @@ Table: Role / permission matrix (✓ allowed; scope in brackets)
 |---|---|---|---|---|
 | Register, sign in (password or Google), reset password, edit own profile | ✓ | ✓ (no registration) | ✓ (no registration) | ✓ (no registration) |
 | Delete own account (POPIA) | ✓ | — | — | — |
+| "Me too" on an open issue | ✓ | — | — | — |
+| Turn push notifications on/off for own device | ✓ | ✓ | ✓ | ✓ |
 | Submit report; view own reports; confirm/reopen | ✓ | — | — | — |
 | View community map | ✓ | ✓ | — | ✓ |
 | View report queue and full report details | — | ✓ (own dept) | ✓ (assigned) | ✓ |
@@ -534,7 +548,8 @@ Table: Security controls
 |---|---|---|
 | Authentication | Unauthorised access | Firebase Authentication with email/password (minimum 8 characters) or Google; signed ID tokens on every request; new Google users can only become Residents |
 | Account enumeration | Attackers discover which emails are registered | Password reset and sign-in errors give the same message whether or not an account exists |
-| Abuse | Flooding the queue with fake reports | Configurable per-resident hourly limit enforced inside the submission transaction (BR-21) |
+| Abuse | Flooding the queue with fake reports | Configurable per-resident hourly limit checked before the submission transaction (BR-21); "Me too" counted once per resident (BR-23) |
+| Push tokens | Notifications sent to the wrong person or a stale device | Tokens stored server-side per user (no client access), sent only after the command commits, pruned when FCM reports them dead, deleted with the account |
 | Authorisation | A user reaches another role's data or functions | Firestore Security Rules per the matrix (photos inherit their report's access); role and department checks in every command; client route guards for usability only |
 | Account lifecycle | A deactivated user keeps access | Auth account disabled, refresh tokens revoked, profile check on every command |
 | Input | Malicious or invalid data | Zod schemas on the server; geographic bounds; length limits; photo size limit and real-type check from magic bytes, so renamed or script-bearing files (e.g. SVG) are refused; request body limited to 4 MB |
@@ -599,6 +614,8 @@ Table: Capability implementation
 | Field completion | FR-11 | WorkerHome, TaskPage; `updateTask`, `completeTask` → TaskService (TX-3), TaskStateMachine; tasks, reports, photos |
 | Confirm, reopen, SLA | FR-13, FR-14 | ResidentReportPage; ReportService.confirm/reopen; MaintenanceService with `escalateOverdue` and `autoCloseResolved` schedules and admin `runMaintenance` |
 | Alerts | FR-16–FR-18 | NewAlertPage, AlertsAdminPage, AlertsFeedPage, useResidentAlerts; AlertService; alerts, recipients |
+| Push notifications | FR-24 | ProfilePage (PushCard), `lib/push.ts`, `public/sw.js`; `register/unregisterPushToken`; pushService (intents recorded by NotificationService, delivered by `execute()` after commit) |
+| Me too and offline | FR-33, FR-34 | CommunityMapPage (MeToo) → `affirmReport` → ReportService.affirm; `public/sw.js`, manifest, `components/pwa.tsx` |
 | Accounts | FR-01, FR-02, FR-29–FR-32 | LoginPage, RegisterPage, WelcomePage, ProfilePage, AuthProvider (Google popup, password reset); `registerResident`, `completeProfile`, `updateProfile`, `deleteMyAccount` → UserService; users, Auth claims, photos |
 | Insight and administration | FR-19–FR-23, FR-26 | AnalyticsPage → AnalyticsService → computeAnalytics; UsersPage → UserService; ConfigPage → ConfigService; LogsPage, logService; CommentService; toCsv |
 
@@ -622,6 +639,8 @@ Table: Callable command API
 | completeProfile | signed in, no profile yet | Finish first Google sign-in as a Resident | already-exists |
 | updateProfile | any role | Own name, phone; residents' suburb | invalid-argument, permission-denied |
 | deleteMyAccount | Resident | POPIA erasure with anonymisation | invalid-argument (confirmation) |
+| affirmReport | Resident | "Me too" on an open issue | failed-precondition (own/closed) |
+| registerPushToken, unregisterPushToken | any role | Device push registration | invalid-argument |
 | submitReport | Resident | TX-1 submission | invalid-argument, permission-denied |
 | triageReport, rejectReport, escalateReport | Official, Admin | Lifecycle actions | failed-precondition, permission-denied |
 | assignReport, reassignTask | Official, Admin | TX-2 dispatch | failed-precondition, invalid-argument |
@@ -657,15 +676,16 @@ Table: Test levels
 |---|---|---|---|
 | Unit | Vitest | Shared domain: schemas, state machines, duplicate/SLA/resolution policies, location helpers, image sniffing, references, analytics, CSV (≈ 98% line coverage) | 30 |
 | Security rules | @firebase/rules-unit-testing on the emulator | Allow and deny case for every permission-matrix cell, including photos | 19 |
-| API integration | Vitest + Firebase client SDK against the emulators | Every command: success, validation, boundary, authorisation, state conflict and concurrency; the Node HTTP adapter | 74 |
-| End-to-end | Playwright (Chromium and Firefox; 360 px mobile) | Full lifecycle across three browser sessions, duplicates, alerts, access control, validation, out-of-area GPS, Google sign-in, password reset, profile and account deletion | 10 + 3 non-functional (run through both API adapters) |
+| API integration | Vitest + Firebase client SDK against the emulators | Every command: success, validation, boundary, authorisation, state conflict and concurrency; the Node HTTP adapter; web push with a fake sender | 79 |
+| Installable PWA | Playwright against the production build (`vite preview`) | Manifest, icons, service worker control, offline reload (NFT-10) | 1 |
+| End-to-end | Playwright (Chromium and Firefox; 360 px mobile) | Full lifecycle across three browser sessions, duplicates, alerts, access control, validation, out-of-area GPS, Google sign-in, password reset, profile and account deletion | 11 + 3 non-functional (run through both API adapters) |
 | Non-functional | Playwright timing, axe-core, gitleaks, ESLint, TypeScript | NFR-04 to NFR-09, NFR-12 | — |
 
 Everything except visual review was tested automatically. **Manual testing** consisted of exploratory sessions in each role and a review of every screenshot in Section 5.5, including mobile layouts. Seeded data (`scripts/seed.ts`) gives every test run the same starting state.
 
 ## Functional and Business-Rule Verification
 
-The table below lists the principal test cases. The complete list of 136 automated tests, with their results, is produced by CI for the submitted commit (Appendix 11.3). All tests listed passed. "As expected" means the actual result matched the expected result exactly.
+The table below lists the principal test cases. The complete list of 143 automated tests, with their results, is produced by CI for the submitted commit (Appendix 11.3). All tests listed passed. "As expected" means the actual result matched the expected result exactly.
 
 Table: Functional and business-rule test results
 
@@ -712,6 +732,10 @@ Table: Functional and business-rule test results
 | IT-AUTH-04, E2E-08 | FR-29, BR-16 | First Google sign-in; client sends role ADMIN | Authorisation | Profile step required; account is a Resident; second completion refused | As expected | Pass |
 | E2E-09 | FR-30 | Reset for a registered and an unregistered email | Security | Identical confirmation for both | As expected | Pass |
 | IT-DEL-01, E2E-10 | FR-32, BR-22 | Resident deletes account (wrong confirmation, then DELETE) | Integration | Refused, then reports anonymised; photos, profile, receipts and Auth account removed; sign-in fails | As expected | Pass |
+| IT-AFF-01, E2E-11 | FR-33, BR-23 | Second resident taps "Me too" on the map, then again | Integration / E2E | Count 2, follower added, one timeline note; repeat says already confirmed | As expected | Pass |
+| IT-AFF-02 | BR-23 | "Me too" on own report, by an official, and on a rejected report | Authorisation / state | Refused | As expected | Pass |
+| IT-PSH-02 | FR-24 | Official triages a report; then repeats the triage (refused) | Integration | Exactly one push to the reporter's device; none for the refused command | As expected | Pass |
+| IT-PSH-03 | FR-24 | Suburb alert with one live and one dead device token | Failure | Both targeted; dead token pruned | As expected | Pass |
 | IT-DEL-02 | BR-22 | Staff self-delete; triage an anonymised report | Authorisation | Refused; anonymised report progresses without notifications | As expected | Pass |
 
 ## Non-Functional and Security Verification
@@ -731,6 +755,7 @@ Table: Non-functional verification results
 | NFR-09 Compatibility | E2E suite on Chromium and Firefox in CI | All pass | Pass |
 | NFR-10 Integrity | IT-RPT-08, IT-ASG-07, IT-TSK-06 | Atomic, exactly-once outcomes | Pass |
 | NFR-11 Privacy | RT-RPT-03, RT-PUB-01, RT-PHO-01, RT-PHO-02, UT-PRV-01, IT-RPT-07 | No PII in public data; photos restricted | Pass |
+| FR-34 Installable / offline | NFT-10 on the production build: manifest and icons, service worker in control, reload with the network off | App shell and offline notice shown | Pass |
 | NFR-12 Maintainability | CI: ESLint, TypeScript strict, coverage threshold | 0 lint errors; 97.9% line coverage of the domain package | Pass |
 
 Timings were measured on the development laptop running the emulators, Vite and the browsers at the same time (local configuration).
@@ -822,7 +847,7 @@ Table: Evaluation against the success criteria
 
 The final system meets its purpose for the scope that was set. A smaller set of capabilities was delivered completely, rather than the large and partly simulated scope of the Phase 3 prototype. Every included requirement is implemented on a real backend and verified automatically.
 
-The main remaining gap for a production rollout is reaching residents who do not open the app. Push notifications and SMS (FR-24, FR-25) are the most valuable next step, followed by offline drafting (FR-27) for areas with poor coverage, and a pilot with one department to validate the SLA targets.
+The main remaining gap for a production rollout is reaching residents without smartphones or data. SMS (FR-25) is the most valuable next step, followed by offline drafting (FR-27) for areas with poor coverage, and a pilot with one department to validate the SLA targets.
 
 # REFERENCES
 
@@ -873,6 +898,6 @@ URL: **{{APP_URL}}** (Vercel + Firebase Spark, decision D3). Demo accounts are l
 - **Complete automated test results:** the GitHub Actions run for commit {{COMMIT}} (tab "Actions"). It includes the Playwright HTML report and the coverage report as downloadable artefacts.
 - **Traceability matrix** (requirement → rule → screen → code → data → test): `docs/trackers/traceability-matrix.md`.
 - **Full test catalogue:** `docs/trackers/test-catalog.md`; **defect log:** `docs/trackers/defect-log.md`.
-- **Baseline change log** reconciling Phases 1–3 (CR-01 to CR-28): `docs/baseline/change-log.md`.
+- **Baseline change log** reconciling Phases 1–3 (CR-01 to CR-32): `docs/baseline/change-log.md`.
 - **Architecture decision records:** `docs/adr/README.md`.
 - **Diagram sources** (PlantUML): `docs/diagrams/src/`; **all 31 UI screenshots:** `docs/evidence/`.

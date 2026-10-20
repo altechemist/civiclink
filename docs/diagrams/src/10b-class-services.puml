@@ -14,6 +14,7 @@ package "Application services (functions/src/services)" {
     +reassign(input, actor)
     +confirm(reportId, actor)
     +reopen(input, actor)
+    +affirm(reportId, actor)
   }
   class TaskService {
     +update(input, actor)
@@ -71,6 +72,12 @@ package "Application services (functions/src/services)" {
   class CallableAdapter <<index.ts, Cloud Functions>> {
     +command(def): onCall
   }
+  class pushService <<module>> {
+    +recordPush(intent)
+    +withPushScope(fn): {result, intents}
+    +deliverPushes(intents)
+    +PushTokens.register / unregister
+  }
   class photoService <<module>> {
     +decodePhotos(inputs, field): DecodedPhoto[]
     +writePhotos(tx, photos, meta, now): ids
@@ -124,6 +131,8 @@ TaskService ..> ReportLifecycle
 MaintenanceService ..> ReportLifecycle
 ReportLifecycle ..> ReportStateMachine
 ReportLifecycle ..> NotificationService
+NotificationService ..> pushService : records intents
+CommandRegistry ..> pushService : flush after commit
 TaskService ..> TaskStateMachine
 ReportService ..> DuplicatePolicy
 ReportService ..> photoService

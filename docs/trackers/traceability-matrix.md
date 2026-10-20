@@ -30,7 +30,7 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | FR-21 | P4 | BR-19 | UC Configure | `/admin/config` | `ConfigPage.tsx`, `ConfigService` | departments, categories | UT-SCH-08, IT-CFG-01..04, IT-RPT-05 | Included |
 | FR-22 | P4 | BR-18 | — | `/official/reports/:id` (internal notes) | `CommentService`, `OfficialReportPage.tsx` | reports/*/comments | IT-CMT-01, RT-CMT-01 | Included |
 | FR-23 | P7 | — | UC System log | `/admin/logs` | `fn/services/logService.ts`, `LogsPage.tsx`, `runMaintenance` | systemLogs | IT-ADM-07, RT-CFG-01 | Included |
-| FR-24 | P3, P5 | — | — | — | — | — | — | Deferred (Could; FCM cannot be verified in the emulator, ADR-0003) |
+| FR-24 | P3, P5 | — | all workflows | `/profile` (push toggle) | `fn/services/pushService.ts` (intents, `deliverPushes`), `NotificationService.add`, `execute()`, `web/lib/push.ts`, `public/sw.js` | users/*/pushTokens | IT-PSH-01..03; manual live check | Included |
 | FR-25 | P5 | — | — | — | — | — | — | Deferred |
 | FR-26 | P6 | — | — | queue "Export CSV" | `shared/analytics.ts` (`toCsv`), `ReportQueuePage.tsx` | — | UT-CSV-01 | Included |
 | FR-27 | P1 | — | — | — | — | — | — | Deferred |
@@ -38,6 +38,8 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | FR-29 | P7 | BR-16 | UC Sign in (Google) | `/login`, `/welcome` | `AuthProvider.signInWithGoogle`, `WelcomePage.tsx`, `completeProfile` → `UserService.completeProfile` | users, Auth claims | IT-AUTH-04, IT-AUTH-05, E2E-08 | Included |
 | FR-30 | P7 | — | UC Sign in | `/login` | `AuthProvider.resetPassword` (Firebase Auth reset email) | Auth | E2E-09 | Included |
 | FR-31 | P5 | BR-14, BR-16 | UC Profile | `/profile` | `ProfilePage.tsx`, `updateProfile` → `UserService.updateProfile` | users, Auth claims | IT-PRF-01, IT-PRF-02, E2E-10 | Included |
+| FR-33 | P2 | BR-23 | UC Me too | `/map` (popup) | `CommunityMapPage.tsx` (MeToo), `affirmReport` → `ReportService.affirm` | reports, publicReports, history | IT-AFF-01, IT-AFF-02, E2E-11 | Included |
+| FR-34 | P1 | — | UC Install | all (offline banner), `/resident` (install) | `public/sw.js`, `public/manifest.webmanifest`, `components/pwa.tsx` | Firestore offline cache | NFT-10 | Included |
 | FR-32 | P7 | BR-22 | UC Delete account | `/profile` | `ProfilePage.tsx`, `deleteMyAccount` → `UserService.deleteMyAccount` | users, reports, photos, recipients, notifications, Auth | IT-DEL-01, IT-DEL-02, E2E-10 | Included |
 
 ## Business rules → enforcement → tests
@@ -66,6 +68,7 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | BR-20 | `assertDepartmentAccess`; rules `departmentId == dept()` | IT-TRI-04, RT-RPT-04, RT-TSK-01 |
 | BR-21 | `settings/app.reportsPerHour` read and enforced inside TX-1; `updateSettings` (admin) | IT-RPT-11, IT-CFG-05 |
 | BR-22 | `UserService.deleteMyAccount`; notifications skip `deleted-user` | IT-DEL-01, IT-DEL-02, E2E-10 |
+| BR-23 | `ReportService.affirm` (open, not own, once) | IT-AFF-01, IT-AFF-02, E2E-11 |
 
 ## NFR → verification
 
