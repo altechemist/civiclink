@@ -39,9 +39,9 @@ Residents of Sol Plaatje have no dependable digital channel for reporting servic
 
 The stakeholder questionnaire reported response times of 24–72 hours for burst pipes, mainly because reports were routed to the wrong team. These problems are structural rather than individual: they come from analogue, fragmented processes. A shared digital system that records every report, assignment and status change in one place, enforces routing and accountability rules, and pushes updates to the people affected directly addresses each of them.
 
-These findings agree with published evidence that municipal service delivery in South Africa suffers from weak monitoring, poor record-keeping and slow responses to infrastructure failures (Auditor-General South Africa, 2024). They also agree with the municipality's own planning documents, which identify ageing water and electricity infrastructure as a priority (Sol Plaatje Local Municipality, 2022).
+Published evidence supports these findings. Sol Plaatje is home to 270,078 people (Statistics South Africa, 2023). The municipality's own plan sets a turnaround strategy for water and electricity losses (Sol Plaatje Local Municipality, 2022), and municipal management has reported physical and technical water losses of about 60%, with inner-city pipelines bursting frequently (Noordkaap Bulletin, 2024). Residents have publicly criticised slow responses to near-daily burst pipes (Diamond Fields Advertiser, 2026), the same response-time gap identified in the interview. Nationally, only 34 of South Africa's municipalities (13%) obtained clean audits in 2022-23, and the Auditor-General reports weak controls over performance information and service delivery (Auditor-General South Africa, 2024). Accountable, traceable records of service delivery are therefore a recognised need, not only a local one.
 
-> VERIFY: Before submission, confirm the Sol Plaatje IDP edition and add one sentence with a specific figure from it (e.g. water-loss percentage or backlog), and the Census 2022 population figure for Sol Plaatje (Statistics South Africa, 2023). Phase 1 quoted "approximately 250 000"; replace it with the census value.
+> VERIFY: Quick final check of the two press figures (60% water losses; near-daily bursts) against the articles listed in the references.
 
 ## Project Purpose
 
@@ -851,17 +851,17 @@ The main remaining gap for a production rollout is reaching residents without sm
 
 # REFERENCES
 
-> VERIFY: Confirm each URL, edition and access date below before submission, and add any further sources you cite in Section 2.
+Auditor-General South Africa. (2024). *Consolidated general report on local government audit outcomes: MFMA 2022-23*. https://www.agsa.co.za/Reporting/MFMAReports/MFMA2022-2023.aspx
 
-Auditor-General South Africa. (2024). *Consolidated general report on local government audit outcomes: MFMA 2022-23*. https://www.agsa.co.za
+Diamond Fields Advertiser. (2026, February 16). *Kimberley residents frustrated as Sol Plaatje Municipality struggles with burst pipes and service delivery* [Opinion]. https://dfa.co.za/diamond-fields-advertiser/opinion/2026-02-16-kimberley-residents-frustrated-as-sol-plaatje-municipality-struggles-with-burst-pipes-and-service-delivery/
 
 Firebase. (2026). *Cloud Firestore documentation*. Google. https://firebase.google.com/docs/firestore
 
-Firebase. (2026). *Cloud Functions for Firebase documentation*. Google. https://firebase.google.com/docs/functions
-
-Firebase. (2026). *Firebase Security Rules documentation*. Google. https://firebase.google.com/docs/rules
+Firebase. (2026). *Firebase Cloud Messaging: Web push*. Google. https://firebase.google.com/docs/cloud-messaging/js/client
 
 Firebase. (2026). *Firebase Local Emulator Suite*. Google. https://firebase.google.com/docs/emulator-suite
+
+Firebase. (2026). *Firebase Security Rules documentation*. Google. https://firebase.google.com/docs/rules
 
 Leaflet. (2023). *Leaflet: An open-source JavaScript library for interactive maps* (Version 1.9.4) [Computer software]. https://leafletjs.com
 
@@ -869,15 +869,21 @@ Meta Platforms. (2026). *React* (Version 19) [Computer software]. https://react.
 
 Microsoft. (2026). *Playwright* (Version 1.63) [Computer software]. https://playwright.dev
 
+Noordkaap Bulletin. (2024, January 30). *Sol Plaatje 'has a plan' to solve water crisis*. News24. https://www.news24.com/news24/community-newspaper/noordkaapbulletin/sol-plaatje-has-a-plan-20240130
+
 OpenStreetMap contributors. (2026). *OpenStreetMap* [Data set]. OpenStreetMap Foundation. https://www.openstreetmap.org
 
 Protection of Personal Information Act 4 of 2013. (2013). *Government Gazette, 581*(37067). Republic of South Africa.
 
-Sol Plaatje Local Municipality. (2022). *Integrated development plan 2022–2027*. Sol Plaatje Local Municipality.
+Sol Plaatje Local Municipality. (2022). *Integrated development plan 2022–2027*. https://lg.treasury.gov.za/supportingdocs/NC091/NC091_IDP%20Final_2023_Y_20220908T164950Z_kdeklerk.pdf
 
-Statistics South Africa. (2023). *Census 2022: Municipal fact sheet*. Statistics South Africa. https://census.statssa.gov.za
+Statistics South Africa. (2023). *Census 2022: Municipal fact sheet*. https://census.statssa.gov.za/assets/documents/2022/Census_2022_Municipal_factsheet-Web.pdf
+
+Vercel. (2026). *Vercel Functions documentation*. https://vercel.com/docs/functions
 
 W3C. (2018). *Web Content Accessibility Guidelines (WCAG) 2.1*. World Wide Web Consortium. https://www.w3.org/TR/WCAG21/
+
+W3C. (2023). *Web Application Manifest*. World Wide Web Consortium. https://www.w3.org/TR/appmanifest/
 
 Zod. (2026). *Zod: TypeScript-first schema validation* (Version 4) [Computer software]. https://zod.dev
 
