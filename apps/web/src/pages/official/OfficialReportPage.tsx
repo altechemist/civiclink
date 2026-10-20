@@ -164,6 +164,12 @@ export function OfficialReportPage() {
               <div className="mt-3">
                 <PhotoGrid ids={r.resolutionPhotoIds} label="Proof of repair" />
               </div>
+              {r.rating ? (
+                <p className="mt-3 text-sm text-slate-700" data-testid="resident-rating">
+                  Resident rating: <strong>{r.rating}/5</strong>
+                  {r.feedback ? <> · “{r.feedback}”</> : null}
+                </p>
+              ) : null}
             </Card>
           )}
           <Card>

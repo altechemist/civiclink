@@ -47,6 +47,6 @@ describe('Node HTTP adapter (ADR-0006)', () => {
     expect((await fetch(`${base}/cron/maintenance`, { headers: { Authorization: 'Bearer wrong-secret-value' } })).status).toBe(401);
     const ok = await fetch(`${base}/cron/maintenance`, { headers: { Authorization: 'Bearer test-cron-secret' } });
     expect(ok.status).toBe(200);
-    expect(await ok.json()).toEqual({ escalated: expect.any(Number), closed: expect.any(Number) });
+    expect(await ok.json()).toEqual({ escalated: expect.any(Number), closed: expect.any(Number), published: expect.any(Number) });
   });
 });

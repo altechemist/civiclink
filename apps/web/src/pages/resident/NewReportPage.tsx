@@ -8,17 +8,19 @@ import {
   nearestSuburb,
   type Suburb,
   type CallableResults,
+  type SubmitReportInput,
   type LatLng,
   type Severity,
 } from '@civiclink/shared';
-import { Camera, CheckCircle2, Copy, Send, X } from 'lucide-react';
+import { Camera, CheckCircle2, CloudUpload, Copy, Send, X } from 'lucide-react';
 import { lazy, Suspense, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../../auth/AuthProvider';
 import { CategoryIcon, useCategories } from '../../components/domain';
 import { useOnlineStatus } from '../../components/pwa';
 import { Button, cx, ErrorState, Field, Input, LoadingState, Notice, PageHeader, Select, Textarea } from '../../components/ui';
-import { call } from '../../lib/api';
+import { ApiError, call } from '../../lib/api';
+import { newClientId, queueReport } from '../../lib/outbox';
 import { checkPhoto, toPhotoInputs } from '../../lib/upload';
 
 const LocationPicker = lazy(() => import('../../components/maps').then((m) => ({ default: m.LocationPicker })));
@@ -32,7 +34,10 @@ const SEVERITY_HELP: Record<Severity, string> = {
 
 /** FR-03/04/05: report an incident in three steps (NFR-07). */
 export function NewReportPage() {
-  const { claims } = useSession();
+  const { claims, uid } = useSession();
+  // FR-27: one id per report, reused if it is resent, so the server stores it once.
+  const [clientId] = useState(newClientId);
+  const [queued, setQueued] = useState(false);
   const online = useOnlineStatus();
   const categories = useCategories();
   const [step, setStep] = useState<Step>(1);
@@ -82,9 +87,27 @@ export function NewReportPage() {
     if (!validateDetails()) return setStep(2);
     setBusy(true);
     setFormError(null);
+    let payload: SubmitReportInput & { clientId: string };
     try {
-      setResult(await call('submitReport', { ...draft(), photos: await toPhotoInputs(photos) }));
+      payload = { ...draft(), suburb: suburb as Suburb, severity: severity as Severity, location: location!, photos: await toPhotoInputs(photos), clientId };
     } catch (err) {
+      setBusy(false);
+      setErrors((e) => ({ ...e, photos: (err as Error).message }));
+      return setStep(2);
+    }
+    // FR-27: without a connection (or when the request cannot get through) the report waits on the phone.
+    const saveForLater = async () => {
+      await queueReport({ clientId, uid, categoryName: category?.name ?? 'Report', createdAt: Date.now(), payload });
+      setQueued(true);
+    };
+    try {
+      if (!navigator.onLine) await saveForLater();
+      else setResult(await call('submitReport', payload));
+    } catch (err) {
+      if (err instanceof ApiError && (err.code === 'functions/unavailable' || err.code === 'functions/internal' || err.code === 'functions/deadline-exceeded')) {
+        await saveForLater().catch(() => setFormError(err.message));
+        return;
+      }
       const apiErr = err as { fields?: Record<string, string>; message: string };
       if (apiErr.fields && Object.keys(apiErr.fields).length) {
         setErrors(apiErr.fields);
@@ -95,6 +118,22 @@ export function NewReportPage() {
       setBusy(false);
     }
   };
+
+  if (queued) {
+    return (
+      <div className="space-y-5 text-center" data-testid="report-queued">
+        <CloudUpload className="mx-auto size-14 text-amber-600" aria-hidden />
+        <h1 className="text-xl font-bold text-slate-900">Saved on this phone</h1>
+        <p className="text-slate-700">
+          You're offline, so your report is kept on this phone. It will be sent automatically as soon as you're back online, and you'll get a reference
+          number then.
+        </p>
+        <Link to="/resident" className="inline-block font-semibold text-brand-700 hover:underline">
+          Back to home
+        </Link>
+      </div>
+    );
+  }
 
   if (result) {
     return (
@@ -294,8 +333,8 @@ export function NewReportPage() {
             <Button type="button" variant="secondary" onClick={() => setStep(2)}>
               Edit
             </Button>
-            <Button type="submit" busy={busy} icon={Send} disabled={!online}>
-              {online ? 'Submit report' : 'Waiting for a connection'}
+            <Button type="submit" busy={busy} icon={online ? Send : CloudUpload}>
+              {online ? 'Submit report' : 'Save and send later'}
             </Button>
           </div>
         </div>

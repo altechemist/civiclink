@@ -8,7 +8,7 @@ export default tseslint.config(
   {
     files: ['apps/web/public/sw.js'],
     languageOptions: {
-      globals: { self: 'readonly', caches: 'readonly', fetch: 'readonly', URL: 'readonly', importScripts: 'readonly', firebase: 'readonly', clients: 'readonly' },
+      globals: { self: 'readonly', caches: 'readonly', fetch: 'readonly', URL: 'readonly', importScripts: 'readonly', firebase: 'readonly', clients: 'readonly', Response: 'readonly' },
     },
   },
   {

@@ -32,6 +32,7 @@ export const col = {
   publicReports: () => db.collection('publicReports'),
   tasks: () => db.collection('tasks'),
   alerts: () => db.collection('alerts'),
+  scheduledAlerts: () => db.collection('scheduledAlerts'),
   recipients: (alertId: string) => db.collection('alerts').doc(alertId).collection('recipients'),
   departments: () => db.collection('departments'),
   categories: () => db.collection('categories'),
@@ -39,4 +40,5 @@ export const col = {
   systemLogs: () => db.collection('systemLogs'),
   settings: () => db.collection('settings').doc('app'),
   photos: () => db.collection('photos'),
+  smsOutbox: () => db.collection('smsOutbox'),
 };

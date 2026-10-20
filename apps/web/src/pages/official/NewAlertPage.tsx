@@ -1,5 +1,5 @@
-import { ALERT_TYPES, ALL_SUBURBS, broadcastAlertSchema, fieldErrors, LIMITS, SUBURBS, validateAlertExpiry, type AlertType } from '@civiclink/shared';
-import { Send } from 'lucide-react';
+import { ALERT_TYPES, ALL_SUBURBS, broadcastAlertSchema, fieldErrors, LIMITS, SUBURBS, validateAlertExpiry, validateAlertSchedule, type AlertType } from '@civiclink/shared';
+import { CalendarClock, Send } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackLink, Button, Card, cx, Field, Input, Notice, PageHeader, Select, Textarea } from '../../components/ui';
@@ -16,6 +16,9 @@ export function NewAlertPage() {
   const [message, setMessage] = useState('');
   const [targets, setTargets] = useState<string[]>([]);
   const [expires, setExpires] = useState(toLocalInput(Date.now() + 24 * 3600_000));
+  // FR-28: send now, or schedule for later.
+  const [later, setLater] = useState(false);
+  const [publishAt, setPublishAt] = useState(toLocalInput(Date.now() + 2 * 3600_000));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -28,18 +31,29 @@ export function NewAlertPage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const input = { type, title, message, targetSuburbs: targets, expiresAt: new Date(expires).getTime() };
+    const input = {
+      type, title, message, targetSuburbs: targets, expiresAt: new Date(expires).getTime(),
+      ...(later ? { publishAt: new Date(publishAt).getTime() } : {}),
+    };
     const parsed = broadcastAlertSchema.safeParse(input);
     const errs = parsed.success ? {} : fieldErrors(parsed.error);
     const expiryErr = validateAlertExpiry(input.expiresAt, Date.now());
     if (expiryErr) errs.expiresAt = expiryErr;
+    const scheduleErr = input.publishAt !== undefined ? validateAlertSchedule(input.publishAt, input.expiresAt, Date.now()) : null;
+    if (scheduleErr) errs.publishAt = scheduleErr;
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setBusy(true);
     setFormError(null);
     try {
       const res = await call('broadcastAlert', input);
-      navigate('/official/alerts', { state: { sent: `Alert sent to ${res.recipientCount} resident${res.recipientCount === 1 ? '' : 's'}` } });
+      navigate(res.scheduled ? '/official/alerts?tab=scheduled' : '/official/alerts', {
+        state: {
+          sent: res.scheduled
+            ? `Alert scheduled for ${new Date(publishAt).toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' })}`
+            : `Alert sent to ${res.recipientCount} resident${res.recipientCount === 1 ? '' : 's'}`,
+        },
+      });
     } catch (err) {
       const apiErr = err as { fields: Record<string, string>; message: string };
       setErrors(apiErr.fields ?? {});
@@ -74,7 +88,7 @@ export function NewAlertPage() {
           <form onSubmit={submit} className="space-y-4" noValidate>
             {formError && <Notice tone="error">{formError}</Notice>}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Type" htmlFor="type">
+              <Field label="Type" htmlFor="type" hint={type === 'EMERGENCY' ? 'Also sent by SMS to residents who opted in' : undefined}>
                 <Select id="type" value={type} onChange={(e) => setType(e.target.value as AlertType)}>
                   {ALERT_TYPES.map((t) => (
                     <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>
@@ -108,8 +122,24 @@ export function NewAlertPage() {
               </div>
               {errors.targetSuburbs && <p role="alert" className="mt-1 text-sm font-medium text-red-700">{errors.targetSuburbs}</p>}
             </fieldset>
-            <Button type="submit" busy={busy} icon={Send}>
-              Broadcast now
+            <fieldset className="space-y-2">
+              <legend className="mb-1.5 text-sm font-medium text-slate-800">When</legend>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="when" checked={!later} onChange={() => setLater(false)} /> Now
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="when" checked={later} onChange={() => setLater(true)} /> Schedule for later
+                </label>
+              </div>
+              {later && (
+                <Field label="Publish at" htmlFor="publishAt" error={errors.publishAt} hint="Residents see it, and get notified, from this time (within a few minutes)">
+                  <Input id="publishAt" type="datetime-local" value={publishAt} onChange={(e) => { setPublishAt(e.target.value); clear('publishAt'); }} invalid={!!errors.publishAt} />
+                </Field>
+              )}
+            </fieldset>
+            <Button type="submit" busy={busy} icon={later ? CalendarClock : Send}>
+              {later ? 'Schedule alert' : 'Broadcast now'}
             </Button>
           </form>
         </Card>

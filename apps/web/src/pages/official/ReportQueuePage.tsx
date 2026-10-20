@@ -1,15 +1,26 @@
-import { REPORT_STATUSES, SEVERITIES, toCsv, type ReportDoc } from '@civiclink/shared';
-import { Download, Search } from 'lucide-react';
+import { LIMITS, REPORT_STATUSES, SEVERITIES, toCsv, type ReportDoc, type UserDoc } from '@civiclink/shared';
+import { collection, query, where } from 'firebase/firestore';
+import { Download, Search, UserCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../../auth/AuthProvider';
 import { useCategories } from '../../components/domain';
-import { Button, Card, EmptyState, ErrorState, Input, LoadingState, PageHeader, Pill, Select, SeverityBadge, StatusBadge } from '../../components/ui';
+import { Button, Card, EmptyState, ErrorState, Input, LoadingState, Notice, PageHeader, Pill, Select, SeverityBadge, StatusBadge } from '../../components/ui';
+import { call } from '../../lib/api';
+import { db } from '../../lib/firebase';
 import { formatDateTime, STATUS_LABEL, timeAgo } from '../../lib/format';
-import type { WithId } from '../../lib/hooks';
+import { useLiveQuery, type WithId } from '../../lib/hooks';
 import { useDepartments, useStaffReports } from './useStaffReports';
 
-export function ReportTable({ reports, emptyText }: { reports: WithId<ReportDoc>[]; emptyText: string }) {
+/** FR-35: a report can join a bulk assignment when it is triaged (or escalated) and has no active task. */
+export const canAssign = (r: ReportDoc) => (r.status === 'UNDER_REVIEW' || r.status === 'ESCALATED') && !r.activeTaskId;
+
+interface Selection {
+  selected: Set<string>;
+  toggle: (id: string) => void;
+}
+
+export function ReportTable({ reports, emptyText, selection }: { reports: WithId<ReportDoc>[]; emptyText: string; selection?: Selection }) {
   const navigate = useNavigate();
   if (reports.length === 0) return <EmptyState title={emptyText} />;
   return (
@@ -17,6 +28,7 @@ export function ReportTable({ reports, emptyText }: { reports: WithId<ReportDoc>
       <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
           <tr>
+            {selection && <th className="w-8 px-3 py-2"><span className="sr-only">Select</span></th>}
             <th className="px-3 py-2 font-semibold">Reference</th>
             <th className="px-3 py-2 font-semibold">Category</th>
             <th className="px-3 py-2 font-semibold">Location</th>
@@ -36,6 +48,19 @@ export function ReportTable({ reports, emptyText }: { reports: WithId<ReportDoc>
               className="cursor-pointer hover:bg-slate-50 focus:bg-brand-50 focus:outline-none"
               data-testid="queue-row"
             >
+              {selection && (
+                <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  {canAssign(r) && (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${r.ref}`}
+                      checked={selection.selected.has(r.id)}
+                      onChange={() => selection.toggle(r.id)}
+                      className="size-4 rounded border-slate-300"
+                    />
+                  )}
+                </td>
+              )}
               <td className="px-3 py-2.5 font-mono text-xs font-semibold text-brand-800">{r.ref}</td>
               <td className="px-3 py-2.5">{r.categoryName}</td>
               <td className="px-3 py-2.5 text-slate-600">{r.suburb}</td>
@@ -56,6 +81,57 @@ export function ReportTable({ reports, emptyText }: { reports: WithId<ReportDoc>
   );
 }
 
+/** FR-35: assign the selected reports (one department) to one field worker in a single step. */
+function BulkAssignBar({ reports, onDone }: { reports: WithId<ReportDoc>[]; onDone: (message: string, failed: boolean) => void }) {
+  const departmentIds = [...new Set(reports.map((r) => r.departmentId))];
+  const departmentId = departmentIds.length === 1 ? departmentIds[0]! : null;
+  const workers = useLiveQuery<UserDoc>(
+    departmentId ? query(collection(db, 'users'), where('role', '==', 'FIELD_WORKER'), where('departmentId', '==', departmentId), where('isActive', '==', true)) : null,
+    `bulk-workers-${departmentId}`,
+  );
+  const [workerId, setWorkerId] = useState('');
+  const [busy, setBusy] = useState(false);
+  const tooMany = reports.length > LIMITS.bulkAssignMax;
+
+  const assign = async () => {
+    setBusy(true);
+    try {
+      const res = await call('assignReports', { reportIds: reports.map((r) => r.id), workerId });
+      const refOf = (id: string) => reports.find((r) => r.id === id)?.ref ?? id;
+      const worker = workers.data.find((w) => w.id === workerId)?.name ?? 'the worker';
+      const failed = res.failed.map((f) => `${refOf(f.reportId)}: ${f.message}`).join('; ');
+      onDone(`Assigned ${res.assigned.length} report${res.assigned.length === 1 ? '' : 's'} to ${worker}.${failed ? ` Not assigned: ${failed}` : ''}`, res.failed.length > 0);
+    } catch (err) {
+      onDone((err as Error).message, true);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-brand-50 p-3 ring-1 ring-brand-200" data-testid="bulk-assign">
+      <p className="text-sm font-semibold text-brand-900">{reports.length} selected</p>
+      {!departmentId ? (
+        <p className="text-sm text-slate-700">Select reports from one department to assign them together.</p>
+      ) : tooMany ? (
+        <p className="text-sm text-slate-700">Select at most {LIMITS.bulkAssignMax} reports at a time.</p>
+      ) : (
+        <>
+          <Select aria-label="Assign selected to" value={workerId} onChange={(e) => setWorkerId(e.target.value)} className="w-auto">
+            <option value="">Choose a field worker…</option>
+            {workers.data.map((w) => (
+              <option key={w.id} value={w.id}>{w.name}</option>
+            ))}
+          </Select>
+          <Button icon={UserCheck} busy={busy} disabled={!workerId} onClick={assign}>
+            Assign selected
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** FR-08: report queue with combined filters, reference search and CSV export (FR-26). */
 export function ReportQueuePage() {
   const { claims } = useSession();
@@ -68,6 +144,15 @@ export function ReportQueuePage() {
   const [department, setDepartment] = useState('');
   const [unassigned, setUnassigned] = useState(false);
   const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkResult, setBulkResult] = useState<{ message: string; failed: boolean } | null>(null);
+  const toggle = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const filtered = useMemo(() => {
     const term = search.trim().toUpperCase();
@@ -81,6 +166,9 @@ export function ReportQueuePage() {
         (!term || r.ref.includes(term) || r.suburb.toUpperCase().includes(term) || r.description.toUpperCase().includes(term)),
     );
   }, [reports.data, status, category, severity, department, unassigned, search]);
+
+  // Only reports still visible and still assignable count, so a live update cannot assign a stale selection.
+  const chosen = filtered.filter((r) => selected.has(r.id) && canAssign(r));
 
   const exportCsv = () => {
     const csv = toCsv(
@@ -156,10 +244,24 @@ export function ReportQueuePage() {
           </label>
         </div>
       </Card>
+      {bulkResult && (
+        <div className="mb-4" data-testid="bulk-result">
+          <Notice tone={bulkResult.failed ? 'warning' : 'success'}>{bulkResult.message}</Notice>
+        </div>
+      )}
+      {chosen.length > 0 && (
+        <BulkAssignBar
+          reports={chosen}
+          onDone={(message, failed) => {
+            setBulkResult({ message, failed });
+            setSelected(new Set());
+          }}
+        />
+      )}
       <Card>
         {reports.loading && <LoadingState />}
         {reports.error && <ErrorState error={reports.error} />}
-        {!reports.loading && <ReportTable reports={filtered} emptyText="No reports match these filters." />}
+        {!reports.loading && <ReportTable reports={filtered} emptyText="No reports match these filters." selection={{ selected, toggle }} />}
       </Card>
     </div>
   );

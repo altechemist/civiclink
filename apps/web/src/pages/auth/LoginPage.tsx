@@ -80,6 +80,11 @@ export function LoginPage() {
           <Link to="/register" className="font-semibold text-white underline">
             Create a resident account
           </Link>
+          <span className="mt-2 block">
+            <Link to="/transparency" className="font-semibold text-white underline">
+              See how the municipality is responding
+            </Link>
+          </span>
         </>
       }
     >

@@ -91,7 +91,7 @@ export function LocationPicker({
     <div className="space-y-2">
       <div className={`h-64 overflow-hidden rounded-xl ring-1 ${invalid ? 'ring-red-400' : 'ring-slate-300'}`}>
         <MapContainer center={[position.lat, position.lng]} zoom={14} className="h-full w-full" scrollWheelZoom={false}>
-          <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
+          <TileLayer url={TILE_URL} attribution={ATTRIBUTION} crossOrigin="anonymous" />
           <Marker position={[position.lat, position.lng]} icon={pinIcon} draggable eventHandlers={markerHandlers} opacity={value ? 1 : 0.55} />
           <ClickToMove onChange={onChange} />
           {value ? <Recenter to={value} /> : focus ? <Recenter to={focus} zoom={14} /> : null}
@@ -137,7 +137,7 @@ export function IncidentMap({ points, height = 'h-80', zoom = 13, center }: { po
   return (
     <div className={`${height} overflow-hidden rounded-xl ring-1 ring-slate-200`}>
       <MapContainer center={[c.lat, c.lng]} zoom={zoom} className="h-full w-full">
-        <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
+        <TileLayer url={TILE_URL} attribution={ATTRIBUTION} crossOrigin="anonymous" />
         {points.map((p) => (
           <CircleMarker
             key={p.id}

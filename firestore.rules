@@ -76,6 +76,10 @@ service cloud.firestore {
         allow read: if (active() && request.auth.uid == uid) || isOfficial() || isAdmin();
       }
     }
+    // FR-28: alerts waiting for their publish time are visible to staff only; residents see them once published.
+    match /scheduledAlerts/{id} {
+      allow read: if isOfficial() || isAdmin();
+    }
     match /{path=**}/recipients/{uid} {
       allow read: if active() && resource.data.uid == request.auth.uid;
     }
@@ -83,6 +87,8 @@ service cloud.firestore {
     match /departments/{id} { allow read: if active(); }
     match /categories/{id} { allow read: if active(); }
     match /systemLogs/{id} { allow read: if isAdmin(); }
+    // FR-25: SMS records hold phone numbers; administrators only (POPIA, NFR-11).
+    match /smsOutbox/{id} { allow read: if isAdmin(); }
     match /settings/{id} { allow read: if active(); }
 
     // Counters and anything not listed above: no client access.

@@ -114,3 +114,15 @@ export function nearestSuburb(p: LatLng, maxMetres = 6000): Suburb | null {
 }
 
 export const distanceFromKimberley = (p: LatLng) => distanceMetres(p, KIMBERLEY_CENTRE);
+
+/** FR-25: South African mobile numbers (0821234567 or +27821234567) in the E.164 form SMS gateways expect. */
+export function toE164ZA(phone: string): string {
+  const digits = phone.replace(/\s+/g, '');
+  return digits.startsWith('0') ? `+27${digits.slice(1)}` : digits;
+}
+
+/** FR-25: one SMS segment (160 characters): "CivicLink EMERGENCY: <title>. <message>", shortened with an ellipsis. */
+export function smsAlertText(type: string, title: string, message: string, max = 160): string {
+  const text = `CivicLink ${type}: ${title.replace(/[.\s]+$/, '')}. ${message}`.replace(/\s+/g, ' ').trim();
+  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+}

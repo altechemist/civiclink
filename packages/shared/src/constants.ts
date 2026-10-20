@@ -97,6 +97,12 @@ export const LIMITS = {
   alertTitleMax: 100,
   alertMessageMax: 500,
   alertMaxDays: 30,
+  /** FR-28: earliest a scheduled alert may start. Sooner means "send now". */
+  alertScheduleMinMinutes: 10,
+  /** FR-35: reports per bulk assignment. */
+  bulkAssignMax: 20,
+  /** FR-37: free-text feedback with a rating. */
+  feedbackMax: 300,
   duplicateRadiusM: 100,
   duplicateWindowHours: 72,
   reopenWindowDays: 7,

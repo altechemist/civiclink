@@ -77,11 +77,15 @@ export const completeProfileSchema = z.object({
 });
 
 /** FR-31: residents update their own details; staff may update name and phone only. */
-export const updateProfileSchema = z.object({
-  name: z.string().trim().min(2, 'Enter your full name').max(80),
-  suburb: suburbSchema.optional(),
-  phone: phoneSchema,
-});
+export const updateProfileSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Enter your full name').max(80),
+    suburb: suburbSchema.optional(),
+    phone: phoneSchema,
+    /** FR-25: residents opt in to emergency alerts by SMS (needs a mobile number). */
+    smsAlerts: z.boolean().optional(),
+  })
+  .refine((p) => !p.smsAlerts || !!p.phone, { path: ['phone'], message: 'Add a mobile number to get SMS alerts' });
 
 /** FR-32: deletion requires typing DELETE to confirm. */
 export const deleteAccountSchema = z.object({ confirm: z.literal('DELETE', { error: 'Type DELETE to confirm' }) });
@@ -98,12 +102,20 @@ export const submitReportSchema = z.object({
   landmark: z.string().trim().max(LIMITS.landmarkMax).optional(),
   severity: z.enum(SEVERITIES),
   photos: z.array(photoInputSchema).max(LIMITS.photosMax, `At most ${LIMITS.photosMax} photos`).default([]),
+  /** FR-27: random id chosen by the device, so a report re-sent after a lost connection is stored once. */
+  clientId: z.string().regex(/^[A-Za-z0-9-]{8,64}$/, 'Invalid client id').optional(),
 });
 
 export const triageReportSchema = z.object({ reportId: id, departmentId: id.optional() });
 export const rejectReportSchema = z.object({ reportId: id, reason });
 export const escalateReportSchema = z.object({ reportId: id, reason });
 export const assignReportSchema = z.object({ reportId: id, workerId: id, notes: z.string().trim().max(500).optional() });
+/** FR-35: assign several triaged reports to one field worker at once. */
+export const assignReportsSchema = z.object({
+  reportIds: z.array(id).min(1, 'Select at least one report').max(LIMITS.bulkAssignMax, `At most ${LIMITS.bulkAssignMax} reports at a time`),
+  workerId: id,
+  notes: z.string().trim().max(500).optional(),
+});
 export const reassignTaskSchema = assignReportSchema;
 export const updateTaskSchema = z.object({ taskId: id, action: z.enum(['accept', 'start']) });
 export const completeTaskSchema = z.object({
@@ -118,7 +130,12 @@ export const completeTaskSchema = z.object({
     .min(1, 'Add at least one proof photo')
     .max(LIMITS.photosMax, `At most ${LIMITS.photosMax} photos`),
 });
-export const confirmResolutionSchema = z.object({ reportId: id });
+/** FR-14 + FR-37: confirming a fix, optionally rating the service (1–5) with a short comment. */
+export const confirmResolutionSchema = z.object({
+  reportId: id,
+  rating: z.number().int('Whole stars only').min(1).max(5).optional(),
+  feedback: z.string().trim().max(LIMITS.feedbackMax, `At most ${LIMITS.feedbackMax} characters`).optional(),
+});
 /** FR-24: a browser push subscription token for this device. */
 export const pushTokenSchema = z.object({ token: z.string().trim().min(20, 'Invalid push token').max(4096) });
 
@@ -140,6 +157,8 @@ export const broadcastAlertSchema = z
       .array(z.union([suburbSchema, z.literal(ALL_SUBURBS)]))
       .min(1, 'Choose at least one suburb or All'),
     expiresAt: z.number().int(), // epoch millis
+    /** FR-28: when to publish (epoch millis); omitted means now. */
+    publishAt: z.number().int().optional(),
   })
   .transform((a) => ({
     ...a,
@@ -153,7 +172,16 @@ export function validateAlertExpiry(expiresAt: number, now: number): string | nu
   return null;
 }
 
+/** FR-28 / BR-24: a scheduled alert starts at least 10 minutes and at most 30 days ahead, and before it expires. */
+export function validateAlertSchedule(publishAt: number, expiresAt: number, now: number): string | null {
+  if (publishAt < now + LIMITS.alertScheduleMinMinutes * 60_000) return `Schedule at least ${LIMITS.alertScheduleMinMinutes} minutes ahead, or send now`;
+  if (publishAt > now + LIMITS.alertMaxDays * 24 * 3600_000) return `Schedule within ${LIMITS.alertMaxDays} days`;
+  if (publishAt >= expiresAt) return 'The alert must start before it expires';
+  return null;
+}
+
 export const alertIdSchema = z.object({ alertId: id });
+export const scheduledAlertIdSchema = z.object({ scheduledId: id });
 
 export const createStaffUserSchema = z
   .object({
@@ -217,4 +245,12 @@ export function fieldErrors(error: z.ZodError): Record<string, string> {
     out[key] ??= issue.message;
   }
   return out;
+}
+
+/**
+ * NFR-14: the web app's Content Security Policy forbids `eval`. zod would otherwise probe it with
+ * `new Function` (caught, but reported as a CSP violation); jitless validation skips the probe.
+ */
+export function configureJitlessValidation() {
+  z.config({ jitless: true });
 }

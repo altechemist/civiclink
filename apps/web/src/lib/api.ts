@@ -1,7 +1,7 @@
 import type { CallableResults } from '@civiclink/shared';
 import { FirebaseError } from 'firebase/app';
 import { httpsCallable, httpsCallableFromURL } from 'firebase/functions';
-import { functions } from './firebase';
+import { functions, projectId, useEmulators } from './firebase';
 
 /** A command failure with an optional per-field message map for forms (NFR-03). */
 export class ApiError extends Error {
@@ -46,4 +46,14 @@ export async function call<K extends keyof CallableResults>(name: K, data: unkno
   } catch (err) {
     throw toApiError(err);
   }
+}
+
+/**
+ * FR-36: the public figures come from a plain GET (no sign-in) so the CDN can cache them (NFR-13):
+ * the Node API route when VITE_API_BASE is set, otherwise the Cloud Functions emulator.
+ */
+export function publicStatsUrl(): string {
+  if (API_BASE) return `${API_BASE.replace(/\/$/, '')}/public/stats`;
+  const host = useEmulators ? `http://${window.location.hostname || '127.0.0.1'}:5001` : `https://africa-south1-${projectId}.cloudfunctions.net`;
+  return useEmulators ? `${host}/${projectId}/africa-south1/publicStats` : `${host}/publicStats`;
 }

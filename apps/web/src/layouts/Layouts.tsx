@@ -1,3 +1,4 @@
+import { OutboxSync } from '../components/outbox';
 import {
   BarChart3,
   ClipboardList,
@@ -91,6 +92,8 @@ function MobileShell({ nav, accent }: { nav: NavItem[]; accent: 'brand' | 'field
 
 export function ResidentLayout() {
   return (
+    <>
+    <OutboxSync />
     <MobileShell
       accent="brand"
       nav={[
@@ -101,6 +104,7 @@ export function ResidentLayout() {
         { to: '/resident/alerts', label: 'Alerts', icon: Megaphone },
       ]}
     />
+    </>
   );
 }
 
