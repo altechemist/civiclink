@@ -2,7 +2,7 @@
 
 Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cited in the report appears in a test title, so `grep -r "<ID>"` finds the test. Results for the submitted commit are in its GitHub Actions run.
 
-**Total: 139 automated tests.**
+**Total: 140 automated tests.**
 
 ## Unit (Vitest): 30 tests
 
@@ -162,3 +162,9 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | NFT-07 | mobile layouts fit a 360 px screen | `tests/e2e/mobile.spec.ts` |
 | NFT-08 | accessibility of login, report form, my reports and queue | `tests/e2e/quality.spec.ts` |
 | NFT-06 | responsiveness: screens interactive < 3 s, p95 command < 2 s | `tests/e2e/quality.spec.ts` |
+
+## Installable PWA (Playwright, production build): 1 tests
+
+| ID | Scenario | File |
+|---|---|---|
+| NFT-10 | the production build is installable and opens offline (FR-34) | `tests/pwa/pwa.spec.ts` |

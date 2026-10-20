@@ -6,6 +6,12 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    files: ['apps/web/public/sw.js'],
+    languageOptions: {
+      globals: { self: 'readonly', caches: 'readonly', fetch: 'readonly', URL: 'readonly', importScripts: 'readonly', firebase: 'readonly', clients: 'readonly' },
+    },
+  },
+  {
     files: ['scripts/**/*.mjs', 'api/**/*.js'],
     languageOptions: { globals: { process: 'readonly', console: 'readonly' } },
   },

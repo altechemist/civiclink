@@ -9,6 +9,7 @@ SUITES = [
     ('Security rules (emulator)', 'tests/rules'),
     ('Cloud Functions integration (emulator)', 'functions/test'),
     ('End-to-end and non-functional (Playwright)', 'tests/e2e'),
+    ('Installable PWA (Playwright, production build)', 'tests/pwa'),
 ]
 TITLE = re.compile(r"""\b(?:it|test)\(\s*(['"`])((?:UT|RT|IT|E2E|NFT)-[A-Z0-9.-]+(?:\.\.[0-9]+)?)\s+(.+?)\1""")
 out = ['# Test Catalogue', '',

@@ -26,7 +26,8 @@
     "test:e2e:http": "npm run build -w functions && firebase emulators:exec --only auth,firestore,functions \"npm run seed && (node scripts/api-server.mjs &) && VITE_API_BASE=/api playwright test --project chromium\"",
     "seed:prod": "SEED_TARGET=prod tsx scripts/seed.ts",
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes --project prod",
-    "deploy:web": "npx -y vercel@62.4.0 deploy --prod --yes"
+    "deploy:web": "npx -y vercel@62.4.0 deploy --prod --yes",
+    "test:pwa": "playwright test --config playwright.pwa.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
