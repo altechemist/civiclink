@@ -4,7 +4,7 @@
  * callable API through Auth and Security Rules exactly like the web app.
  */
 import { deleteApp, initializeApp as initClient, type FirebaseApp } from 'firebase/app';
-import { connectAuthEmulator, getAuth as getClientAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { connectAuthEmulator, getAuth as getClientAuth, signInAnonymously, signInWithEmailAndPassword, type Auth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore as getClientDb, type Firestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions, httpsCallable, type Functions } from 'firebase/functions';
 import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
@@ -105,6 +105,7 @@ export async function createUser(u: NewUser): Promise<string> {
 
 export interface Session {
   uid: string;
+  auth: Auth;
   app: FirebaseApp;
   db: Firestore;
   functions: Functions;
@@ -131,6 +132,7 @@ export async function session(email?: string, password = DEFAULT_PASSWORD): Prom
   }
   return {
     uid,
+    auth,
     app,
     db,
     functions,
@@ -160,4 +162,13 @@ export async function expectCode(p: Promise<unknown>, code: string): Promise<{ m
     return e;
   }
   throw new Error(`Expected ${code} but the call succeeded`);
+}
+
+/** FR-39: an anonymous browser session that has started a guest profile (as the web app's "Report an issue"). */
+export async function guestSession(): Promise<Session> {
+  const s = await session();
+  const { user } = await signInAnonymously(s.auth);
+  await s.call('startGuestSession', {});
+  await user.getIdToken(true);
+  return { ...s, uid: user.uid };
 }

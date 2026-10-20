@@ -3,7 +3,7 @@ import { ArrowLeft, Clock, ShieldCheck, Smile, Wrench } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, ErrorState, LoadingState, Stat } from '../../components/ui';
-import { publicStatsUrl } from '../../lib/api';
+import { getPublic } from '../../lib/api';
 import { formatDateTime } from '../../lib/format';
 
 function Bars({ rows, testId }: { rows: [string, number][]; testId: string }) {
@@ -37,8 +37,7 @@ export default function TransparencyPage() {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    fetch(publicStatsUrl(), { signal: ctrl.signal })
-      .then((res) => (res.ok ? (res.json() as Promise<PublicStats>) : Promise.reject(new Error('The figures are unavailable right now. Please try again later.'))))
+    getPublic<PublicStats>('stats', ctrl.signal)
       .then(setData)
       .catch((err: Error) => err.name !== 'AbortError' && setError(err));
     return () => ctrl.abort();

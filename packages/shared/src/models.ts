@@ -12,6 +12,8 @@ export interface UserDoc {
   phone?: string | null;
   /** FR-25: opted in to emergency alerts by SMS. */
   smsAlerts?: boolean;
+  /** FR-39: a guest (anonymous sign-in) who has not created an account yet. */
+  isGuest?: boolean;
   role: Role;
   departmentId?: string | null;
   suburb?: string | null;
@@ -26,6 +28,8 @@ export interface Claims {
   dept?: string | null;
   suburb?: string | null;
   active: boolean;
+  /** FR-39: present (true) only for guest sessions. */
+  guest?: boolean;
 }
 
 export interface DepartmentDoc {
@@ -194,6 +198,13 @@ export interface PublicStats {
   satisfaction: { average: number | null; ratings: number };
 }
 
+/** FR-38: what is happening now, for the public home page (no personal data; locations ≈ 100 m). */
+export interface PublicFeed {
+  generatedAt: number;
+  openIssues: { id: string; ref: string; categoryId: string; categoryName: string; status: ReportStatus; location: LatLng; suburb: string; affectedCount: number; createdAt: number }[];
+  alerts: { id: string; type: AlertType; title: string; message: string; targetSuburbs: string[]; createdAt: number; expiresAt: number }[];
+}
+
 export interface AlertRecipientDoc {
   uid: string;
   alertId: string;
@@ -246,6 +257,11 @@ export interface CallableResults {
   addComment: { commentId: string };
   broadcastAlert: { alertId: string; recipientCount: number; scheduled: boolean };
   cancelScheduledAlert: { ok: true };
+  startGuestSession: { ok: true; created: boolean };
+  upgradeGuest: { ok: true };
+  startGuestTransfer: { code: string; expiresAt: number };
+  claimGuestReports: { moved: number };
+  sendTestSms: { status: 'SENT' | 'SIMULATED' | 'FAILED'; gateway: string; error?: string };
   deactivateAlert: { ok: true };
   markAlertRead: { ok: true };
   createStaffUser: { uid: string };

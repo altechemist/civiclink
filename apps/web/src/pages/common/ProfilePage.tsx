@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom';
 import { fieldErrors, SUBURBS, updateProfileSchema, type UserDoc } from '@civiclink/shared';
 import { BellRing, Save, Trash2 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -56,7 +57,9 @@ function PushCard() {
 
 /** FR-31 (own details) and FR-32 (POPIA account deletion for residents). */
 export function ProfilePage() {
-  const { profile } = useSession();
+  const { profile, claims } = useSession();
+  // FR-39: guests have no profile to edit yet; they are offered an account instead.
+  if (claims.guest) return <Navigate to="/account" replace />;
   // The editor copies the profile into form state, so wait until it has loaded.
   return profile ? <ProfileEditor profile={profile} /> : <LoadingState label="Loading your profile" />;
 }

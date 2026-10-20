@@ -101,6 +101,11 @@ export const LIMITS = {
   alertScheduleMinMinutes: 10,
   /** FR-35: reports per bulk assignment. */
   bulkAssignMax: 20,
+  /** FR-39 / BR-26: reports per guest session per rolling hour, and guest sessions per network address per hour. */
+  guestReportsPerHour: 3,
+  guestSessionsPerIpPerHour: 10,
+  /** FR-39: minutes a guest-to-account transfer code stays valid. */
+  guestTransferMinutes: 15,
   /** FR-37: free-text feedback with a rating. */
   feedbackMax: 300,
   duplicateRadiusM: 100,

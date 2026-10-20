@@ -79,10 +79,12 @@ export class ReportService {
     ]);
     const reporter = reporterSnap.data() as UserDoc;
     // BR-21: abuse prevention, at most N reports per resident per rolling hour (admin-configurable).
-    const perHour = (settingsSnap.data()?.reportsPerHour as number | undefined) ?? LIMITS.reportsPerHour;
+    const configured = (settingsSnap.data()?.reportsPerHour as number | undefined) ?? LIMITS.reportsPerHour;
+    // BR-26: guests (no account) get a lower limit, because a new guest session costs nothing.
+    const perHour = actor.isGuest ? Math.min(configured, LIMITS.guestReportsPerHour) : configured;
     const recent = await col.reports().where('reporterId', '==', actor.uid).where('createdAt', '>=', ts(this.clock() - 3600_000)).count().get();
     if (recent.data().count >= perHour) {
-      throw new DomainError('resource-exhausted', `You have submitted ${perHour} reports in the last hour. Please wait before reporting again.`);
+      throw new DomainError('resource-exhausted', `You have submitted ${perHour} reports in the last hour. Please wait before reporting again${actor.isGuest ? ', or create an account' : ''}.`);
     }
     const preDepartment = (categorySnapPre.data() as CategoryDoc | undefined)?.departmentId;
     const officialsOfDept = preDepartment ? await NotificationService.departmentOfficialsNow(preDepartment) : [];

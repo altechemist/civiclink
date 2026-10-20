@@ -9,7 +9,7 @@ import { COMMANDS } from './commands';
 import { command } from './lib/command';
 import { AlertService } from './services/alertService';
 import { MaintenanceService } from './services/maintenanceService';
-import { PublicStatsService } from './services/publicStatsService';
+import { PublicFeedService, PublicStatsService } from './services/publicStatsService';
 import { deliverPushes, withPushScope } from './services/pushService';
 
 // Johannesburg region keeps resident data in South Africa (POPIA, NFR-11).
@@ -20,6 +20,10 @@ export const createStaffUser = command(COMMANDS.createStaffUser);
 export const setUserRole = command(COMMANDS.setUserRole);
 export const completeProfile = command(COMMANDS.completeProfile);
 export const updateProfile = command(COMMANDS.updateProfile);
+export const startGuestSession = command(COMMANDS.startGuestSession);
+export const upgradeGuest = command(COMMANDS.upgradeGuest);
+export const startGuestTransfer = command(COMMANDS.startGuestTransfer);
+export const claimGuestReports = command(COMMANDS.claimGuestReports);
 export const deleteMyAccount = command(COMMANDS.deleteMyAccount);
 export const setUserActive = command(COMMANDS.setUserActive);
 export const submitReport = command(COMMANDS.submitReport);
@@ -41,6 +45,7 @@ export const broadcastAlert = command(COMMANDS.broadcastAlert);
 export const deactivateAlert = command(COMMANDS.deactivateAlert);
 export const cancelScheduledAlert = command(COMMANDS.cancelScheduledAlert);
 export const markAlertRead = command(COMMANDS.markAlertRead);
+export const sendTestSms = command(COMMANDS.sendTestSms);
 export const upsertDepartment = command(COMMANDS.upsertDepartment);
 export const upsertCategory = command(COMMANDS.upsertCategory);
 export const updateSettings = command(COMMANDS.updateSettings);
@@ -52,6 +57,11 @@ const publicStatsService = new PublicStatsService();
 export const publicStats = onRequest({ cors: true }, async (_req, res) => {
   res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
   res.json(await publicStatsService.get());
+});
+const publicFeedService = new PublicFeedService();
+export const publicFeed = onRequest({ cors: true }, async (_req, res) => {
+  res.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=60');
+  res.json(await publicFeedService.get());
 });
 
 // ---- Scheduled business rules (FR-13, FR-14, FR-28) ----

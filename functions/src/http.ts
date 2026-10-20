@@ -6,6 +6,7 @@
  *   POST /api/<command>          body {"data": …}, header Authorization: Bearer <Firebase ID token>
  *   GET  /api/cron/maintenance   header Authorization: Bearer <CRON_SECRET>   (SLA escalation, auto-close, scheduled alerts)
  *   GET  /api/public/stats       no sign-in; anonymous figures, cacheable by the CDN (FR-36, NFR-13)
+ *   GET  /api/public/feed        no sign-in; open issues (≈100 m) and active alerts for the home page (FR-38)
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
@@ -16,7 +17,7 @@ import { execute, type Caller } from './lib/command';
 import { auth } from './lib/firebase';
 import { AlertService } from './services/alertService';
 import { MaintenanceService } from './services/maintenanceService';
-import { PublicStatsService } from './services/publicStatsService';
+import { PublicFeedService, PublicStatsService } from './services/publicStatsService';
 import { writeLog } from './services/logService';
 import { deliverPushes, withPushScope } from './services/pushService';
 
@@ -62,7 +63,9 @@ async function verifyCaller(req: IncomingMessage): Promise<Caller | null> {
   if (!header.startsWith('Bearer ')) return null;
   try {
     const token = await auth.verifyIdToken(header.slice(7), true);
-    return { uid: token.uid, name: token.name as string | undefined };
+    // Vercel sets x-forwarded-for; the first address is the client's.
+    const forwarded = String(req.headers['x-forwarded-for'] ?? '').split(',')[0]!.trim();
+    return { uid: token.uid, name: token.name as string | undefined, ip: forwarded || req.socket.remoteAddress };
   } catch {
     throw new HttpsError('unauthenticated', 'Your session has expired. Please sign in again.');
   }
@@ -90,13 +93,16 @@ async function maintenance(req: IncomingMessage, res: ServerResponse) {
  */
 export const PUBLIC_STATS_CACHE = 'public, max-age=60, s-maxage=300, stale-while-revalidate=600';
 const publicStats = new PublicStatsService();
+/** FR-38: alerts must be fresh, so the public feed is cached for one minute only. */
+export const PUBLIC_FEED_CACHE = 'public, max-age=30, s-maxage=60, stale-while-revalidate=60';
+const publicFeed = new PublicFeedService();
 
-async function stats(req: IncomingMessage, res: ServerResponse) {
+async function publicJson(req: IncomingMessage, res: ServerResponse, load: () => Promise<unknown>, cache: string) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, { error: 'Use GET' });
-  const body = await publicStats.get();
+  const body = await load();
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', PUBLIC_STATS_CACHE);
+  res.setHeader('Cache-Control', cache);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.end(JSON.stringify(body));
 }
@@ -124,7 +130,8 @@ export async function handleHttp(req: IncomingMessage, res: ServerResponse) {
   if (req.method === 'OPTIONS') return send(res, 204, null);
   try {
     if (path.endsWith('/cron/maintenance')) return await maintenance(req, res);
-    if (path.endsWith('/public/stats')) return await stats(req, res);
+    if (path.endsWith('/public/stats')) return await publicJson(req, res, () => publicStats.get(), PUBLIC_STATS_CACHE);
+    if (path.endsWith('/public/feed')) return await publicJson(req, res, () => publicFeed.get(), PUBLIC_FEED_CACHE);
     const name = path.split('/').pop() as CommandName;
     const def = Object.prototype.hasOwnProperty.call(COMMANDS, name) ? COMMANDS[name] : undefined;
     if (!def) return sendError(res, new HttpsError('not-found', 'Unknown command'));

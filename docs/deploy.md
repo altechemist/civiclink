@@ -52,6 +52,8 @@ npx firebase deploy --only firestore:rules,firestore:indexes --project prod
 | `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_APP_ID` | from step 1.3 |
 | `FIREBASE_SERVICE_ACCOUNT` | contents of the key JSON (or `base64 -w0 key.json`) |
 | `CRON_SECRET` | a long random string (`openssl rand -hex 32`) |
+| `VITE_FIREBASE_VAPID_KEY` | Web Push public key (Firebase console → Project settings → Cloud Messaging → Web Push certificates); not secret |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | optional, sensitive: real SMS for emergency alerts (FR-25). Without them SMS are recorded as SIMULATED |
 
 3. Deploy. The API region is Cape Town (`cpt1`, in `vercel.json`).
 
@@ -62,6 +64,21 @@ Repository → Settings → Secrets and variables → Actions:
 - Variable `APP_URL`: `https://<your-app>.vercel.app`.
 
 The workflow `.github/workflows/cron.yml` then calls `/api/cron/maintenance` every hour. You can also run it manually with *Run workflow*.
+
+## 4a. SMS with Twilio (optional, FR-25)
+
+1. Create a Twilio account (a free trial works). From the Console home copy the **Account SID** and **Auth Token**.
+2. Get a sender: buy/claim a Twilio phone number (trial accounts get one free) and use it in E.164 form, e.g. `+15005550006`.
+3. Trial accounts can only send to **verified** numbers: Console → Phone Numbers → Verified Caller IDs → add your phone. Trial messages start with "Sent from your Twilio trial account".
+4. Check that SMS to South Africa (+27) is enabled: Console → Messaging → Settings → Geo permissions.
+5. Add the three variables to Vercel as sensitive values and redeploy:
+   ```bash
+   printf '%s' 'ACxxxxxxxx' | npx vercel@62.4.0 env add TWILIO_ACCOUNT_SID production --sensitive --yes --force
+   printf '%s' '<auth token>' | npx vercel@62.4.0 env add TWILIO_AUTH_TOKEN production --sensitive --yes --force
+   printf '%s' '+1xxxxxxxxxx' | npx vercel@62.4.0 env add TWILIO_FROM production --sensitive --yes --force
+   npm run deploy:web
+   ```
+6. Verify: sign in as the administrator → System log → SMS outbox → **Send test SMS** to your verified number. The row shows SENT (Twilio) and the phone receives it; FAILED shows Twilio's reason.
 
 ## 5. Demo data
 

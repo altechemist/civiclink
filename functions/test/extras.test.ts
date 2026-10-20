@@ -176,3 +176,41 @@ describe('SMS alerts (FR-25, BR-25)', () => {
     expect((await adminDb.collection('smsOutbox').where('uid', '==', w.resident.uid).get()).size).toBe(0);
   });
 });
+
+describe('SMS gateway (FR-25, Twilio)', () => {
+  it('IT-SMS-04 an administrator can send a test SMS (simulated without credentials); others cannot', async () => {
+    const res = await w.admin.call('sendTestSms', { to: '0831112222' });
+    expect(res).toMatchObject({ status: 'SIMULATED', gateway: 'simulated' });
+    await expectCode(w.officialWater.call('sendTestSms', { to: '0831112222' }), 'permission-denied');
+    await expectCode(w.admin.call('sendTestSms', { to: '12345' }), 'invalid-argument');
+  });
+  it('IT-SMS-05 with Twilio credentials, messages go to Twilio’s REST API in the documented form; errors are recorded', async () => {
+    const env = { ...process.env };
+    const realFetch = globalThis.fetch;
+    const calls: { url: string; auth: string; body: URLSearchParams }[] = [];
+    let fail = false;
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      if (!String(url).startsWith('https://api.twilio.com/')) return realFetch(url, init);
+      calls.push({ url: String(url), auth: (init?.headers as Record<string, string>).Authorization ?? '', body: init?.body as URLSearchParams });
+      return fail
+        ? new Response(JSON.stringify({ message: 'The To number is not verified' }), { status: 400 })
+        : new Response(JSON.stringify({ sid: 'SM0123456789' }), { status: 201 });
+    }) as typeof fetch;
+    Object.assign(process.env, { TWILIO_ACCOUNT_SID: 'ACtest', TWILIO_AUTH_TOKEN: 'secret-token', TWILIO_FROM: '+15005550006' });
+    setSmsGateway(null);
+    try {
+      const ok = await http(w.admin, 'sendTestSms', { to: '0831112222' });
+      expect(ok).toMatchObject({ status: 'SENT', gateway: 'twilio' });
+      expect(calls[0]!.url).toBe('https://api.twilio.com/2010-04-01/Accounts/ACtest/Messages.json');
+      expect(calls[0]!.auth).toBe(`Basic ${Buffer.from('ACtest:secret-token').toString('base64')}`);
+      expect(Object.fromEntries(calls[0]!.body)).toEqual({ To: '+27831112222', From: '+15005550006', Body: 'CivicLink test: SMS alerts are working.' });
+      fail = true;
+      const bad = await http(w.admin, 'sendTestSms', { to: '0831112222' });
+      expect(bad).toMatchObject({ status: 'FAILED', error: 'The To number is not verified' });
+    } finally {
+      globalThis.fetch = realFetch;
+      process.env = env;
+      setSmsGateway(null);
+    }
+  });
+});

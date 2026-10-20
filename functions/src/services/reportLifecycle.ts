@@ -14,7 +14,7 @@ import { col, ts } from '../lib/firebase';
 import { NotificationService, STATUS_LABEL } from './notificationService';
 
 export type ReportWithId = ReportDoc & { id: string };
-export const SYSTEM_ACTOR: Actor = { uid: 'system', role: 'ADMIN', name: 'CivicLink system', departmentId: null, suburb: null };
+export const SYSTEM_ACTOR: Actor = { uid: 'system', role: 'ADMIN', name: 'CivicLink system', departmentId: null, suburb: null, isGuest: false };
 
 export async function getReport(tx: Transaction, reportId: string): Promise<{ ref: DocumentReference; report: ReportWithId }> {
   const ref = col.reports().doc(reportId);

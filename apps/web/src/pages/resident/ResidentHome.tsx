@@ -2,11 +2,11 @@ import type { ReportDoc } from '@civiclink/shared';
 import { OPEN_REPORT_STATUSES } from '@civiclink/shared';
 import { collection, orderBy, query, where } from 'firebase/firestore';
 import { ChevronRight, Megaphone, PlusCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useSession } from '../../auth/AuthProvider';
 import { OutboxCard } from '../../components/outbox';
 import { InstallButton } from '../../components/pwa';
-import { ErrorState, LoadingState, Stat } from '../../components/ui';
+import { ErrorState, LoadingState, Notice, Stat } from '../../components/ui';
 import { db } from '../../lib/firebase';
 import { useLiveQuery } from '../../lib/hooks';
 import { AlertCard } from './AlertsFeedPage';
@@ -15,6 +15,7 @@ import { useResidentAlerts } from './useResidentAlerts';
 
 export function ResidentHome() {
   const { uid, profile, claims } = useSession();
+  const notice = (useLocation().state as { notice?: string } | null)?.notice;
   const reports = useLiveQuery<ReportDoc>(
     query(collection(db, 'reports'), where('reporterId', '==', uid), orderBy('createdAt', 'desc')),
     `my-reports-${uid}`,
@@ -25,6 +26,7 @@ export function ResidentHome() {
 
   return (
     <div className="space-y-6">
+      {notice && <Notice tone="success">{notice}</Notice>}
       <div>
         <p className="text-sm text-slate-600">Dumela · Molo · Hallo</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">{profile?.name?.split(' ')[0] ?? 'Welcome'}</h1>
@@ -58,7 +60,7 @@ export function ResidentHome() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-slate-900">
-              <Megaphone className="size-4" aria-hidden /> Alerts for {claims.suburb}
+              <Megaphone className="size-4" aria-hidden /> Alerts for {claims.suburb ?? 'all areas'}
             </h2>
             <Link to="/resident/alerts" className="text-sm font-medium text-brand-700">
               See all

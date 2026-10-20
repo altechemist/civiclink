@@ -2,7 +2,7 @@ import type { SmsDoc, SystemLogDoc } from '@civiclink/shared';
 import { collection, limit, orderBy, query } from 'firebase/firestore';
 import { MessageSquareText, PlayCircle, ScrollText } from 'lucide-react';
 import { useState } from 'react';
-import { Button, Card, EmptyState, ErrorState, LoadingState, Notice, PageHeader, Pill } from '../../components/ui';
+import { Button, Card, EmptyState, ErrorState, Input, LoadingState, Notice, PageHeader, Pill } from '../../components/ui';
 import { call } from '../../lib/api';
 import { db } from '../../lib/firebase';
 import { formatDateTime } from '../../lib/format';
@@ -15,6 +15,28 @@ export function LogsPage() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [testTo, setTestTo] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ tone: 'success' | 'warning' | 'error'; text: string } | null>(null);
+  const sendTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await call('sendTestSms', { to: testTo });
+      setTestResult(
+        r.status === 'SENT'
+          ? { tone: 'success', text: `Sent through ${r.gateway}. Check the phone.` }
+          : r.status === 'SIMULATED'
+            ? { tone: 'warning', text: 'Recorded as SIMULATED: no SMS gateway is configured (see docs/deploy.md, Twilio).' }
+            : { tone: 'error', text: `Failed: ${r.error}` },
+      );
+    } catch (err) {
+      setTestResult({ tone: 'error', text: (err as Error).message });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const runNow = async () => {
     setBusy(true);
@@ -60,6 +82,13 @@ export function LogsPage() {
         <p className="mb-3 text-xs text-slate-500">
           Emergency alerts to residents who opted in to SMS. "Simulated" means no SMS gateway is configured, so the message was recorded but not sent.
         </p>
+        <div className="mb-3 flex flex-wrap items-end gap-2">
+          <Input aria-label="Test SMS number" placeholder="0821234567" type="tel" value={testTo} onChange={(e) => setTestTo(e.target.value)} className="w-full sm:w-48" />
+          <Button variant="secondary" busy={testing} disabled={!testTo} onClick={sendTest}>
+            Send test SMS
+          </Button>
+        </div>
+        {testResult && <div className="mb-3" data-testid="sms-test-result"><Notice tone={testResult.tone}>{testResult.text}</Notice></div>}
         {sms.error && <ErrorState error={sms.error} />}
         {!sms.loading && sms.data.length === 0 && <p className="text-sm text-slate-500">No SMS yet.</p>}
         <ul className="divide-y divide-slate-100" data-testid="sms-outbox">

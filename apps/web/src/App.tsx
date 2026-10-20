@@ -1,9 +1,9 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, HOME, useAuth } from './auth/AuthProvider';
 import { RequireRole } from './auth/RequireRole';
 import { OfflineBanner } from './components/pwa';
-import { LoadingState } from './components/ui';
+import { LoadingState, Notice } from './components/ui';
 import { ResidentLayout, RoleShell, StaffLayout, WorkerLayout } from './layouts/Layouts';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
@@ -13,6 +13,7 @@ import { NotFoundPage } from './pages/common/NotFoundPage';
 import { ResidentHome } from './pages/resident/ResidentHome';
 import { NewReportPage } from './pages/resident/NewReportPage';
 import { MyReportsPage } from './pages/resident/MyReportsPage';
+import { GuestAccountPage } from './pages/resident/GuestAccountPage';
 import { ResidentReportPage } from './pages/resident/ResidentReportPage';
 import { AlertsFeedPage } from './pages/resident/AlertsFeedPage';
 
@@ -31,12 +32,40 @@ const LogsPage = lazy(() => import('./pages/admin/LogsPage').then((m) => ({ defa
 const CommunityMapPage = lazy(() => import('./pages/common/CommunityMapPage'));
 const AnalyticsPage = lazy(() => import('./pages/official/AnalyticsPage'));
 const TransparencyPage = lazy(() => import('./pages/public/TransparencyPage'));
+const PublicHomePage = lazy(() => import('./pages/public/PublicHomePage'));
+
+/**
+ * FR-39: /report is the one link for "report a problem": signed-in residents go straight to the form,
+ * visitors get a guest session first. Other roles go to their own home.
+ */
+function ReportEntry() {
+  const { session, loading, startGuest } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
+  useEffect(() => {
+    if (loading || session || started.current) return;
+    started.current = true;
+    startGuest().catch((err: Error) => setError(err.message));
+  }, [loading, session, startGuest]);
+  if (session) return <Navigate to={session.claims.role === 'RESIDENT' ? '/resident/report/new' : HOME[session.claims.role]} replace />;
+  if (error)
+    return (
+      <div className="mx-auto max-w-md p-6">
+        <Notice tone="error">{error}</Notice>
+        <Link to="/login" className="mt-3 inline-block font-semibold text-brand-700 hover:underline">
+          Sign in instead
+        </Link>
+      </div>
+    );
+  return <LoadingState full label="Getting the report form ready" />;
+}
 
 function Home() {
   const { session, loading, pendingProfile } = useAuth();
   if (loading) return <LoadingState full />;
   if (pendingProfile) return <Navigate to="/welcome" replace />;
-  return <Navigate to={session ? HOME[session.claims.role] : '/login'} replace />;
+  // FR-38: signed-out visitors land on the public "what's happening" page.
+  return session ? <Navigate to={HOME[session.claims.role]} replace /> : <PublicHomePage />;
 }
 
 export function App() {
@@ -51,6 +80,7 @@ export function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/welcome" element={<WelcomePage />} />
             <Route path="/transparency" element={<TransparencyPage />} />
+            <Route path="/report" element={<ReportEntry />} />
 
             <Route element={<RequireRole roles="any" />}>
               <Route element={<RoleShell />}>
@@ -65,6 +95,7 @@ export function App() {
                 <Route path="/resident/reports" element={<MyReportsPage />} />
                 <Route path="/resident/reports/:id" element={<ResidentReportPage />} />
                 <Route path="/resident/alerts" element={<AlertsFeedPage />} />
+                <Route path="/account" element={<GuestAccountPage />} />
               </Route>
             </Route>
 
