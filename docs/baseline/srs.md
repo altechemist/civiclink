@@ -70,7 +70,8 @@ Supporting: reassignment, escalation (manual + SLA-automatic), resident reopen/c
 
 | Area | Limitation | Impact | Status / workaround |
 |---|---|---|---|
-| Notifications (FR-15) | In-app only; residents must open the app to see updates (no push or SMS) | A resident who does not open CivicLink is not alerted | FR-24 (FCM push) and FR-25 (SMS) deferred |
+| Notifications (FR-24) | Push is best-effort and per device; on iPhone it works only once CivicLink is installed to the home screen (iOS 16.4+) | A resident who has not turned push on sees updates only in the app | In-app notifications remain the guaranteed channel; SMS (FR-25) deferred |
+| Offline (FR-34) | Offline mode is read-only: new reports cannot be queued offline | A resident without signal must report later | Offline drafts (FR-27) deferred |
 | Scheduled rules (FR-13, FR-14) | The emulator does not fire schedules on its own | In the local demo, escalation and auto-close run when an admin presses "Run SLA & auto-close now" | Deployed Cloud Scheduler runs them hourly/daily |
 | Alert broadcast (FR-16) | Recipient records are written in batches after the alert document, so they are not one atomic unit | A crash mid-broadcast could leave `recipientCount` higher than the stored delivery records | Acceptable at municipal scale; recipients can be re-derived from the suburb query |
 | Location (FR-03) | No reverse geocoding; address = suburb + optional landmark | Officials rely on the map pin and landmark text | Deliberate (ADR-0004) |
@@ -105,7 +106,7 @@ Priority uses MoSCoW. Release status is *Planned* until the freeze, then becomes
 | FR-21 | The system shall allow an Administrator to manage departments (name, SLA hours, active) and categories (name, default department, active). | Admin | Should | Included | BR-19 |
 | FR-22 | The system shall allow Officials and Field Workers to add internal comments to a report that residents cannot see. | Official, Field Worker | Could | Included | BR-18 |
 | FR-23 | The system shall record significant system events (function errors, admin actions) and show them to Administrators. | Admin | Could | Included | — |
-| FR-24 | The system shall send web push notifications (FCM) for status changes and alerts. | System | Could | Deferred | — |
+| FR-24 | The system shall send web push notifications (FCM) for status changes, task assignments and suburb alerts to devices where the user has turned them on. | System | Could | Included | — |
 | FR-25 | The system shall send SMS alerts to residents without data access. | System | Won't (this release) | Deferred | — |
 | FR-26 | The system shall allow an Official to export the filtered report queue as CSV. | Official | Could | Included | — |
 | FR-27 | The system shall let residents draft reports offline and submit when connectivity returns. | Resident | Won't (this release) | Deferred | — |
@@ -114,6 +115,8 @@ Priority uses MoSCoW. Release status is *Planned* until the freeze, then becomes
 | FR-30 | The system shall allow users to request a password-reset email without revealing whether an account exists. | All | Should | Included | — |
 | FR-31 | The system shall allow users to update their name and phone number, and residents their suburb. | All | Should | Included | BR-14, BR-16 |
 | FR-32 | The system shall allow a Resident to delete their account; personal data is erased and their reports are kept anonymised. | Resident | Should | Included | BR-22 |
+| FR-33 | The system shall allow a Resident to confirm an existing open issue from the community map ("Me too"), raising its affected count and following its progress. | Resident | Should | Included | BR-23 |
+| FR-34 | The system shall be installable on a phone's home screen and shall open, with previously viewed information, without a connection. | All | Should | Included | — |
 
 ## 5. Non-functional requirements
 
@@ -159,6 +162,7 @@ All are verified in the assessment environment: local Firebase Emulator Suite, s
 | BR-19 | Inactive departments and categories cannot be selected for new reports or assignments. Existing records keep their reference. |
 | BR-20 | Officials may triage, assign and escalate reports only for their own department. Admins may act on any department. |
 | BR-21 | A resident may submit at most N reports in any rolling hour (N set by an Administrator, 1–100, default 10). |
+| BR-23 | A resident may confirm ("Me too") an issue once, only while it is open, and not their own report. |
 | BR-22 | When a resident deletes their account, their name, email, phone, photos, notifications, alert receipts, profile and sign-in are erased. Their reports are retained for service records with the reporter replaced by "Former resident". Staff accounts are deactivated, never self-deleted. |
 
 ### Critical transactions (integrity rules)
@@ -232,6 +236,12 @@ Task: ASSIGNED → ACCEPTED → IN_PROGRESS → COMPLETED. Any active state goes
 **FR-23 System log.** Administrative actions (account, role, configuration and settings changes), scheduled runs and unexpected server errors are recorded with level, source, time and actor. Only Administrators can view the log. Entries are never edited.
 
 **FR-26 CSV export.** The export contains exactly the reports matching the current queue filters and search, with reference, category, department, suburb, severity, status, assignee, affected count and submitted/resolved times. Values with commas, quotes or line breaks are quoted correctly. The button is disabled when no reports match.
+
+**FR-24 Web push.** On a supported browser with notifications allowed, turning push on registers this device. A committed status change, new task or suburb alert produces one notification per device, and clicking it opens the related screen. A command that fails sends nothing. Turning push off, or deleting the account, removes the device. The option is hidden where push is unavailable.
+
+**FR-33 Me too.** From the map popup of an open issue, a resident confirms it once: the affected count increases, they follow its progress, and the timeline notes the confirmation. A repeat says "already confirmed". Their own report, closed issues and staff callers are refused.
+
+**FR-34 Installable and offline.** The browser offers to install CivicLink (manifest with name, icons and standalone display). With no connection, the app opens, previously viewed reports and alerts still show, and an offline notice explains that new reports need a connection (Submit is disabled).
 
 **FR-29 Google sign-in.** "Continue with Google" signs the user in. A first-time user is sent to a profile step, which needs a name and a suburb. The account is always created as a Resident. An existing profile cannot be re-created.
 

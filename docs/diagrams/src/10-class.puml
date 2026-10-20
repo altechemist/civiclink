@@ -77,6 +77,9 @@ package "Domain entities (shared models → Firestore documents)" {
   class Comment <<reports/{id}/comments>> {
     authorId, authorRole, text, createdAt
   }
+  class PushToken <<users/{uid}/pushTokens>> {
+    uid, token, createdAt
+  }
   class Settings <<settings/app>> {
     reportsPerHour: int
   }
@@ -129,6 +132,7 @@ package "Application services (functions/src/services)" {
     +reassign(input, actor)
     +confirm(reportId, actor)
     +reopen(input, actor)
+    +affirm(reportId, actor)
   }
   class TaskService {
     +update(input, actor)
@@ -186,6 +190,12 @@ package "Application services (functions/src/services)" {
   class CallableAdapter <<index.ts, Cloud Functions>> {
     +command(def): onCall
   }
+  class pushService <<module>> {
+    +recordPush(intent)
+    +withPushScope(fn): {result, intents}
+    +deliverPushes(intents)
+    +PushTokens.register / unregister
+  }
   class photoService <<module>> {
     +decodePhotos(inputs, field): DecodedPhoto[]
     +writePhotos(tx, photos, meta, now): ids
@@ -206,6 +216,7 @@ Report "0..*" --> "1" Department
 Alert "1" *-- "0..*" AlertRecipient
 User "1" -- "0..*" AlertRecipient
 User "1" *-- "0..*" Notification
+User "1" *-- "0..*" PushToken : devices >
 User "1" -- "0..*" Alert : creates >
 
 HttpAdapter ..> CommandRegistry
@@ -222,6 +233,8 @@ TaskService ..> ReportLifecycle
 MaintenanceService ..> ReportLifecycle
 ReportLifecycle ..> ReportStateMachine
 ReportLifecycle ..> NotificationService
+NotificationService ..> pushService : records intents
+CommandRegistry ..> pushService : flush after commit
 TaskService ..> TaskStateMachine
 ReportService ..> DuplicatePolicy
 ReportService ..> photoService
