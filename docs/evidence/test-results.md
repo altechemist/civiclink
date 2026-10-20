@@ -1,4 +1,4 @@
-Run 2026-10-20 07:54 UTC on commit `bb56ab4`: **143 of 143 passed**.
+Run 2026-10-20 09:15 UTC on commit `0f52054`: **173 of 173 passed**.
 
 Table: Complete automated test results
 
@@ -23,6 +23,16 @@ Table: Complete automated test results
 | UT-ANL-02 | empty input yields nulls, not NaN | Unit | Pass |
 | UT-CSV-01 | CSV quoting | Unit | Pass |
 | UT-LOC-01 | municipal bounds and nearest suburb | Unit | Pass |
+| UT-ALS-01 | publish time must be 10 min to 30 days ahead and before expiry | Unit | Pass |
+| UT-ALS-02 | publishAt is optional in the broadcast schema | Unit | Pass |
+| UT-OFF-01 | clientId is optional and limited to a safe id format | Unit | Pass |
+| UT-BLK-01 | one to 20 reports per batch | Unit | Pass |
+| UT-RAT-01 | ratings are whole stars from 1 to 5, with optional short feedback | Unit | Pass |
+| UT-RAT-02 | average to one decimal; no ratings gives null; invalid values ignored | Unit | Pass |
+| UT-PUB-01 | open reports per suburb exclude closed, rejected and duplicate reports | Unit | Pass |
+| UT-SMS-01 | South African numbers convert to E.164 | Unit | Pass |
+| UT-SMS-02 | SMS text fits one 160-character segment | Unit | Pass |
+| UT-SMS-03 | opting in to SMS requires a mobile number | Unit | Pass |
 | UT-SCH-01 | description boundaries 9/10/300/301 | Unit | Pass |
 | UT-SCH-02 | photo count 0/3/4 and file size and type | Unit | Pass |
 | UT-SCH-03 | location inside / outside municipal bounding box | Unit | Pass |
@@ -51,6 +61,8 @@ Table: Complete automated test results
 | RT-ALR-01 | signed-in users read alerts; nobody writes them directly | Security rules | Pass |
 | RT-ALR-02 | residents read only their own delivery record; officials read all | Security rules | Pass |
 | RT-CFG-01 | configuration is readable, never client-writable; counters and logs locked | Security rules | Pass |
+| RT-ALS-01 | scheduled alerts are visible to staff only until published; nobody writes them directly (FR-28) | Security rules | Pass |
+| RT-SMS-01 | SMS records (phone numbers) are readable by administrators only (FR-25, NFR-11) | Security rules | Pass |
 | RT-PHO-01 | report photos and proof are visible to the reporter, followers and staff with access (BR-17) | Security rules | Pass |
 | RT-PHO-02 | other users cannot read photos, and nobody writes them directly | Security rules | Pass |
 | IT-AUTH-04 | completeProfile creates a RESIDENT profile and claims once | Integration | Pass |
@@ -82,6 +94,18 @@ Table: Complete automated test results
 | IT-CFG-03 | categories link to an existing department and can be deactivated | Integration | Pass |
 | IT-CFG-04 | non-admins cannot change configuration | Integration | Pass |
 | IT-ANL-01 | metrics reflect live data and are restricted to officials and admins | Integration | Pass |
+| IT-OFF-01 | a report re-sent with the same clientId is stored once and returns the same reference | Integration | Pass |
+| IT-OFF-02 | another resident cannot reuse a clientId to read someone else’s report; malformed ids are refused | Integration | Pass |
+| IT-SCH-01 | a scheduled alert is invisible until due, then published once with the same id | Integration | Pass |
+| IT-SCH-02 | invalid times are refused; a cancelled alert is never published | Integration | Pass |
+| IT-BLK-01 | assigns every eligible report and reports the rest without blocking them | Integration | Pass |
+| IT-BLK-02 | other departments, residents and oversized batches are refused | Integration | Pass |
+| IT-RAT-01 | the reporter rates the fix when confirming; out-of-range ratings are refused | Integration | Pass |
+| IT-PUB-01 | anyone can GET anonymous figures, with CDN cache headers | Integration | Pass |
+| IT-PUB-02 | the figures are only readable, not writable | Integration | Pass |
+| IT-SMS-01 | emergency alerts are queued by SMS for opted-in residents only; other types are not | Integration | Pass |
+| IT-SMS-02 | a gateway failure is recorded per message and logged, and does not fail the alert | Integration | Pass |
+| IT-SMS-03 | removing the number ends the opt-in; deleting the account deletes the SMS records | Integration | Pass |
 | IT-HTTP-01 | a resident submits a report through the HTTP API | Integration | Pass |
 | IT-HTTP-02 | authentication, roles and validation behave exactly as with Cloud Functions | Integration | Pass |
 | IT-HTTP-03 | unknown commands and wrong methods are refused | Integration | Pass |
@@ -145,5 +169,11 @@ Table: Complete automated test results
 | E2E-11 | "Me too" from the community map raises the affected count (FR-33, BR-23) | E2E (chromium) | Pass |
 | NFT-08 | accessibility of login, report form, my reports and queue | E2E (chromium) | Pass |
 | NFT-06 | responsiveness: screens interactive < 3 s, p95 command < 2 s | E2E (chromium) | Pass |
+| E2E-12 | a report made offline is saved on the phone and sent automatically on reconnect (FR-27) | E2E (chromium) | Pass |
+| E2E-13 | an official schedules an alert for later and cancels it (FR-28) | E2E (chromium) | Pass |
+| E2E-14 | an official assigns several reports to one field worker at once (FR-35) | E2E (chromium) | Pass |
+| E2E-15 | the public transparency page works without signing in (FR-36) | E2E (chromium) | Pass |
 | NFT-07 | mobile layouts fit a 360 px screen | E2E (mobile-360) | Pass |
 | NFT-10 | the production build is installable and opens offline (FR-34) | PWA () | Pass |
+| NFT-11 | CDN caching: immutable assets, cached public figures, uncached app shell (NFR-13) | Deployed site (chromium) | Pass |
+| NFT-12 | security headers: CSP, HSTS, no framing, no sniffing (NFR-14) | Deployed site (chromium) | Pass |

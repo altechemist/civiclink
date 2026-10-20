@@ -4,6 +4,7 @@ title CivicLink: Logical Architecture
 
 actor "Resident /\nField Worker\n(mobile browser)" as M
 actor "Official /\nAdministrator\n(desktop browser)" as D
+actor "Public\n(no account)" as PUB
 
 package "Web client: apps/web (React SPA)" {
   [Role-guarded routes\n(RequireRole)] as Routes
@@ -12,6 +13,8 @@ package "Web client: apps/web (React SPA)" {
   [api.call()\n(typed callables)] as Api
   [Live hooks\n(onSnapshot)] as Hooks
   [Leaflet map /\nRecharts] as Viz
+  [Offline outbox\n(IndexedDB)] as Outbox
+  [Transparency page\n(public)] as Transp
 }
 
 package "Shared domain: packages/shared" as Shared {
@@ -24,7 +27,9 @@ package "Command API: functions/ (Node.js 22)" {
   [Adapters:\nhttp.ts on Vercel (deployed)\nindex.ts Cloud Functions (local)] as Adapt
   [commands.ts registry +\nexecute(): auth · role ·\nvalidation · errors] as Cmd
   [ReportService · TaskService ·\nAlertService · UserService ·\nConfigService · CommentService ·\nAnalyticsService · photoService] as Svc
-  [MaintenanceService\n(escalate, auto-close)] as Sched
+  [MaintenanceService\n(escalate, auto-close,\npublish scheduled alerts)] as Sched
+  [PublicStatsService\n(anonymous figures,\n1-min cache)] as Stats
+  [smsService\n(SmsGateway)] as Sms
 }
 package "Firebase (Spark plan; emulator locally)" {
   [Firebase Authentication\n(password + Google;\nclaims: role, dept, suburb, active)] as Auth
@@ -33,7 +38,9 @@ package "Firebase (Spark plan; emulator locally)" {
 [GitHub Actions hourly /\nVercel Cron daily] as Cron
 cloud "OpenStreetMap tiles" as OSM
 cloud "Firebase Cloud Messaging\n(web push)" as FCM
-[Service worker sw.js\n(offline shell, push display)] as SW
+[Service worker sw.js\n(offline shell, map tiles,\npush display)] as SW
+cloud "Vercel CDN\n(edge cache)" as CDN
+cloud "Twilio SMS\n(optional)" as TW
 
 M --> Routes
 D --> Routes
@@ -56,6 +63,15 @@ Sched --> FS
 Svc --> FCM : push after commit
 FCM --> SW : push event
 Pages ..> SW : registers (PWA)
+Pages --> Outbox : save offline
+Outbox --> Api : send on reconnect\n(clientId)
+PUB --> Transp
+Transp --> CDN : GET /api/public/stats
+CDN --> Adapt : on cache miss
+Adapt --> Stats
+Stats --> FS : aggregate reads
+Svc --> Sms
+Sms --> TW : emergency SMS
 Pages ..> Sch : client validation
 Svc ..> Sch : server validation
 Svc ..> SMs

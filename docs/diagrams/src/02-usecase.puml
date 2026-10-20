@@ -5,6 +5,7 @@ left to right direction
 skinparam packageStyle rectangle
 
 actor Resident as R
+actor "Public\n(no account)" as P
 actor "Scheduler\n(system clock)" as S
 
 rectangle CivicLink {
@@ -16,23 +17,27 @@ rectangle CivicLink {
     usecase "Submit incident report\n(FR-03, FR-04)" as UC3
     usecase "Detect duplicate (FR-05)" as UC4
     usecase "Track my reports (FR-06)" as UC5
-    usecase "Confirm / reopen\nresolution (FR-14)" as UC6
+    usecase "Confirm (with rating) /\nreopen resolution\n(FR-14, FR-37)" as UC6
     usecase "View community map (FR-07)" as UC7
     usecase "View suburb alerts (FR-17)" as UC8
     usecase "Receive notifications:\nin-app and push\n(FR-15, FR-24)" as UC9
     usecase "Me too: confirm an\nopen issue (FR-33)" as UC27
     usecase "Install app / use offline\n(FR-34)" as UC28
+    usecase "Save report offline,\nsend on reconnect (FR-27)" as UC29
+    usecase "Opt in to SMS for\nemergency alerts (FR-25)" as UC30
+    usecase "View transparency page\n(FR-36)" as UC31
   }
   package "Operations" {
     usecase "Manage report queue\n(FR-08, FR-26)" as UC13
     usecase "Triage / reject (FR-09)" as UC10
     usecase "Assign / reassign\nfield worker (FR-10, FR-12)" as UC11
+    usecase "Bulk-assign reports\n(FR-35)" as UC32
     usecase "Escalate report (FR-13)" as UC12
-    usecase "Broadcast alert (FR-16)" as UC14
+    usecase "Broadcast alert now or\nschedule / cancel;\nSMS for emergencies\n(FR-16, FR-28, FR-25)" as UC14
     usecase "Review alert delivery (FR-18)" as UC15
     usecase "View analytics (FR-19)" as UC16
     usecase "Add internal note (FR-22)" as UC17
-    usecase "Auto-escalate overdue /\nauto-close resolved\n(FR-13, FR-14)" as UC23
+    usecase "Auto-escalate overdue /\nauto-close resolved /\npublish scheduled alerts\n(FR-13, FR-14, FR-28)" as UC23
   }
   package "Field work" {
     usecase "Accept / start task (FR-11)" as UC18
@@ -64,13 +69,20 @@ R --> UC24
 R --> UC27
 R --> UC28
 R --> UC25
+R --> UC29
+R --> UC30
+R --> UC31
+P --> UC31
 S --> UC23
+UC3 <.. UC29 : <<extend>>
 
 UC2 <-- O
 UC24 <-- O
 UC13 <-- O
 UC10 <-- O
 UC11 <-- O
+UC32 <-- O
+UC32 .> UC11 : <<include>>
 UC12 <-- O
 UC14 <-- O
 UC15 <-- O

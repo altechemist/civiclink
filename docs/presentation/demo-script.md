@@ -17,10 +17,10 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
 ## Slides (≤ 5 min), see `CivicLink_Presentation.pptx`
 
 1. **Problem:** the 31 March strike; phone and WhatsApp reporting; no tracking; no alerts.
-2. **Solution and scope:** four roles; 31 of 34 requirements included (all 14 Must-haves); deferred items and why.
+2. **Solution and scope:** four roles; all 37 requirements included (all 14 Must-haves); four deferred at baseline were brought back by change requests once the core was verified.
 3. **Architecture:** React SPA → callable commands → transactions; Security Rules; shared domain package (Figure 9).
-4. **Two key decisions:** server-side commands with transactions (D1); free-tier deployment, with a Node API on Vercel and photos in Firestore (D3).
-5. **Verification:** 143 automated tests, CI green, NFR measurements, SC-01 to SC-05 all achieved.
+4. **Key decisions:** server-side commands with transactions (D1); free-tier deployment, with a Node API on Vercel and photos in Firestore (D3); offline outbox with idempotent submission (D5).
+5. **Verification:** 173 automated tests (all pass), CI green, NFR measurements, CDN/CSP checks on the live site, SC-01 to SC-05 all achieved.
 
 ## Principal workflow (≈ 5 min, 2 marks)
 
@@ -53,7 +53,7 @@ For every included requirement and rule: how to show it, and a failure case to s
 | FR-10 / BR-06 / BR-07 | Assign | The dropdown shows only active workers of that department; point to IT-ASG-07 (concurrent assigns → exactly one) |
 | FR-11 / BR-08 / BR-09 | Worker flow | Mark as resolved without notes or photo → field errors |
 | FR-12 | Reassign to Anele | The old worker's task shows "no longer yours"; completing it is refused |
-| FR-13 / BR-10 | Escalate with reason; or Admin → System log → **Run SLA & auto-close now** | Escalate with empty reason → error |
+| FR-13 / BR-10 | Escalate with reason; or Admin → System log → **Run scheduled rules now** | Escalate with empty reason → error |
 | FR-14 / BR-11 | Resident reopen with reason → back to Under review | Explain the 7-day window (IT-RES-03) and auto-close |
 | FR-15 | Bell badge updates live in another window | — |
 | FR-16 / BR-13 | Broadcast | No suburb chosen → "Choose at least one suburb"; title over 100 characters |
@@ -70,7 +70,14 @@ For every included requirement and rule: how to show it, and a failure case to s
 | FR-31 | Profile → change suburb → alerts feed follows | Phone "123" → error |
 | FR-24 | Phone with push on (Profile → Turn on) → official assigns the report → notification on the phone; tap opens the report | Push off → no notification, in-app bell still updates |
 | FR-33 / BR-23 | Resident: Map → tap an open issue → Me too → count rises | Tap again → "already confirmed"; own report → refused |
-| FR-34 | Phone: Install CivicLink → airplane mode → open the app → saved reports + offline notice | Report form → Submit disabled ("Waiting for a connection") |
+| FR-34 | Phone: Install CivicLink → airplane mode → open the app → saved reports + offline notice | Map shows only areas viewed before |
+| FR-27 | Airplane mode → Report → … → **Save and send later** → Home shows "Saved on this phone" → airplane mode off → "Your saved report was sent" with its reference | Explain the clientId: a resend after a lost response is stored once (IT-OFF-01) |
+| FR-28 / BR-24 | Official → New alert → Schedule for later → Scheduled tab → Cancel | Publish time 2 minutes ahead → "Schedule at least 10 minutes ahead"; locally publish with Admin → **Run scheduled rules now** |
+| FR-25 / BR-25 | Resident profile: number + "emergency alerts by SMS" → official broadcasts an Emergency alert → Admin → System log → SMS outbox shows SIMULATED | Opt in without a number → field error; a Water alert creates no SMS |
+| FR-35 | Queue → tick two reports under review → choose worker → Assign selected | One already assigned → listed with the reason, the rest still assigned |
+| FR-36 | Log out → "See how the municipality is responding" → public page | No names, descriptions or locations; figures cached ≤ 5 min (DevTools: `x-vercel-cache: HIT`) |
+| FR-37 | Resident confirms a fix with 4 stars → official sees "Resident rating: 4/5" | Rating is optional; 6 stars refused by the API |
+| NFR-13 / NFR-14 | DevTools → Network: assets `immutable`; Response headers: CSP, HSTS | Console shows no CSP violations |
 | FR-32 / BR-22 | Profile → type DELETE → delete; sign-in now fails | Show that the old report now reads "Former resident" (official view) |
 | BR-21 | Admin → config → limit 2; resident submits a third report | "You have submitted 2 reports in the last hour" |
 | NFR-01 | As resident, open /official → 403 page | Even with the guard bypassed, rules deny the data (show the RT test) |
@@ -84,6 +91,7 @@ For every included requirement and rule: how to show it, and a failure case to s
 - **What stops two officials assigning at once?** The Firestore transaction re-reads `activeTaskId`; the second transaction retries, sees the task and fails (IT-ASG-07).
 - **How is duplicate detection done?** Geohash range query for 100 m, then exact haversine distance, same category, open status, 72 h (`DuplicatePolicy`, UT-DUP-01..06).
 - **Where is security enforced? What if someone calls Firestore directly?** Security Rules deny all client writes; reads are scoped by role, department and owner; functions re-check roles from the profile.
-- **What is deferred and why?** Push, SMS, offline, scheduled alerts. They can't be verified in the emulator, or are out of scope (Section 3.3).
-- **What would you do next?** Push and SMS, a pilot with one department, image compression, offline drafts.
+- **Why is SMS "simulated"?** Every SMS costs money; the gateway is an interface. With three Twilio variables it sends for real, and every message is recorded with its status either way.
+- **How can a scheduled alert be on time without a paid scheduler?** Hourly cron as backstop, plus a background check (Vercel `waitUntil`) after API requests at most once a minute; publication is claimed in a transaction so it happens once.
+- **What would you do next?** A paid SMS gateway with a send queue, Cloud Scheduler, and a pilot with one department.
 - **Did you use AI tools?** Be ready to explain any file: open it from the traceability matrix and walk through the logic.

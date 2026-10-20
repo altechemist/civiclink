@@ -1,8 +1,8 @@
 {
-  "date": "2026-10-20 07:54 UTC",
-  "commit": "bb56ab4",
-  "total": 143,
-  "passed": 143,
+  "date": "2026-10-20 09:15 UTC",
+  "commit": "0f52054",
+  "total": 173,
+  "passed": 173,
   "tests": [
     {
       "title": "UT-RSM-01 every allowed transition succeeds for its allowed actors",
@@ -96,6 +96,56 @@
     },
     {
       "title": "UT-LOC-01 municipal bounds and nearest suburb",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-ALS-01 publish time must be 10 min to 30 days ahead and before expiry",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-ALS-02 publishAt is optional in the broadcast schema",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-OFF-01 clientId is optional and limited to a safe id format",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-BLK-01 one to 20 reports per batch",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-RAT-01 ratings are whole stars from 1 to 5, with optional short feedback",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-RAT-02 average to one decimal; no ratings gives null; invalid values ignored",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-PUB-01 open reports per suburb exclude closed, rejected and duplicate reports",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SMS-01 South African numbers convert to E.164",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SMS-02 SMS text fits one 160-character segment",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SMS-03 opting in to SMS requires a mobile number",
       "suite": "Unit",
       "result": "Pass"
     },
@@ -236,6 +286,16 @@
     },
     {
       "title": "RT-CFG-01 configuration is readable, never client-writable; counters and logs locked",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-ALS-01 scheduled alerts are visible to staff only until published; nobody writes them directly (FR-28)",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-SMS-01 SMS records (phone numbers) are readable by administrators only (FR-25, NFR-11)",
       "suite": "Security rules",
       "result": "Pass"
     },
@@ -391,6 +451,66 @@
     },
     {
       "title": "IT-ANL-01 metrics reflect live data and are restricted to officials and admins",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-OFF-01 a report re-sent with the same clientId is stored once and returns the same reference",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-OFF-02 another resident cannot reuse a clientId to read someone else\u2019s report; malformed ids are refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-SCH-01 a scheduled alert is invisible until due, then published once with the same id",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-SCH-02 invalid times are refused; a cancelled alert is never published",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-BLK-01 assigns every eligible report and reports the rest without blocking them",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-BLK-02 other departments, residents and oversized batches are refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RAT-01 the reporter rates the fix when confirming; out-of-range ratings are refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-PUB-01 anyone can GET anonymous figures, with CDN cache headers",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-PUB-02 the figures are only readable, not writable",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-SMS-01 emergency alerts are queued by SMS for opted-in residents only; other types are not",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-SMS-02 a gateway failure is recorded per message and logged, and does not fail the alert",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-SMS-03 removing the number ends the opt-in; deleting the account deletes the SMS records",
       "suite": "Integration",
       "result": "Pass"
     },
@@ -710,6 +830,26 @@
       "result": "Pass"
     },
     {
+      "title": "E2E-12 a report made offline is saved on the phone and sent automatically on reconnect (FR-27)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-13 an official schedules an alert for later and cancels it (FR-28)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-14 an official assigns several reports to one field worker at once (FR-35)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-15 the public transparency page works without signing in (FR-36)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
       "title": "NFT-07 mobile layouts fit a 360 px screen",
       "suite": "E2E (mobile-360)",
       "result": "Pass"
@@ -717,6 +857,16 @@
     {
       "title": "NFT-10 the production build is installable and opens offline (FR-34)",
       "suite": "PWA ()",
+      "result": "Pass"
+    },
+    {
+      "title": "NFT-11 CDN caching: immutable assets, cached public figures, uncached app shell (NFR-13)",
+      "suite": "Deployed site (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "NFT-12 security headers: CSP, HSTS, no framing, no sniffing (NFR-14)",
+      "suite": "Deployed site (chromium)",
       "result": "Pass"
     }
   ]

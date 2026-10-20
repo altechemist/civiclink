@@ -4,9 +4,13 @@
   python3 scripts/test-results.py            # run all suites (≈ 8 min) and summarise
   python3 scripts/test-results.py --parse    # only summarise existing reports in test-reports/
 
+With PROD_URL set (e.g. https://civiclink-five.vercel.app), the deployment checks (NFT-11, NFT-12), which are
+skipped locally, are also run against the live site.
+
 The Markdown table is included in the final report's appendix (complete automated test results).
 """
 import json
+import os
 import re
 import subprocess
 import sys
@@ -34,6 +38,9 @@ def run_all():
     run(f'cp test-results/e2e.json {OUT}/e2e.json')
     run('npm run test:pwa')
     run(f'cp test-results/pwa.json {OUT}/pwa.json')
+    if os.environ.get('PROD_URL'):
+        run(f"E2E_BASE_URL={os.environ['PROD_URL']} npx playwright test tests/e2e/delivery.spec.ts --project chromium "
+            f"--reporter=json > {OUT}/prod.json")
 
 
 def vitest(file: str, suite: str):
@@ -69,8 +76,11 @@ def playwright(file: str, suite: str):
 def main():
     if '--parse' not in sys.argv:
         run_all()
+    prod = playwright('prod.json', 'Deployed site')
+    ran_on_prod = {t for t, _, r in prod if r != 'Skipped'}
     rows = (vitest('unit.json', 'Unit') + vitest('rules.json', 'Security rules') + vitest('functions.json', 'Integration')
-            + playwright('e2e.json', 'E2E') + playwright('pwa.json', 'PWA'))
+            + [r for r in playwright('e2e.json', 'E2E') if not (r[2] == 'Skipped' and r[0] in ran_on_prod)]
+            + playwright('pwa.json', 'PWA') + [r for r in prod if r[2] != 'Skipped'])
     commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT, text=True).strip()
     when = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
     passed = sum(1 for r in rows if r[2] == 'Pass')

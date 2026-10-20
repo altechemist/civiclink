@@ -1,7 +1,7 @@
 # Traceability Matrix
 
 Problem evidence → Requirement → Rules → Workflow / use case → Screen → Code → Data → Tests.
-This matrix reflects the **implemented** system (updated 19 Oct 2026). Paths are relative to the repo root: `web/` = `apps/web/src/`, `fn/` = `functions/src/`, `shared/` = `packages/shared/src/`.
+This matrix reflects the **implemented** system (updated 20 Oct 2026). Paths are relative to the repo root: `web/` = `apps/web/src/`, `fn/` = `functions/src/`, `shared/` = `packages/shared/src/`.
 
 Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** duplicates · **P3** no feedback to residents · **P4** phone-based dispatch, no audit · **P5** no targeted alerts (strike, outages) · **P6** no management visibility · **P7** no access control / accountability.
 
@@ -31,15 +31,18 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | FR-22 | P4 | BR-18 | — | `/official/reports/:id` (internal notes) | `CommentService`, `OfficialReportPage.tsx` | reports/*/comments | IT-CMT-01, RT-CMT-01 | Included |
 | FR-23 | P7 | — | UC System log | `/admin/logs` | `fn/services/logService.ts`, `LogsPage.tsx`, `runMaintenance` | systemLogs | IT-ADM-07, RT-CFG-01 | Included |
 | FR-24 | P3, P5 | — | all workflows | `/profile` (push toggle) | `fn/services/pushService.ts` (intents, `deliverPushes`), `NotificationService.add`, `execute()`, `web/lib/push.ts`, `public/sw.js` | users/*/pushTokens | IT-PSH-01..03; manual live check | Included |
-| FR-25 | P5 | — | — | — | — | — | — | Deferred |
+| FR-25 | P5 | BR-25 | UC Broadcast alert (SMS) | `/profile` (opt-in), `/admin/logs` (SMS outbox) | `fn/services/smsService.ts` (SmsGateway: Twilio / simulated), `AlertService.publish`, `UserService.updateProfile`, `LogsPage.tsx` | smsOutbox, users.smsAlerts, alerts.smsCount | UT-SMS-01..03, IT-SMS-01..03, RT-SMS-01 | Included |
 | FR-26 | P6 | — | — | queue "Export CSV" | `shared/analytics.ts` (`toCsv`), `ReportQueuePage.tsx` | — | UT-CSV-01 | Included |
-| FR-27 | P1 | — | — | — | — | — | — | Deferred |
-| FR-28 | P5 | — | — | — | — | — | — | Deferred |
+| FR-27 | P1 | BR-01, BR-02 | W1 (offline path) | `/resident/report/new`, `/resident` (saved reports) | `web/lib/outbox.ts` (IndexedDB), `web/components/outbox.tsx` (OutboxSync, OutboxCard), `ReportService.submit` (`clientId`) | reports (id from user + clientId) | UT-OFF-01, IT-OFF-01, IT-OFF-02, E2E-12 | Included |
+| FR-28 | P5 | BR-13, BR-24 | UC Schedule alert | `/official/alerts/new`, `/official/alerts?tab=scheduled` | `AlertService.broadcast/publishDue/cancelScheduled`, `MaintenanceService.runAll`, `http.ts` (background check), `NewAlertPage.tsx`, `AlertsAdminPage.tsx` | scheduledAlerts, alerts | UT-ALS-01..02, IT-SCH-01..02, RT-ALS-01, E2E-13 | Included |
 | FR-29 | P7 | BR-16 | UC Sign in (Google) | `/login`, `/welcome` | `AuthProvider.signInWithGoogle`, `WelcomePage.tsx`, `completeProfile` → `UserService.completeProfile` | users, Auth claims | IT-AUTH-04, IT-AUTH-05, E2E-08 | Included |
 | FR-30 | P7 | — | UC Sign in | `/login` | `AuthProvider.resetPassword` (Firebase Auth reset email) | Auth | E2E-09 | Included |
 | FR-31 | P5 | BR-14, BR-16 | UC Profile | `/profile` | `ProfilePage.tsx`, `updateProfile` → `UserService.updateProfile` | users, Auth claims | IT-PRF-01, IT-PRF-02, E2E-10 | Included |
 | FR-33 | P2 | BR-23 | UC Me too | `/map` (popup) | `CommunityMapPage.tsx` (MeToo), `affirmReport` → `ReportService.affirm` | reports, publicReports, history | IT-AFF-01, IT-AFF-02, E2E-11 | Included |
 | FR-34 | P1 | — | UC Install | all (offline banner), `/resident` (install) | `public/sw.js`, `public/manifest.webmanifest`, `components/pwa.tsx` | Firestore offline cache | NFT-10 | Included |
+| FR-35 | P4 | BR-06, BR-07, BR-20 | UC Bulk assign | `/official/reports` (checkboxes) | `ReportQueuePage.tsx` (BulkAssignBar), `assignReports` → `ReportService.assignMany` | tasks, reports, history | UT-BLK-01, IT-BLK-01..02, E2E-14 | Included |
+| FR-36 | P3, P6 | BR-17 | UC View transparency page | `/transparency` (public) | `pages/public/TransparencyPage.tsx`, `GET /api/public/stats` → `PublicStatsService`, `shared/analytics.ts` | reports (aggregated), categories, departments | UT-PUB-01, UT-RAT-02, IT-PUB-01..02, E2E-15, NFT-11 | Included |
+| FR-37 | P3 | BR-11 | W2 (confirm) | `/resident/reports/:id` (stars) | `ResidentReportPage.tsx`, `confirmResolution` → `ReportService.confirm`, `OfficialReportPage.tsx` | reports.rating, reports.feedback | UT-RAT-01, IT-RAT-01, E2E-01 | Included |
 | FR-32 | P7 | BR-22 | UC Delete account | `/profile` | `ProfilePage.tsx`, `deleteMyAccount` → `UserService.deleteMyAccount` | users, reports, photos, recipients, notifications, Auth | IT-DEL-01, IT-DEL-02, E2E-10 | Included |
 
 ## Business rules → enforcement → tests
@@ -69,6 +72,8 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | BR-21 | `settings/app.reportsPerHour` read and enforced inside TX-1; `updateSettings` (admin) | IT-RPT-11, IT-CFG-05 |
 | BR-22 | `UserService.deleteMyAccount`; notifications skip `deleted-user` | IT-DEL-01, IT-DEL-02, E2E-10 |
 | BR-23 | `ReportService.affirm` (open, not own, once) | IT-AFF-01, IT-AFF-02, E2E-11 |
+| BR-24 | `validateAlertSchedule`; claim SCHEDULED → PUBLISHED in a transaction; `alerts.create()` with the scheduled id | UT-ALS-01, IT-SCH-01, IT-SCH-02 |
+| BR-25 | `AlertService.publish` (EMERGENCY + opted in + phone); `updateProfileSchema` refine; smsOutbox rule admin-only; deletion erases records | UT-SMS-03, IT-SMS-01, IT-SMS-03, RT-SMS-01 |
 
 ## NFR → verification
 
@@ -86,6 +91,8 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 | NFR-10 | IT-RPT-08, IT-ASG-07, IT-TSK-06 | Pass |
 | NFR-11 | RT-RPT-03, RT-PUB-01, RT-PHO-01, RT-PHO-02, UT-PRV-01; data classification (plan §1) | Pass |
 | NFR-12 | strict TS, ESLint, CI, shared coverage 97.9% lines (threshold 80%) | Pass |
+| NFR-13 | NFT-11 on the deployed site: assets immutable for a year, app shell revalidated, `/api/public/stats` served from the Vercel edge cache (HIT after the first request); service-worker tile cache | Pass |
+| NFR-14 | NFT-12 on the deployed site: CSP (no `unsafe-eval`), HSTS, X-Frame-Options, nosniff; 0 CSP violations across all screens and the Google sign-in popup | Pass |
 
 ## Screen inventory (states implemented)
 

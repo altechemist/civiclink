@@ -6,13 +6,14 @@ title Class design (2/2): application services and domain logic
 package "Application services (functions/src/services)" {
   class ReportService {
     -clock: () => number
-    +submit(input, actor)  «TX-1»
+    +submit(input, actor)  «TX-1, idempotent by clientId»
     +triage(input, actor)
     +reject(input, actor)
     +escalate(input, actor)
     +assign(input, actor)  «TX-2»
+    +assignMany(input, actor)  «TX-2 per report»
     +reassign(input, actor)
-    +confirm(reportId, actor)
+    +confirm(input, actor)  «with rating»
     +reopen(input, actor)
     +affirm(reportId, actor)
   }
@@ -29,7 +30,10 @@ package "Application services (functions/src/services)" {
     +departmentOfficials(tx, deptId)
   }
   class AlertService {
-    +broadcast(input, actor)
+    +broadcast(input, actor)  «now or scheduled»
+    +publishDue(): number
+    +cancelScheduled(id, actor)
+    -publish(alertId, content, now)
     +deactivate(alertId)
     +markRead(alertId, actor)
   }
@@ -48,6 +52,7 @@ package "Application services (functions/src/services)" {
     +updateSettings(input, actor)
   }
   class MaintenanceService {
+    +runAll(): {escalated, closed, published}
     +escalateOverdue(): number
     +autoCloseResolved(): number
   }
@@ -56,6 +61,17 @@ package "Application services (functions/src/services)" {
   }
   class CommentService {
     +add(reportId, text, actor)
+  }
+  class PublicStatsService {
+    -cached: PublicStats  «1 min»
+    +get(): PublicStats
+  }
+  class smsService <<module>> {
+    +sendAlertSms(alertId, alert, recipients, now)
+    +setSmsGateway(g)
+  }
+  interface SmsGateway {
+    +send(to, body): {id, simulated?}
   }
   class CommandRegistry <<commands.ts>> {
     +COMMANDS: Record<name, CommandDefinition>
@@ -68,6 +84,8 @@ package "Application services (functions/src/services)" {
     +handleHttp(req, res)
     -verifyCaller(): Caller
     -maintenance(): cron
+    -stats(): GET /api/public/stats
+    -publishDueAlertsInBackground()
   }
   class CallableAdapter <<index.ts, Cloud Functions>> {
     +command(def): onCall
@@ -116,8 +134,17 @@ package "Domain entities (see part 1)" {
   class User
   class Settings
   class Photo
+  class ScheduledAlert
+  class SmsMessage
 }
 HttpAdapter ..> CommandRegistry
+HttpAdapter ..> PublicStatsService
+HttpAdapter ..> AlertService : background publishDue
+MaintenanceService ..> AlertService : publishDue
+AlertService ..> smsService
+smsService ..> SmsGateway
+AlertService ..> ScheduledAlert
+smsService ..> SmsMessage
 CallableAdapter ..> CommandRegistry
 CommandRegistry ..> ReportService
 CommandRegistry ..> TaskService

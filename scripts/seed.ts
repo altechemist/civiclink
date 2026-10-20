@@ -208,8 +208,10 @@ async function main() {
               Object.assign(patch, { resolvedAt: Timestamp.fromMillis(t), activeTaskId: null, resolutionNotes: notes, resolutionPhotoIds: [] });
               const resolvedAt = t;
               if (rand() < 0.5 && advance(2, 72)) {
-                step('confirm', 'RESIDENT', a.reporter, 'Resident confirmed the fix');
-                patch.closedAt = Timestamp.fromMillis(t);
+                // FR-37: a rating derived from existing values (no extra rand() call, so the rest of the seed is unchanged).
+                const rating = slow ? 2 + (Math.floor(t / 60_000) % 2) : 3 + (Math.floor(t / 60_000) % 3);
+                step('confirm', 'RESIDENT', a.reporter, `Resident confirmed the fix and rated the service ${rating}/5`);
+                Object.assign(patch, { closedAt: Timestamp.fromMillis(t), rating, feedback: null });
               } else if (NOW - resolvedAt > 7 * DAY) {
                 t = resolvedAt + 7 * DAY + HOUR;
                 step('autoClose', 'SYSTEM', { uid: 'system', name: 'CivicLink system' }, 'Closed automatically after 7 days without a response');

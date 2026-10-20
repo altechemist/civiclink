@@ -5,6 +5,7 @@ Keeps the template cover page, styles and automatic heading numbering; replaces 
 body with the report content. Run from the repository root:  python3 docs/report/build_report.py
 """
 import copy
+import json
 import os
 import re
 import subprocess
@@ -63,6 +64,13 @@ def expand_includes(text: str) -> str:
                 status = c[9].split(' (')[0]
                 rows.append(f"| {c[1]} | {c[3]} | {c[5].replace('`', '')} | {c[8]} | {status} |")
         text = text.replace('{{TRACE_TABLE}}', '\n'.join(rows))
+    # Test counts come from the latest full run (scripts/test-results.py), so the text cannot drift from the evidence.
+    results = ROOT / 'docs/evidence/test-results.json'
+    if results.exists():
+        data = json.loads(results.read_text(encoding='utf8'))
+        text = text.replace('{{TEST_TOTAL}}', str(data['total']))
+        text = re.sub(r'\{\{TEST_COUNT:([^}]+)\}\}',
+                      lambda m: str(sum(1 for t in data['tests'] if t['suite'].startswith(m.group(1)))), text)
     return text
 
 
