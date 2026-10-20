@@ -1,0 +1,723 @@
+{
+  "date": "2026-10-20 07:54 UTC",
+  "commit": "bb56ab4",
+  "total": 143,
+  "passed": 143,
+  "tests": [
+    {
+      "title": "UT-RSM-01 every allowed transition succeeds for its allowed actors",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-RSM-02 every other (status, event) pair is rejected",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-RSM-03 terminal statuses allow no events and actors are enforced",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-TSM-01 tasks move in order; skipping steps is rejected (BR-08)",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-DUP-01 distance boundary 99 m / 100 m / 101 m",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-DUP-02 time window 71 h / 73 h",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-DUP-03 different category is not a duplicate",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-DUP-04 parent must be open",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-DUP-05 picks the closest candidate, oldest on a tie",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-DUP-06 haversine distance sanity check (Kimberley CBD \u2192 Galeshewe \u2248 3.4 km)",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SLA-01 breach only after slaHours",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SLA-02 never re-escalates and ignores closed work",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-RES-01 7-day window and auto-close",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-REF-01 reference format and padding (BR-04)",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-PRV-01 public location is rounded to ~110 m (BR-17)",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-ANL-01 metrics on a fixture",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-ANL-02 empty input yields nulls, not NaN",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-CSV-01 CSV quoting",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-LOC-01 municipal bounds and nearest suburb",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-01 description boundaries 9/10/300/301",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-02 photo count 0/3/4 and file size and type",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-03 location inside / outside municipal bounding box",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-04 rejects unknown suburb and severity with field errors",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-05 password minimum, optional SA phone, no role field accepted",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-06 completion requires notes \u226510 and 1\u20133 proof photos (BR-09)",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-ALR-01 title/message boundaries and target suburbs (BR-13)",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-ALR-02 expiry must be future and within 30 days",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-07 staff users need a department unless admin",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-08 department SLA hours 1\u2013720 whole numbers",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "UT-SCH-09 real type is detected from magic bytes",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-USR-01 a user reads their own profile and may only stamp lastLoginAt",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-USR-02 users cannot change their own role, department or active flag (BR-16)",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-USR-03 residents cannot read other users; staff read the staff directory only",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-USR-04 notifications are private; only readAt can be set",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-USR-05 deactivated or anonymous users read nothing",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-RPT-01 no client can create or modify reports or history (functions only)",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-RPT-02 the reporter and duplicate followers read the report and its history",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-RPT-03 residents cannot read others' reports or list all reports (BR-17)",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-RPT-04 officials read only their department (BR-20)",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-RPT-05 workers read only reports assigned to them",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-RPT-06 admins read every report",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-CMT-01 internal comments are hidden from residents (BR-18)",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-PUB-01 the public projection is readable by residents, officials and admins only",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-TSK-01 workers read own tasks; officials read their department; others denied",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-ALR-01 signed-in users read alerts; nobody writes them directly",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-ALR-02 residents read only their own delivery record; officials read all",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-CFG-01 configuration is readable, never client-writable; counters and logs locked",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-PHO-01 report photos and proof are visible to the reporter, followers and staff with access (BR-17)",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-PHO-02 other users cannot read photos, and nobody writes them directly",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-AUTH-04 completeProfile creates a RESIDENT profile and claims once",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-AUTH-05 existing accounts and anonymous callers cannot use completeProfile",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-PRF-01 residents change suburb and phone; claims follow; invalid phone refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-PRF-02 staff may change name and phone but have no home suburb",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-DEL-01 deletion anonymises reports and removes photos, profile, receipts and the Auth account",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-DEL-02 staff cannot self-delete; anonymised reports still progress without notifying anyone",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-11 submissions beyond the hourly limit are refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-CFG-05 settings are admin-only and bounded",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-AUTH-01 self-registration creates a RESIDENT with claims and a profile",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-AUTH-02 duplicate email and weak password are refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-AUTH-03 a deactivated account is refused by every command",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ALR-01 broadcast creates one recipient per active resident in the target suburbs",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ALR-02 ALL targets every active resident",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ALR-03 validation: long title, empty targets, past or far expiry",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ALR-04 residents and field workers cannot broadcast",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ALR-05 mark-as-read counts once per resident",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ALR-06 deactivation hides the alert",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ADM-01 admin creates a staff account with claims",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ADM-02 staff accounts need an active department",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ADM-03 role change updates the profile and claims",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ADM-04 an admin cannot demote or deactivate themselves (BR-15)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ADM-05 non-admins cannot manage users",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ADM-06 reactivation restores access",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ADM-07 admin actions are written to the system log (FR-23)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-CFG-01 SLA hours must be 1\u2013720",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-CFG-02 names are unique (case-insensitive)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-CFG-03 categories link to an existing department and can be deactivated",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-CFG-04 non-admins cannot change configuration",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ANL-01 metrics reflect live data and are restricted to officials and admins",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-HTTP-01 a resident submits a report through the HTTP API",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-HTTP-02 authentication, roles and validation behave exactly as with Cloud Functions",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-HTTP-03 unknown commands and wrong methods are refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-HTTP-04 the cron endpoint requires the secret",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-PSH-01 devices register and unregister; tokens are stored server-side only; anonymous refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-PSH-02 a committed status change pushes once to the reporter; a refused command pushes nothing",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-PSH-03 suburb alerts are pushed to targeted residents and dead tokens are pruned",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-01 valid submission creates a SUBMITTED report with a reference",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-02 invalid fields are rejected with field errors and nothing is written",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-03 location outside the municipality is rejected (BR-02)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-04 photos must really be images of the declared type and within the size limit",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-05 inactive category is refused (BR-19)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-06 only residents may submit (BR-01)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-07 default department from category, one history entry, officials notified",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-08 concurrent submissions get unique sequential references (BR-04, NFR-10)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-09 a nearby open report of the same category is linked as a duplicate (BR-03)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RPT-10 optional fields sent as undefined/null by the web client are accepted (DEF-02)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TRI-01 triage moves SUBMITTED \u2192 UNDER_REVIEW and records history",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TRI-02 triage from a non-SUBMITTED status is refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TRI-03 reject needs a reason \u2265 10 characters (BR-12)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TRI-04 officials cannot act on another department's report (BR-20)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TRI-05 rerouting to an inactive department is refused; active reroute works",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-01 assignment creates a task, moves the report to IN_PROGRESS and notifies",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-02 a worker from another department is refused (BR-07)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-03 an inactive worker is refused (BR-07)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-04 a report with an active task cannot be assigned again (BR-06)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-05 a SUBMITTED (untriaged) report cannot be assigned",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-06 residents and workers cannot assign",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-07 two concurrent assignments: exactly one succeeds (NFR-10)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-08 reassignment ends the old task and creates a new one",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-09 reassigning to the same worker is refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ASG-10 reassigning without an active task is refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TSK-01 accept \u2192 start \u2192 complete resolves the report and notifies the resident",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TSK-02 another worker cannot act on the task (BR-08)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TSK-03 steps cannot be skipped (BR-08)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TSK-04 completion without notes or proof is refused (BR-09)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TSK-05 proof photos must match their declared type",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TSK-06 a reassigned (stale) task cannot be completed",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-TSK-07 officials and residents cannot complete tasks",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ESC-01 the schedule escalates reports past their SLA once, and is idempotent",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ESC-02 manual escalation requires a reason; escalated reports can be assigned",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-ESC-03 only admins can run maintenance",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RES-01 the reporter can confirm a resolved report (\u2192 CLOSED)",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RES-02 the reporter can reopen with a reason (\u2192 UNDER_REVIEW); officials notified",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RES-03 after 7 days confirm/reopen are refused and the schedule closes the report",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RES-04 another resident cannot confirm or reopen",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-RES-05 confirming an unresolved report is refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-AFF-01 a resident confirms an open issue: count, follower and timeline update once",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-AFF-02 own reports, closed reports and staff are refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-CMT-01 staff with access can comment; residents and other departments cannot",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-08 first Google sign-in completes a resident profile (FR-29, BR-16)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-09 password reset gives the same answer whether or not the account exists (FR-30)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-10 profile change and POPIA self-deletion (FR-31, FR-32)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-01 full lifecycle: resident \u2192 official \u2192 field worker \u2192 resident (SC-01, NFT-05)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-02 a second resident reporting the same issue is linked as a duplicate (FR-05)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-03 suburb-targeted alert reaches Galeshewe but not Roodepan (FR-16, FR-17, BR-14)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-04 each role is denied other roles\u2019 areas (NFR-01)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-05 invalid report input is rejected with field messages (BR-02, NFR-03)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-06 wrong password shows a generic error (FR-02)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-07 GPS outside Sol Plaatje is explained, not used; tapping the map sets the pin and suburb (FR-03, BR-02)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-11 \"Me too\" from the community map raises the affected count (FR-33, BR-23)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "NFT-08 accessibility of login, report form, my reports and queue",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "NFT-06 responsiveness: screens interactive < 3 s, p95 command < 2 s",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "NFT-07 mobile layouts fit a 360 px screen",
+      "suite": "E2E (mobile-360)",
+      "result": "Pass"
+    },
+    {
+      "title": "NFT-10 the production build is installable and opens offline (FR-34)",
+      "suite": "PWA ()",
+      "result": "Pass"
+    }
+  ]
+}
