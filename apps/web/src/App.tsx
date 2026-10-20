@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, HOME, useAuth } from './auth/AuthProvider';
 import { RequireRole } from './auth/RequireRole';
+import { OfflineBanner } from './components/pwa';
 import { LoadingState } from './components/ui';
 import { ResidentLayout, RoleShell, StaffLayout, WorkerLayout } from './layouts/Layouts';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -40,6 +41,7 @@ export function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <OfflineBanner />
         <Suspense fallback={<LoadingState full />}>
           <Routes>
             <Route path="/" element={<Home />} />

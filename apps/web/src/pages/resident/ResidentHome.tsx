@@ -4,6 +4,7 @@ import { collection, orderBy, query, where } from 'firebase/firestore';
 import { ChevronRight, Megaphone, PlusCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../../auth/AuthProvider';
+import { InstallButton } from '../../components/pwa';
 import { ErrorState, LoadingState, Stat } from '../../components/ui';
 import { db } from '../../lib/firebase';
 import { useLiveQuery } from '../../lib/hooks';
@@ -41,6 +42,8 @@ export function ResidentHome() {
         </div>
         <ChevronRight className="size-6" aria-hidden />
       </Link>
+
+      <InstallButton />
 
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Reported" value={reports.data.length} />

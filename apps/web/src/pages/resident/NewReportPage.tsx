@@ -16,6 +16,7 @@ import { lazy, Suspense, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../../auth/AuthProvider';
 import { CategoryIcon, useCategories } from '../../components/domain';
+import { useOnlineStatus } from '../../components/pwa';
 import { Button, cx, ErrorState, Field, Input, LoadingState, Notice, PageHeader, Select, Textarea } from '../../components/ui';
 import { call } from '../../lib/api';
 import { checkPhoto, toPhotoInputs } from '../../lib/upload';
@@ -32,6 +33,7 @@ const SEVERITY_HELP: Record<Severity, string> = {
 /** FR-03/04/05: report an incident in three steps (NFR-07). */
 export function NewReportPage() {
   const { claims } = useSession();
+  const online = useOnlineStatus();
   const categories = useCategories();
   const [step, setStep] = useState<Step>(1);
   const [categoryId, setCategoryId] = useState('');
@@ -292,8 +294,8 @@ export function NewReportPage() {
             <Button type="button" variant="secondary" onClick={() => setStep(2)}>
               Edit
             </Button>
-            <Button type="submit" busy={busy} icon={Send}>
-              Submit report
+            <Button type="submit" busy={busy} icon={Send} disabled={!online}>
+              {online ? 'Submit report' : 'Waiting for a connection'}
             </Button>
           </div>
         </div>

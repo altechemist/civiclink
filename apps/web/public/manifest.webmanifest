@@ -1,9 +1,18 @@
 {
+  "id": "/",
   "name": "CivicLink Sol Plaatje",
   "short_name": "CivicLink",
+  "description": "Report municipal service issues, track them to resolution and receive alerts for your area.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f6f8fa",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
   "theme_color": "#0b4f6c",
-  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "categories": ["government", "utilities"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }
