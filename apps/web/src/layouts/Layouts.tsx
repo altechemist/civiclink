@@ -15,7 +15,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useSession } from '../auth/AuthProvider';
 import { NotificationBell } from '../components/domain';
 import { cx } from '../components/ui';
@@ -38,9 +38,26 @@ function Brand({ light }: { light?: boolean }) {
 }
 
 /** Mobile-first shell for residents and field workers (NFR-07). */
+/** FR-39: shown to guests on every resident screen except the account page itself. */
+function GuestBanner() {
+  const { pathname } = useLocation();
+  if (pathname === '/account') return null;
+  return (
+    <div className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-testid="guest-banner">
+      You're reporting as a <strong>guest</strong>. Your reports are kept in this browser.{' '}
+      <Link to="/account" className="font-semibold underline">
+        Create an account or sign in
+      </Link>{' '}
+      to follow them on any device and get alerts for your suburb.
+    </div>
+  );
+}
+
 function MobileShell({ nav, accent }: { nav: NavItem[]; accent: 'brand' | 'field' }) {
   const { signOut } = useAuth();
-  const { profile } = useSession();
+  const { profile, claims } = useSession();
+  const navigate = useNavigate();
+  const guest = !!claims.guest;
   const bar = accent === 'brand' ? 'bg-brand-800' : 'bg-field-700';
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">
@@ -50,16 +67,18 @@ function MobileShell({ nav, accent }: { nav: NavItem[]; accent: 'brand' | 'field
           <div className="flex items-center gap-1">
             <span className="mr-1 hidden text-sm text-white/80 sm:inline">{profile?.name}</span>
             <NotificationBell />
-            <NavLink to="/profile" aria-label="My profile" className="rounded-full p-2 hover:bg-white/10">
+            <NavLink to={guest ? '/account' : '/profile'} aria-label={guest ? 'Account' : 'My profile'} className="rounded-full p-2 hover:bg-white/10">
               <UserRound className="size-5" aria-hidden />
             </NavLink>
-            <button onClick={() => signOut()} aria-label="Sign out" className="rounded-full p-2 hover:bg-white/10">
+            {/* A guest who signs out loses access to their reports, so the account page explains that first. */}
+            <button onClick={() => (guest ? navigate('/account?leaving=1') : signOut())} aria-label="Sign out" className="rounded-full p-2 hover:bg-white/10">
               <LogOut className="size-5" aria-hidden />
             </button>
           </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-28 pt-5">
+        {guest && <GuestBanner />}
         <Outlet />
       </main>
       <nav

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   assignReportsSchema,
+  claimGuestReportsSchema,
+  upgradeGuestSchema,
   broadcastAlertSchema,
   confirmResolutionSchema,
   openBySuburb,
@@ -90,5 +92,15 @@ describe('SMS alerts (FR-25, BR-25)', () => {
     expect(updateProfileSchema.safeParse({ name: 'Thandi', smsAlerts: true }).success).toBe(false);
     expect(updateProfileSchema.safeParse({ name: 'Thandi', phone: '0821234567', smsAlerts: true }).success).toBe(true);
     expect(updateProfileSchema.safeParse({ name: 'Thandi', smsAlerts: false }).success).toBe(true);
+  });
+});
+
+describe('guest reporting (FR-39)', () => {
+  it('UT-GST-01 an upgrading guest gives a name and suburb; transfer codes have a fixed safe format', () => {
+    expect(upgradeGuestSchema.safeParse({ name: 'Lerato Mokoena', suburb: 'Homestead' }).success).toBe(true);
+    expect(upgradeGuestSchema.safeParse({ name: 'Lerato Mokoena' }).success).toBe(false);
+    expect(claimGuestReportsSchema.safeParse({ code: 'a'.repeat(43) }).success).toBe(true);
+    expect(claimGuestReportsSchema.safeParse({ code: 'short' }).success).toBe(false);
+    expect(claimGuestReportsSchema.safeParse({ code: '../'.repeat(15) }).success).toBe(false);
   });
 });

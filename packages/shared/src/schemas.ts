@@ -87,6 +87,12 @@ export const updateProfileSchema = z
   })
   .refine((p) => !p.smsAlerts || !!p.phone, { path: ['phone'], message: 'Add a mobile number to get SMS alerts' });
 
+/** FR-39: a guest becomes a resident account (after linking an email/password or Google sign-in on the device). */
+export const upgradeGuestSchema = completeProfileSchema;
+/** FR-39: claim a guest's reports into an existing account with a one-time code. */
+export const claimGuestReportsSchema = z.object({ code: z.string().regex(/^[A-Za-z0-9_-]{32,64}$/, 'Invalid transfer code') });
+export const emptySchema = z.object({});
+
 /** FR-32: deletion requires typing DELETE to confirm. */
 export const deleteAccountSchema = z.object({ confirm: z.literal('DELETE', { error: 'Type DELETE to confirm' }) });
 
@@ -181,6 +187,8 @@ export function validateAlertSchedule(publishAt: number, expiresAt: number, now:
 }
 
 export const alertIdSchema = z.object({ alertId: id });
+/** FR-25: administrator's test SMS to a South African mobile number. */
+export const testSmsSchema = z.object({ to: z.string().trim().regex(/^(\+27|0)\d{9}$/, 'Use a South African number, e.g. 0821234567') });
 export const scheduledAlertIdSchema = z.object({ scheduledId: id });
 
 export const createStaffUserSchema = z

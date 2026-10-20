@@ -55,6 +55,31 @@ export function setSmsGateway(g: SmsGateway | null) {
   gateway = g;
 }
 
+/** Name of the gateway in use ("twilio" or "simulated"), for the admin screen. */
+export function smsGatewayName() {
+  return (gateway ??= gatewayFromEnv()).name;
+}
+
+/** FR-25: an administrator checks the gateway by sending one SMS; recorded in smsOutbox like any other. */
+export async function sendTestSms(to: string, actor: { uid: string; name: string }, now: number) {
+  const g = (gateway ??= gatewayFromEnv());
+  const body = 'CivicLink test: SMS alerts are working.';
+  const ref = col.smsOutbox().doc();
+  const sms: SmsDoc = { uid: actor.uid, to: toE164ZA(to), body, alertId: 'test', status: 'QUEUED', gateway: g.name, createdAt: ts(now), sentAt: null };
+  await ref.set(sms);
+  try {
+    const res = await g.send(sms.to, body);
+    const status = res.simulated ? 'SIMULATED' : 'SENT';
+    await ref.update({ status, providerId: res.id, sentAt: ts(Date.now()) });
+    return { status, gateway: g.name } as const;
+  } catch (err) {
+    const error = (err as Error).message.slice(0, 200);
+    await ref.update({ status: 'FAILED', error });
+    await writeLog('WARNING', 'sms.test', `Test SMS by ${actor.name} failed: ${error}`, actor.uid);
+    return { status: 'FAILED' as const, gateway: g.name, error };
+  }
+}
+
 const CONCURRENCY = 5;
 
 export interface SmsRecipient {

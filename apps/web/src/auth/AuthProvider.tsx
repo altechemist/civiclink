@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   onIdTokenChanged,
   sendPasswordResetEmail,
+  signInAnonymously,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -10,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { call } from '../lib/api';
 import { auth, db } from '../lib/firebase';
 
 export interface Session {
@@ -27,6 +29,8 @@ interface AuthState {
   notice: string | null;
   signIn(email: string, password: string): Promise<void>;
   signInWithGoogle(): Promise<void>;
+  /** FR-39: continue as a guest (anonymous session with a guest Resident profile). */
+  startGuest(): Promise<void>;
   resetPassword(email: string): Promise<void>;
   refreshClaims(): Promise<void>;
   signOut(notice?: string): Promise<void>;
@@ -70,8 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Profile listener: when an admin changes this user's role or deactivates them, refresh the token
   // so Security Rules and routing see the new claims immediately (FR-20).
+  // Resubscribes once claims exist: a new guest's profile is not readable until its claims are set (FR-39).
+  const hasClaims = claims !== null;
   useEffect(() => {
-    if (!user) return;
+    if (!user || !hasClaims) return;
     return onSnapshot(doc(db, 'users', user.uid), async (snap) => {
       const p = (snap.data() as UserDoc | undefined) ?? null;
       setProfile(p);
@@ -86,12 +92,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await user.getIdToken(true);
       }
     }, () => setProfile(null));
-  }, [user]);
+  }, [user, hasClaims]);
 
   const value = useMemo<AuthState>(
     () => ({
       session: user && claims ? { user, uid: user.uid, claims, profile } : null,
-      pendingProfile: user && !claims && !loading ? user : null,
+      // A guest session gets its profile from startGuest(), never from the welcome step.
+      pendingProfile: user && !user.isAnonymous && !claims && !loading ? user : null,
       loading,
       notice,
       async signIn(email, password) {
@@ -103,6 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setNotice(null);
         const cred = await signInWithPopup(auth, new GoogleAuthProvider());
         await updateDoc(doc(db, 'users', cred.user.uid), { lastLoginAt: serverTimestamp() }).catch(() => {});
+      },
+      async startGuest() {
+        setNotice(null);
+        const current = auth.currentUser;
+        const u = current?.isAnonymous ? current : (await signInAnonymously(auth)).user;
+        await call('startGuestSession', {});
+        await u.getIdToken(true);
       },
       async resetPassword(email) {
         await sendPasswordResetEmail(auth, email);

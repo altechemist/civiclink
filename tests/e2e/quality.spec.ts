@@ -15,7 +15,13 @@ async function audit(page: Page, name: string) {
   expect(serious.map((v) => `${name} ${v.id}: ${v.nodes.map((n) => `${n.target.join(" ")} ${n.failureSummary?.split("\n")[1] ?? ""}`).join("; ")}`)).toEqual([]);
 }
 
-test('NFT-08 accessibility of login, report form, my reports and queue', async ({ page }) => {
+test('NFT-08 accessibility of public home, transparency, login, report form, my reports and queue', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('public-alerts')).toBeVisible();
+  await audit(page, 'public home');
+  await page.goto('/transparency');
+  await expect(page.getByTestId('public-kpis')).toBeVisible();
+  await audit(page, 'transparency');
   await page.goto('/login');
   await audit(page, 'login');
   await signIn(page, ACCOUNTS.thandi);

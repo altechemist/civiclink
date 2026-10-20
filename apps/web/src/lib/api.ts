@@ -49,11 +49,19 @@ export async function call<K extends keyof CallableResults>(name: K, data: unkno
 }
 
 /**
- * FR-36: the public figures come from a plain GET (no sign-in) so the CDN can cache them (NFR-13):
+ * FR-36 / FR-38: public data comes from plain GETs (no sign-in) so the CDN can cache them (NFR-13):
  * the Node API route when VITE_API_BASE is set, otherwise the Cloud Functions emulator.
  */
-export function publicStatsUrl(): string {
-  if (API_BASE) return `${API_BASE.replace(/\/$/, '')}/public/stats`;
+export function publicUrl(kind: 'stats' | 'feed'): string {
+  if (API_BASE) return `${API_BASE.replace(/\/$/, '')}/public/${kind}`;
+  const fn = kind === 'stats' ? 'publicStats' : 'publicFeed';
   const host = useEmulators ? `http://${window.location.hostname || '127.0.0.1'}:5001` : `https://africa-south1-${projectId}.cloudfunctions.net`;
-  return useEmulators ? `${host}/${projectId}/africa-south1/publicStats` : `${host}/publicStats`;
+  return useEmulators ? `${host}/${projectId}/africa-south1/${fn}` : `${host}/${fn}`;
+}
+
+/** Fetches public JSON (FR-36, FR-38). */
+export async function getPublic<T>(kind: 'stats' | 'feed', signal?: AbortSignal): Promise<T> {
+  const res = await fetch(publicUrl(kind), { signal });
+  if (!res.ok) throw new Error('This information is unavailable right now. Please try again later.');
+  return (await res.json()) as T;
 }

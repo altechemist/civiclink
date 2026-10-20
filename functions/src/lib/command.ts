@@ -14,6 +14,10 @@ export interface Actor {
   name: string;
   departmentId: string | null;
   suburb: string | null;
+  /** FR-39: signed in as a guest (anonymous), without an account yet. */
+  isGuest: boolean;
+  /** Caller's network address, when the transport provides it (guest-session limit, BR-26). */
+  ip?: string;
 }
 
 export async function loadActor(uid: string): Promise<Actor> {
@@ -21,7 +25,7 @@ export async function loadActor(uid: string): Promise<Actor> {
   const user = snap.data() as UserDoc | undefined;
   if (!user) throw new HttpsError('permission-denied', 'Account profile not found');
   if (!user.isActive) throw new HttpsError('permission-denied', 'Account deactivated'); // BR-16
-  return { uid, role: user.role, name: user.name, departmentId: user.departmentId ?? null, suburb: user.suburb ?? null };
+  return { uid, role: user.role, name: user.name, departmentId: user.departmentId ?? null, suburb: user.suburb ?? null, isGuest: !!user.isGuest };
 }
 
 /** The callable protocol serialises `undefined` as `null`; treat top-level nulls as "not provided". */
@@ -47,6 +51,8 @@ export interface CommandDefinition<S extends z.ZodType = z.ZodType, R = unknown>
    * `'signed-in'` allows any authenticated caller even without a profile yet (first Google sign-in).
    */
   roles: readonly Role[] | 'public' | 'signed-in';
+  /** FR-39: set to false for resident commands that need a full account (guests are refused). */
+  guests?: boolean;
   handler: (input: z.infer<S>, actor: Actor) => Promise<R>;
 }
 
@@ -54,6 +60,7 @@ export interface CommandDefinition<S extends z.ZodType = z.ZodType, R = unknown>
 export interface Caller {
   uid: string;
   name?: string;
+  ip?: string;
 }
 
 export function defineCommand<S extends z.ZodType, R>(def: CommandDefinition<S, R>): CommandDefinition<S, R> {
@@ -69,13 +76,14 @@ export async function execute<S extends z.ZodType, R>(def: CommandDefinition<S, 
   try {
     let actor: Actor;
     if (def.roles === 'public') {
-      actor = { uid: caller?.uid ?? 'anonymous', role: 'RESIDENT', name: 'Public', departmentId: null, suburb: null };
+      actor = { uid: caller?.uid ?? 'anonymous', role: 'RESIDENT', name: 'Public', departmentId: null, suburb: null, isGuest: false, ip: caller?.ip };
     } else if (def.roles === 'signed-in') {
       if (!caller) throw new HttpsError('unauthenticated', 'Please sign in');
-      actor = { uid: caller.uid, role: 'RESIDENT', name: caller.name ?? '', departmentId: null, suburb: null };
+      actor = { uid: caller.uid, role: 'RESIDENT', name: caller.name ?? '', departmentId: null, suburb: null, isGuest: false, ip: caller.ip };
     } else {
       if (!caller) throw new HttpsError('unauthenticated', 'Please sign in');
-      actor = await loadActor(caller.uid);
+      actor = { ...(await loadActor(caller.uid)), ip: caller.ip };
+      if (def.guests === false && actor.isGuest) throw new HttpsError('permission-denied', 'Create an account to do this');
       if (!def.roles.includes(actor.role)) throw new HttpsError('permission-denied', 'Your role cannot do this');
     }
     const input = parse(def.schema, data);
@@ -96,6 +104,6 @@ export async function execute<S extends z.ZodType, R>(def: CommandDefinition<S, 
 /** Cloud Functions adapter (local emulator, or a Blaze-plan deployment). */
 export function command<S extends z.ZodType, R>(def: CommandDefinition<S, R>) {
   return onCall((request) =>
-    execute(def, request.auth ? { uid: request.auth.uid, name: request.auth.token.name as string | undefined } : null, request.data),
+    execute(def, request.auth ? { uid: request.auth.uid, name: request.auth.token.name as string | undefined, ip: request.rawRequest.ip } : null, request.data),
   );
 }

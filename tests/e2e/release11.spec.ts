@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ACCOUNTS, as, submitReport } from './helpers';
+import { ACCOUNTS, as, PASSWORD, submitReport } from './helpers';
 
 // Spots away from seeded data and from lifecycle.spec.ts; against a deployed site each run moves them.
 const RUN_JITTER = process.env.E2E_BASE_URL ? Math.random() * 0.02 : 0;
@@ -99,4 +99,65 @@ test('E2E-15 the public transparency page works without signing in (FR-36)', asy
   await expect(kpis).toContainText('Resident satisfaction');
   await expect(page.getByTestId('public-departments')).toContainText('Water & Sanitation');
   await expect(page.getByTestId('public-categories').locator('li').first()).toBeVisible();
+});
+
+test('E2E-16 a visitor sees what is happening, reports as a guest, then creates an account and keeps the report (FR-38, FR-39)', async ({ browser }) => {
+  const context = await browser.newContext({ geolocation: spot(0.03), permissions: ['geolocation'] });
+  const page = await context.newPage();
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: "What's happening in Sol Plaatje" })).toBeVisible();
+  await expect(page.getByTestId('public-alerts')).toBeVisible();
+  await expect(page.locator('.incident-marker').first()).toBeAttached();
+
+  await page.getByTestId('report-as-guest').click();
+  await expect(page).toHaveURL(/\/resident\/report\/new/);
+  await expect(page.getByTestId('guest-banner')).toBeVisible();
+  await page.getByRole('radio', { name: 'Illegal Dumping' }).click();
+  await page.getByRole('button', { name: 'Use my location' }).click();
+  await expect(page.getByTestId('location-coords')).not.toHaveText(/Tap the map/);
+  await page.getByLabel('Suburb', { exact: true }).selectOption('Galeshewe');
+  await page.getByLabel('What is happening?').fill('E2E: rubble and old tyres dumped on the open field');
+  await page.locator('label', { hasText: 'Low' }).first().click();
+  await page.getByRole('button', { name: 'Review' }).click();
+  await page.getByRole('button', { name: 'Submit report' }).click();
+  const ref = (await page.getByTestId('report-ref').innerText()).trim();
+
+  // Signing out as a guest is explained first; then the guest creates an account instead.
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page.getByTestId('guest-leaving')).toBeVisible();
+  const email = `guest.${Date.now()}@civiclink.demo`;
+  await page.getByLabel('Full name').fill('Lerato Mokoena');
+  await page.getByLabel('Suburb').selectOption('Galeshewe');
+  await page.locator('#g-email').fill(email);
+  await page.locator('#g-password').fill('GoodPass123');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page).toHaveURL(/\/resident$/);
+  await expect(page.getByTestId('guest-banner')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Lerato' })).toBeVisible();
+  await page.goto('/resident/reports');
+  await expect(page.getByText(ref)).toBeVisible();
+});
+
+test('E2E-17 a guest who already has an account signs in and their report moves to it (FR-39)', async ({ browser }) => {
+  const context = await browser.newContext({ geolocation: spot(0.04), permissions: ['geolocation'] });
+  const page = await context.newPage();
+  await page.goto('/');
+  await page.getByTestId('report-as-guest').click();
+  await page.getByRole('radio', { name: 'Vandalism' }).click();
+  await page.getByRole('button', { name: 'Use my location' }).click();
+  await expect(page.getByTestId('location-coords')).not.toHaveText(/Tap the map/);
+  await page.getByLabel('Suburb', { exact: true }).selectOption('Roodepan');
+  await page.getByLabel('What is happening?').fill('E2E: bus shelter glass smashed overnight');
+  await page.locator('label', { hasText: 'Medium' }).first().click();
+  await page.getByRole('button', { name: 'Review' }).click();
+  await page.getByRole('button', { name: 'Submit report' }).click();
+  const ref = (await page.getByTestId('report-ref').innerText()).trim();
+
+  await page.goto('/account');
+  await page.locator('#l-email').fill(ACCOUNTS.pieter);
+  await page.locator('#l-password').fill(PASSWORD);
+  await page.getByRole('button', { name: 'Sign in and move my reports' }).click();
+  await expect(page.getByText('1 report moved to your account.')).toBeVisible();
+  await page.goto('/resident/reports');
+  await expect(page.getByText(ref)).toBeVisible();
 });

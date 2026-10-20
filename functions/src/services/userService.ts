@@ -10,11 +10,12 @@ export const DELETED_REPORTER = 'deleted-user';
 import { auth, col, db, ts } from '../lib/firebase';
 import { writeLog } from './logService';
 
-const claimsFor = (u: Pick<UserDoc, 'role' | 'departmentId' | 'suburb' | 'isActive'>): Claims => ({
+export const claimsFor = (u: Pick<UserDoc, 'role' | 'departmentId' | 'suburb' | 'isActive' | 'isGuest'>): Claims => ({
   role: u.role,
   dept: u.departmentId ?? null,
   suburb: u.suburb ?? null,
   active: u.isActive,
+  ...(u.isGuest ? { guest: true } : {}),
 });
 
 function isEmailTaken(err: unknown) {

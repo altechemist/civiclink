@@ -168,6 +168,12 @@ describe('tasks, alerts, config', () => {
     await assertFails(getDoc(doc(db('worker'), 'scheduledAlerts/s1')));
     await assertFails(setDoc(doc(db('official'), 'scheduledAlerts/s2'), { title: 'direct' }));
   });
+  it('RT-GST-01 guest transfer codes and rate-limit counters are server-only (FR-39)', async () => {
+    await assertFails(getDoc(doc(db('admin'), 'guestTransfers/t1')));
+    await assertFails(getDoc(doc(db('resident'), 'guestTransfers/t1')));
+    await assertFails(getDoc(doc(db('admin'), 'rateLimits/r1')));
+    await assertFails(setDoc(doc(db('resident'), 'rateLimits/r1'), { count: 0 }));
+  });
   it('RT-SMS-01 SMS records (phone numbers) are readable by administrators only (FR-25, NFR-11)', async () => {
     await assertSucceeds(getDoc(doc(db('admin'), 'smsOutbox/m1')));
     await assertFails(getDoc(doc(db('official'), 'smsOutbox/m1')));
