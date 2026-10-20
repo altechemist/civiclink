@@ -6,6 +6,7 @@
 import {
   addCommentSchema,
   affirmReportSchema,
+  pushTokenSchema,
   alertIdSchema,
   analyticsQuerySchema,
   assignReportSchema,
@@ -41,6 +42,7 @@ import { MaintenanceService } from './services/maintenanceService';
 import { ReportService } from './services/reportService';
 import { TaskService } from './services/taskService';
 import { UserService } from './services/userService';
+import { PushTokens } from './services/pushService';
 
 const reports = new ReportService();
 const tasks = new TaskService();
@@ -67,6 +69,8 @@ export const COMMANDS = {
   assignReport: defineCommand({ name: 'assignReport', schema: assignReportSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.assign(i, a) }),
   reassignTask: defineCommand({ name: 'reassignTask', schema: reassignTaskSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.reassign(i, a) }),
   confirmResolution: defineCommand({ name: 'confirmResolution', schema: confirmResolutionSchema, roles: ['RESIDENT'], handler: (i, a) => reports.confirm(i.reportId, a) }),
+  registerPushToken: defineCommand({ name: 'registerPushToken', schema: pushTokenSchema, roles: ['RESIDENT', 'OFFICIAL', 'FIELD_WORKER', 'ADMIN'], handler: (i, a) => PushTokens.register(a.uid, i.token) }),
+  unregisterPushToken: defineCommand({ name: 'unregisterPushToken', schema: pushTokenSchema, roles: ['RESIDENT', 'OFFICIAL', 'FIELD_WORKER', 'ADMIN'], handler: (i, a) => PushTokens.unregister(a.uid, i.token) }),
   affirmReport: defineCommand({ name: 'affirmReport', schema: affirmReportSchema, roles: ['RESIDENT'], handler: (i, a) => reports.affirm(i.reportId, a) }),
   reopenReport: defineCommand({ name: 'reopenReport', schema: reopenReportSchema, roles: ['RESIDENT'], handler: (i, a) => reports.reopen(i, a) }),
   addComment: defineCommand({ name: 'addComment', schema: addCommentSchema, roles: ['OFFICIAL', 'FIELD_WORKER', 'ADMIN'], handler: (i, a) => comments.add(i.reportId, i.text, a) }),

@@ -51,3 +51,40 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+/* FR-24 web push. The server sends data-only FCM messages ({title, body, link}); this worker shows
+ * them, so no Firebase script has to be loaded here. Clicking opens (or focuses) the linked screen. */
+self.addEventListener('push', (event) => {
+  let payload;
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = {};
+  }
+  const data = payload.data || payload;
+  const title = data.title || 'CivicLink';
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: data.link || 'civiclink',
+      data: { link: data.link || '/' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const link = (event.notification.data && event.notification.data.link) || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+      const existing = wins.find((w) => new URL(w.url).origin === self.location.origin);
+      if (existing) {
+        existing.navigate(link);
+        return existing.focus();
+      }
+      return self.clients.openWindow(link);
+    }),
+  );
+});

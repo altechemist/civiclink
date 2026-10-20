@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import { col } from './firebase';
 import { toHttpsError } from './errors';
 import { writeLog } from '../services/logService';
+import { deliverPushes, withPushScope } from '../services/pushService';
 
 /** The authenticated, active caller as stored in Firestore (source of truth over possibly stale token claims). */
 export interface Actor {
@@ -78,7 +79,10 @@ export async function execute<S extends z.ZodType, R>(def: CommandDefinition<S, 
       if (!def.roles.includes(actor.role)) throw new HttpsError('permission-denied', 'Your role cannot do this');
     }
     const input = parse(def.schema, data);
-    return await def.handler(input, actor);
+    const { result, intents } = await withPushScope(() => def.handler(input, actor));
+    // FR-24: push only after the command has committed; best-effort, bounded so it never delays the reply much.
+    if (intents.length) await Promise.race([deliverPushes(intents), new Promise((r) => setTimeout(r, 4000))]);
+    return result;
   } catch (err) {
     const httpsError = toHttpsError(err);
     if (httpsError.code === 'internal') {

@@ -14,6 +14,7 @@ import { execute, type Caller } from './lib/command';
 import { auth } from './lib/firebase';
 import { MaintenanceService } from './services/maintenanceService';
 import { writeLog } from './services/logService';
+import { deliverPushes, withPushScope } from './services/pushService';
 
 const MAX_BODY = 4 * 1024 * 1024; // 3 compressed photos (≤ 700 KB each) as base64 fit comfortably
 
@@ -73,7 +74,8 @@ async function maintenance(req: IncomingMessage, res: ServerResponse) {
   const secret = process.env.CRON_SECRET;
   if (!secret || !secretMatches(req.headers.authorization ?? '', `Bearer ${secret}`)) return send(res, 401, { error: 'unauthorised' });
   const m = new MaintenanceService();
-  const result = { escalated: await m.escalateOverdue(), closed: await m.autoCloseResolved() };
+  const { result, intents } = await withPushScope(async () => ({ escalated: await m.escalateOverdue(), closed: await m.autoCloseResolved() }));
+  await deliverPushes(intents);
   await writeLog('INFO', 'cron.maintenance', `Scheduled run: ${result.escalated} escalated, ${result.closed} closed`).catch(() => {});
   send(res, 200, result);
 }
