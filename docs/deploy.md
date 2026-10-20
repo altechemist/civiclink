@@ -78,6 +78,7 @@ The workflow `.github/workflows/cron.yml` then calls `/api/cron/maintenance` eve
    printf '%s' '+1xxxxxxxxxx' | npx vercel@62.4.0 env add TWILIO_FROM production --sensitive --yes --force
    npm run deploy:web
    ```
+   Trial accounts may only send Twilio's predefined templates, not custom text. Also set `TWILIO_TRIAL_TEMPLATE=sms_event_notifications` (not secret). CivicLink then sends that template, and the real alert text stays in the SMS outbox. Remove the variable after upgrading the account to send the real text.
 6. Verify: sign in as the administrator → System log → SMS outbox → **Send test SMS** to your verified number. The row shows SENT (Twilio) and the phone receives it; FAILED shows Twilio's reason.
 
 ## 5. Demo data
