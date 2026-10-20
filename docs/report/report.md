@@ -790,6 +790,7 @@ Table: Significant defects found and resolved
 | DEF-06 | IT-RPT-08 in CI | Under concurrency, extra reads inside the submission transaction (rate-limit count, profile, settings, officials) caused lock timeouts | Those reads moved before the transaction; it now contends only on the reference counter |
 | DEF-07 | E2E-01 run against production | Submission failed in production because the rate-limit query needed a composite index, which the emulator never requires | Index added and deployed; the E2E suite can now run against the deployed URL |
 | DEF-08 | First Vercel deployment | API calls crashed because a firebase-admin dependency pulls in an ESM-only package that Vercel's loader cannot `require()` | Dependency pinned to a compatible version (npm override) |
+| DEF-09 | E2E-11 against production | Map markers lost their per-report CSS class in production builds (set through a styling option Leaflet ignores for classes) | Class passed when the marker is created; production E2E runs now use per-run locations because live data persists |
 | DEF-04 | CI on a clean checkout | An over-broad `lib/` ignore rule had kept two source folders out of the repository | Ignore rule narrowed to the build output; CI now builds from a clean clone on every push |
 
 There are no unresolved defects. The limitations of included functionality are listed in Section 3.4.
