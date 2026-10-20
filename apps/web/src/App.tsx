@@ -15,17 +15,18 @@ import { NewReportPage } from './pages/resident/NewReportPage';
 import { MyReportsPage } from './pages/resident/MyReportsPage';
 import { ResidentReportPage } from './pages/resident/ResidentReportPage';
 import { AlertsFeedPage } from './pages/resident/AlertsFeedPage';
-import { OfficialDashboard } from './pages/official/OfficialDashboard';
-import { ReportQueuePage } from './pages/official/ReportQueuePage';
-import { OfficialReportPage } from './pages/official/OfficialReportPage';
-import { AlertsAdminPage } from './pages/official/AlertsAdminPage';
-import { NewAlertPage } from './pages/official/NewAlertPage';
-import { WorkerHome } from './pages/worker/WorkerHome';
-import { TaskPage } from './pages/worker/TaskPage';
-import { UsersPage } from './pages/admin/UsersPage';
-import { ConfigPage } from './pages/admin/ConfigPage';
-import { LogsPage } from './pages/admin/LogsPage';
 
+// Staff and field-worker screens load on demand, keeping the resident bundle small (NFR-06).
+const OfficialDashboard = lazy(() => import('./pages/official/OfficialDashboard').then((m) => ({ default: m.OfficialDashboard })));
+const ReportQueuePage = lazy(() => import('./pages/official/ReportQueuePage').then((m) => ({ default: m.ReportQueuePage })));
+const OfficialReportPage = lazy(() => import('./pages/official/OfficialReportPage').then((m) => ({ default: m.OfficialReportPage })));
+const AlertsAdminPage = lazy(() => import('./pages/official/AlertsAdminPage').then((m) => ({ default: m.AlertsAdminPage })));
+const NewAlertPage = lazy(() => import('./pages/official/NewAlertPage').then((m) => ({ default: m.NewAlertPage })));
+const WorkerHome = lazy(() => import('./pages/worker/WorkerHome').then((m) => ({ default: m.WorkerHome })));
+const TaskPage = lazy(() => import('./pages/worker/TaskPage').then((m) => ({ default: m.TaskPage })));
+const UsersPage = lazy(() => import('./pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })));
+const ConfigPage = lazy(() => import('./pages/admin/ConfigPage').then((m) => ({ default: m.ConfigPage })));
+const LogsPage = lazy(() => import('./pages/admin/LogsPage').then((m) => ({ default: m.LogsPage })));
 // Map and chart libraries are heavy: load them only when needed.
 const CommunityMapPage = lazy(() => import('./pages/common/CommunityMapPage'));
 const AnalyticsPage = lazy(() => import('./pages/official/AnalyticsPage'));

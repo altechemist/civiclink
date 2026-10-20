@@ -430,6 +430,8 @@ Table: User interface evidence
 | 24 | Official | Empty state in the report queue | FR-08 |
 | 25 | New resident | First Google sign-in completes the profile | FR-29 |
 | 26 | Resident | Profile editing and POPIA account deletion | FR-31, FR-32 |
+| 27 | Resident | "Me too" on an open issue from the community map | FR-33, BR-23 |
+| 28 | Resident | Offline mode: saved information with an offline notice | FR-34 |
 
 ![Figure: Sign in (all roles)](docs/evidence/01-login.png){width=2.6}
 
@@ -463,9 +465,13 @@ Table: User interface evidence
 
 ![Figure: Resident profile with POPIA account deletion](docs/evidence/17-profile-popia.png){width=2.6}
 
+![Figure: Resident, "Me too" from the community map](docs/evidence/18-map-me-too.png){width=2.6}
+
+![Figure: Resident, offline mode](docs/evidence/19-offline-mode.png){width=2.6}
+
 ## Data Design
 
-CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in Firestore as well, as binary documents in the `photos` collection (decision D3), so the system needs no separate file store. Figure 27 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
+CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in Firestore as well, as binary documents in the `photos` collection (decision D3), so the system needs no separate file store. Figure 29 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
 
 ![Figure: Firestore document model](docs/diagrams/data-model.png)
 
@@ -571,7 +577,7 @@ Table: Security controls
 
 ## Deployment and Runtime Design
 
-CivicLink has two runtime configurations built from the same code (Figure 28):
+CivicLink has two runtime configurations built from the same code (Figure 30):
 
 - **Deployed (free tier):** the static web app and the Node command API run on **Vercel** (serverless functions in the Cape Town region). Authentication and Firestore run on Firebase's free **Spark** plan. The API uses a service-account key held in Vercel's encrypted environment. A GitHub Actions schedule calls the protected maintenance endpoint hourly, and Vercel Cron calls it daily. The deployed URL is given in Appendix 11.2.
 - **Local:** the web app runs on Vite. Auth, Firestore and Cloud Functions run in the Firebase Emulator Suite on one machine, with the same command registry served by the Cloud Functions adapter. This configuration is used for development, all automated tests and an offline demonstration.

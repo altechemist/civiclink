@@ -185,3 +185,34 @@ test('capture account screens', async ({ browser }) => {
   await expect(r.getByRole('button', { name: 'Save changes' })).toBeVisible();
   await shot(r, '17-profile-popia');
 });
+
+test('capture map "Me too" and offline screens', async ({ browser }) => {
+  // A fresh open issue near the CBD, reported by Pieter, confirmed by Thandi.
+  const reporter = await open(browser, ACCOUNTS.pieter, PHONE, { latitude: -28.7436, longitude: 24.7712 });
+  await reporter.goto('/resident/report/new');
+  await reporter.getByRole('radio', { name: 'Road Damage' }).click();
+  await reporter.getByRole('button', { name: 'Use my location' }).click();
+  await reporter.getByLabel('What is happening?').fill('Large pothole in the left lane outside the library.');
+  await reporter.locator('label', { hasText: 'High' }).first().click();
+  await reporter.getByRole('button', { name: 'Review' }).click();
+  await reporter.getByRole('button', { name: 'Submit report' }).click();
+  await reporter.getByRole('link', { name: 'Track this report' }).click();
+  const reportId = reporter.url().split('/').pop()!;
+
+  const r = await open(browser, ACCOUNTS.thandi, PHONE);
+  await r.goto('/map');
+  await r.waitForTimeout(2500);
+  await r.locator(`.incident-${reportId}`).dispatchEvent('click');
+  await r.getByTestId('me-too').click();
+  await expect(r.getByTestId('me-too-result')).toBeVisible();
+  await shot(r, '18-map-me-too');
+
+  await r.goto('/resident/reports');
+  await r.waitForTimeout(1000);
+  await r.context().setOffline(true);
+  await r.getByRole('link', { name: 'Home', exact: true }).click();
+  await expect(r.getByTestId('offline-banner')).toBeVisible();
+  await r.waitForTimeout(500);
+  await shot(r, '19-offline-mode');
+  await r.context().setOffline(false);
+});
