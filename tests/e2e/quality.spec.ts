@@ -51,6 +51,8 @@ test('NFT-06 responsiveness: screens interactive < 3 s, p95 command < 2 s', asyn
   }
 
   // p95 latency of 50 sequential calls to a command through the real callable API (client SDK).
+  // The latency half uses the emulator harness, so it only runs locally / in CI.
+  if (process.env.E2E_BASE_URL) return;
   const official = await session(ACCOUNTS.naledi, PASSWORD);
   const latencies: number[] = [];
   for (let i = 0; i < 50; i++) {

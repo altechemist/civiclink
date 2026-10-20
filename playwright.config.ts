@@ -14,7 +14,8 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }], ['json', { outputFile: 'test-results/e2e.json' }]],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    // E2E_BASE_URL runs the suite against a deployed site (no local server is started).
+    baseURL: process.env.E2E_BASE_URL ?? 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     permissions: ['geolocation'],
@@ -24,10 +25,12 @@ export default defineConfig({
     { name: 'mobile-360', use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 640 }, isMobile: true, hasTouch: true }, testMatch: /mobile\.spec\.ts/ },
     ...(process.env.E2E_FIREFOX ? [{ name: 'firefox', use: { ...devices['Desktop Firefox'], permissions: [] as string[] }, testIgnore: /mobile\.spec\.ts/ }] : []),
   ],
-  webServer: {
-    command: 'npm run dev -w apps/web -- --host 127.0.0.1',
-    url: 'http://127.0.0.1:5173',
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: 'npm run dev -w apps/web -- --host 127.0.0.1',
+        url: 'http://127.0.0.1:5173',
+        reuseExistingServer: true,
+        timeout: 120_000,
+      },
 });
