@@ -5,6 +5,7 @@
  */
 import {
   addCommentSchema,
+  affirmReportSchema,
   alertIdSchema,
   analyticsQuerySchema,
   assignReportSchema,
@@ -66,6 +67,7 @@ export const COMMANDS = {
   assignReport: defineCommand({ name: 'assignReport', schema: assignReportSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.assign(i, a) }),
   reassignTask: defineCommand({ name: 'reassignTask', schema: reassignTaskSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.reassign(i, a) }),
   confirmResolution: defineCommand({ name: 'confirmResolution', schema: confirmResolutionSchema, roles: ['RESIDENT'], handler: (i, a) => reports.confirm(i.reportId, a) }),
+  affirmReport: defineCommand({ name: 'affirmReport', schema: affirmReportSchema, roles: ['RESIDENT'], handler: (i, a) => reports.affirm(i.reportId, a) }),
   reopenReport: defineCommand({ name: 'reopenReport', schema: reopenReportSchema, roles: ['RESIDENT'], handler: (i, a) => reports.reopen(i, a) }),
   addComment: defineCommand({ name: 'addComment', schema: addCommentSchema, roles: ['OFFICIAL', 'FIELD_WORKER', 'ADMIN'], handler: (i, a) => comments.add(i.reportId, i.text, a) }),
   updateTask: defineCommand({ name: 'updateTask', schema: updateTaskSchema, roles: ['FIELD_WORKER'], handler: (i, a) => tasks.update(i, a) }),

@@ -1,18 +1,48 @@
 import type { PublicReportDoc } from '@civiclink/shared';
 import { collection, query, where } from 'firebase/firestore';
+import { ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
+import { useSession } from '../../auth/AuthProvider';
 import { categoryColour, useCategories } from '../../components/domain';
 import { IncidentMap } from '../../components/maps';
-import { cx, ErrorState, LoadingState, PageHeader, StatusBadge } from '../../components/ui';
+import { Button, cx, ErrorState, LoadingState, PageHeader, StatusBadge } from '../../components/ui';
+import { call, type ApiError } from '../../lib/api';
 import { db } from '../../lib/firebase';
 import { timeAgo } from '../../lib/format';
 import { useLiveQuery } from '../../lib/hooks';
+
+/** FR-33 / BR-23: "Me too" confirms an existing open issue instead of filing a duplicate. */
+function MeToo({ reportId, count }: { reportId: string; count: number }) {
+  const [state, setState] = useState<{ busy: boolean; message?: string; count: number }>({ busy: false, count });
+  const confirm = async () => {
+    setState((s) => ({ ...s, busy: true }));
+    try {
+      const res = await call('affirmReport', { reportId });
+      setState({
+        busy: false,
+        count: res.affectedCount,
+        message: res.alreadyConfirmed ? 'You already confirmed this issue.' : "Thanks, you'll be notified as it progresses.",
+      });
+    } catch (err) {
+      setState((s) => ({ ...s, busy: false, message: (err as ApiError).message }));
+    }
+  };
+  return (
+    <div className="space-y-1 pt-1">
+      <Button variant="secondary" icon={ThumbsUp} busy={state.busy} onClick={confirm} className="min-h-8 px-3 py-1 text-xs" data-testid="me-too">
+        Me too ({state.count})
+      </Button>
+      {state.message && <p className="text-xs text-slate-700" data-testid="me-too-result">{state.message}</p>}
+    </div>
+  );
+}
 
 /**
  * FR-07: open incidents from the privacy-safe `publicReports` projection (BR-17): category, status,
  * approximate location and age only. No reporter, description or photos.
  */
 export default function CommunityMapPage() {
+  const { claims } = useSession();
   const categories = useCategories();
   const [filter, setFilter] = useState<string | null>(null);
   const { data, loading, error } = useLiveQuery<PublicReportDoc>(query(collection(db, 'publicReports'), where('isOpen', '==', true)), 'public-open');
@@ -58,6 +88,7 @@ export default function CommunityMapPage() {
                   {r.suburb} · {timeAgo(r.createdAt)}
                   {r.affectedCount > 1 ? ` · ${r.affectedCount} reports` : ''}
                 </p>
+                {claims.role === 'RESIDENT' && <MeToo reportId={r.id} count={r.affectedCount} />}
               </div>
             ),
           }))}

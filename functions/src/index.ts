@@ -26,6 +26,7 @@ export const assignReport = command(COMMANDS.assignReport);
 export const reassignTask = command(COMMANDS.reassignTask);
 export const confirmResolution = command(COMMANDS.confirmResolution);
 export const reopenReport = command(COMMANDS.reopenReport);
+export const affirmReport = command(COMMANDS.affirmReport);
 export const addComment = command(COMMANDS.addComment);
 export const updateTask = command(COMMANDS.updateTask);
 export const completeTask = command(COMMANDS.completeTask);

@@ -311,6 +311,28 @@ describe('escalation and resolution (FR-13, FR-14)', () => {
   });
 });
 
+describe('Me too (FR-33, BR-23)', () => {
+  it('IT-AFF-01 a resident confirms an open issue: count, follower and timeline update once', async () => {
+    const { reportId } = await w.resident.call('submitReport', validReport({ location: freshSpot() }));
+    const first = await w.resident2.call('affirmReport', { reportId });
+    expect(first).toEqual({ affectedCount: 2, alreadyConfirmed: false });
+    const again = await w.resident2.call('affirmReport', { reportId });
+    expect(again).toEqual({ affectedCount: 2, alreadyConfirmed: true });
+    const r = await report(reportId);
+    expect(r.affectedCount).toBe(2);
+    expect(r.followerIds).toContain(w.resident2.uid);
+    expect((await adminDb.collection('publicReports').doc(reportId).get()).get('affectedCount')).toBe(2);
+    expect((await history(reportId)).filter((h) => h.event === 'affirm')).toHaveLength(1);
+  });
+  it('IT-AFF-02 own reports, closed reports and staff are refused', async () => {
+    const { reportId } = await w.resident.call('submitReport', validReport({ location: freshSpot() }));
+    await expectCode(w.resident.call('affirmReport', { reportId }), 'failed-precondition');
+    await expectCode(w.officialWater.call('affirmReport', { reportId }), 'permission-denied');
+    await w.officialWater.call('rejectReport', { reportId, reason: 'Duplicate of an older phone report' });
+    await expectCode(w.resident2.call('affirmReport', { reportId }), 'failed-precondition');
+  });
+});
+
 describe('comments (FR-22, BR-18)', () => {
   it('IT-CMT-01 staff with access can comment; residents and other departments cannot', async () => {
     const { reportId } = await assignedReport(w, freshSpot());

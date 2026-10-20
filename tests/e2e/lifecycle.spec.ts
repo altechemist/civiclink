@@ -142,3 +142,20 @@ test('E2E-07 GPS outside Sol Plaatje is explained, not used; tapping the map set
   await expect(resident.getByTestId('location-coords')).toHaveText(/-28\.\d+, 24\.\d+/);
   await expect(resident.getByLabel('Suburb', { exact: true })).not.toHaveValue('');
 });
+
+test('E2E-11 "Me too" from the community map raises the affected count (FR-33, BR-23)', async ({ browser }) => {
+  // Inside the map's initial view (near the CBD), offset per browser like the other spots.
+  const reporter = await as(browser, ACCOUNTS.pieter, { latitude: -28.7442 - offset(), longitude: 24.7793 });
+  await submitReport(reporter, { category: 'Illegal Dumping', description: 'E2E: rubble dumped next to the park entrance', suburb: 'Galeshewe' });
+  await reporter.getByRole('link', { name: 'Track this report' }).click();
+  const reportId = reporter.url().split('/').pop()!;
+
+  const resident = await as(browser, ACCOUNTS.thandi);
+  await resident.goto('/map');
+  await resident.locator(`.incident-${reportId}`).dispatchEvent('click');
+  await resident.getByTestId('me-too').click();
+  await expect(resident.getByTestId('me-too-result')).toContainText("you'll be notified");
+  await expect(resident.getByTestId('me-too')).toContainText('(2)');
+  await resident.getByTestId('me-too').click();
+  await expect(resident.getByTestId('me-too-result')).toContainText('already confirmed');
+});
