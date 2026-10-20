@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Report §5.3 uses ADR-0001, ADR-0002, ADR-0006 and ADR-0004 (the template asks for 2–4 decisions). ADR-0003 and ADR-0005 are supporting.
+Report §5.3 presents four decisions in full: D1 = ADR-0001, D2 = ADR-0006, D3 = ADR-0007, D4 = ADR-0009 (the template asks for 2–4). ADR-0002, ADR-0004 and ADR-0008 are summarised there as supporting decisions; ADR-0003 and ADR-0005 are background.
 
 ---
 
@@ -16,8 +16,8 @@ Report §5.3 uses ADR-0001, ADR-0002, ADR-0006 and ADR-0004 (the template asks f
 
 - **Context:** Four role-specific UIs, mobile-first for residents and workers, desktop for officials.
 - **Options:** Next.js (App Router), React + Vite SPA, Flutter.
-- **Decision:** React 18 + Vite + React Router + Tailwind CSS.
-- **Rationale:** All data access is client-side through the Firebase SDK, so SSR adds complexity for no benefit. A static SPA deploys straight to Firebase Hosting. The Phase 3 routes already use React Router conventions.
+- **Decision:** React 19 + Vite + React Router + Tailwind CSS.
+- **Rationale:** All data access is client-side through the Firebase SDK, so SSR adds complexity for no benefit. A static SPA deploys to any static host or CDN (Vercel in the final deployment, ADR-0006). The Phase 3 routes already use React Router conventions.
 - **Consequences:** A single codebase with role-guarded route trees. SEO is irrelevant (it's an authenticated app).
 
 ## ADR-0003: Firebase Emulator Suite for local development and tests (deployment superseded by ADR-0006)
@@ -26,7 +26,7 @@ Report §5.3 uses ADR-0001, ADR-0002, ADR-0006 and ADR-0004 (the template asks f
 - **Options:** Live Firebase project only, emulator only, or emulator as the primary runtime with an optional live deployment.
 - **Decision:** The emulator is primary (`npm run dev` starts emulators, seeds data and starts the web app). Optionally, deploy to a Blaze project with a budget alert if time allows.
 - **Rationale:** Zero cost and no network dependency during the demo. Identical behaviour for tests in CI. Fully reproducible from the README.
-- **Consequences:** Report §8 documents both paths. FCM push cannot be shown in the emulator (FR-24 stays Could).
+- **Consequences:** Report §8 documents both paths. FCM push cannot be shown in the emulator; it is demonstrated on the deployed system (ADR-0006), where it was verified end to end.
 
 ## ADR-0004: Leaflet + OpenStreetMap instead of Google Maps
 
@@ -54,3 +54,27 @@ Report §5.3 uses ADR-0001, ADR-0002, ADR-0006 and ADR-0004 (the template asks f
   - Vercel's free cron runs daily, so the hourly SLA escalation is triggered by a GitHub Actions schedule calling a secret-protected endpoint.
   - A service-account key is stored as a Vercel secret (never committed).
   - Vercel Hobby is for non-commercial use, which fits an academic project. A municipal rollout would move to Blaze or a paid host with the same code.
+
+## ADR-0007: Offline reports through an on-device outbox and idempotent submission
+
+- **Context:** Residents with weak or no signal must still be able to report (FR-27). Reports are created by a server command (ADR-0001), so Firestore's own offline write queue cannot be used.
+- **Options:** (a) the Background Sync API in the service worker; (b) an IndexedDB outbox in the app, sent when the browser is online again; (c) keep submission disabled offline.
+- **Decision:** (b). Each report carries a `clientId` chosen on the device. The server derives the report's document id from the user id and the `clientId`, checks it before and inside TX-1, and returns the stored result for a resend.
+- **Rationale:** Background Sync is unavailable in Firefox and Safari (NFR-09). The outbox works in every browser, keeps compressed photos, belongs to one account, and idempotency makes at-least-once sending safe.
+- **Consequences:** A saved report gets its reference only when sent. Reports the server refuses stay on the phone with the reason. Tests: UT-OFF-01, IT-OFF-01..02, E2E-12.
+
+## ADR-0008: Public data served through the CDN cache, not public Firestore reads
+
+- **Context:** The public home (FR-38) and transparency page (FR-36) are open to anyone, so traffic is unpredictable and Firestore's free quota counts every read. No personal data may reach anonymous users (NFR-11).
+- **Options:** (a) open Security Rules for an aggregate document and `publicReports`; (b) server endpoints (`/api/public/stats`, `/api/public/feed`) that build the data, cached by the Vercel CDN (`s-maxage`) and per server instance.
+- **Decision:** (b). Figures are cached for 5 minutes (stale-while-revalidate 10), the feed of alerts and open issues for 1 minute because alerts must be fresh.
+- **Rationale:** No rule opens data to unauthenticated users; only aggregates and the privacy-safe projection leave the server; database reads stay bounded however many people visit.
+- **Consequences:** Public data can be up to 1–5 minutes old, stated on the pages. Tests: IT-PUB-01..03, NFT-11.
+
+## ADR-0009: Guest reporting through anonymous sign-in, not unauthenticated writes
+
+- **Context:** Anyone should be able to report without signing up (FR-39), but every write must still go through the authorised command path (ADR-0001, NFR-01), and abuse must be limited.
+- **Options:** (a) an unauthenticated submit endpoint; (b) Firebase anonymous sign-in plus a server-created guest Resident profile; (c) keep registration mandatory.
+- **Decision:** (b). A guest keeps their reports by linking an email/password or Google sign-in to the same user (same uid, nothing copied), or moves them into an existing account with a one-time, hashed, 15-minute transfer code.
+- **Rationale:** The guest is a real authenticated user, so every existing command check and Security Rule applies unchanged; no parallel, weaker path is needed.
+- **Consequences:** Guest sessions are cheap to create, so BR-26 limits guests to 3 reports per hour and 10 new guest sessions per network address per hour. A guest who clears the browser loses access unless they created an account; the app warns before a guest signs out. Empty guest accounts are not yet cleaned up automatically (known limitation). Tests: IT-GST-01..05, RT-GST-01, E2E-16, E2E-17.

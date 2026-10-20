@@ -1,6 +1,6 @@
 /**
  * Regenerates the UI evidence screenshots for report §5.5 into docs/evidence/.
- *   npm run evidence   (against a running `npm run dev`)
+ *   npm run evidence   (against a running `npm run dev`), then: python3 scripts/evidence-groups.py (needs Pillow)
  * Resident/worker screens use a 430×932 phone viewport, staff screens 1440×900 (as in Phase 3).
  */
 import { expect, test, type Browser, type Page } from '@playwright/test';

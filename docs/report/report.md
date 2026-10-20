@@ -39,9 +39,8 @@ Residents of Sol Plaatje have no dependable digital channel for reporting servic
 
 The stakeholder questionnaire reported response times of 24–72 hours for burst pipes, mainly because reports were routed to the wrong team. These problems are structural rather than individual: they come from analogue, fragmented processes. A shared digital system that records every report, assignment and status change in one place, enforces routing and accountability rules, and pushes updates to the people affected directly addresses each of them.
 
-Published evidence supports these findings. Sol Plaatje is home to 270,078 people (Statistics South Africa, 2023). The municipality's own plan sets a turnaround strategy for water and electricity losses (Sol Plaatje Local Municipality, 2022), and municipal management has reported physical and technical water losses of about 60%, with inner-city pipelines bursting frequently (Noordkaap Bulletin, 2024). Residents have publicly criticised slow responses to near-daily burst pipes (Diamond Fields Advertiser, 2026), the same response-time gap identified in the interview. Nationally, only 34 of South Africa's municipalities (13%) obtained clean audits in 2022-23, and the Auditor-General reports weak controls over performance information and service delivery (Auditor-General South Africa, 2024). Accountable, traceable records of service delivery are therefore a recognised need, not only a local one.
+Published evidence supports these findings. Sol Plaatje is home to 270,078 people (Statistics South Africa, 2023). The municipality's own plan sets a turnaround strategy for water and electricity losses (Sol Plaatje Local Municipality, 2022), and the municipal manager has reported non-revenue physical and technical water losses of 60%, with the bulk pipelines from Riverton leaking because of corrosion and sabotage (Noordkaap Bulletin, 2024). In 2026 a resident's published opinion piece described burst pipes as "a near-daily occurrence", with a reported burst still running hours later (Diamond Fields Advertiser, 2026), the same response-time gap identified in the interview. Nationally, only 34 of South Africa's municipalities (13%) obtained clean audits in 2022-23, and the Auditor-General reports weak controls over performance information and service delivery (Auditor-General South Africa, 2024). Accountable, traceable records of service delivery are therefore a recognised need, not only a local one.
 
-> VERIFY: Quick final check of the two press figures (60% water losses; near-daily bursts) against the articles listed in the references.
 
 ## Project Purpose
 
@@ -117,7 +116,7 @@ Table: Excluded capabilities
 |---|---|---|
 | Real SMS sending in the demo deployment | Simulated | Every SMS costs money. Without gateway credentials each SMS is recorded as Simulated; three environment variables switch to Twilio (CR-34) |
 | Native Android/iOS apps | Excluded | The responsive web app works on low-end phones without app-store distribution |
-| Google Maps and reverse geocoding | Excluded (replaced) | Replaced by Leaflet and OpenStreetMap (decision D4) |
+| Google Maps and reverse geocoding | Excluded (replaced) | Replaced by Leaflet and OpenStreetMap (ADR-0004) |
 | 99.5% availability, 10 000 concurrent users, multi-region failover | Excluded | Production targets from Phases 1–2 that cannot be verified in a student environment |
 | AI/ML prediction | Excluded | Not part of the product |
 
@@ -134,7 +133,8 @@ Table: Known limitations
 | Offline (FR-27, FR-34) | Offline, only new reports can be saved; other actions need a connection, and the map shows only areas viewed before | A saved report gets its reference number when it is sent | Sent automatically on reconnect, stored once |
 | Scheduled rules (FR-13, FR-14, FR-28) | The emulator does not fire schedules; the free deployment's schedule runs hourly | Locally an administrator selects "Run scheduled rules now"; a scheduled alert can be up to an hour late when nobody is using the site | While the site is in use, due alerts are published within about a minute (background check after API requests) |
 | Alert broadcast (FR-16) | Delivery records are written in batches after the alert document, not in one transaction | A failure during a broadcast could leave the recipient count higher than the stored delivery records | Acceptable at municipal scale; records can be re-derived from the suburb query |
-| Location (FR-03) | No street address; location is a map pin plus suburb and optional landmark | Officials rely on the pin and the landmark text | Deliberate (decision D4) |
+| Guest accounts (FR-39) | Guest sessions that never report are not deleted automatically | Unused anonymous accounts accumulate in Firebase Authentication (no personal data is stored for them) | A scheduled clean-up of empty guest accounts is a production follow-up |
+| Location (FR-03) | No street address; location is a map pin plus suburb and optional landmark | Officials rely on the pin and the landmark text | Deliberate (ADR-0004) |
 
 # SYSTEM REQUIREMENTS SPECIFICATION
 
@@ -371,24 +371,26 @@ Table: Component responsibilities and technology stack
 
 | Component | Technology | Responsibility |
 |---|---|---|
-| Web application | React 19, TypeScript, Vite, React Router, Tailwind CSS | Role-specific user interfaces, client-side validation, real-time views |
-| Maps | Leaflet 1.9 with OpenStreetMap tiles | Location capture (GPS or draggable pin) and incident maps |
+| Web application | React 19 (Meta Platforms, 2026), TypeScript, Vite, React Router, Tailwind CSS | Role-specific user interfaces, client-side validation, real-time views |
+| Maps | Leaflet 1.9 (Leaflet, 2023) with OpenStreetMap tiles (OpenStreetMap contributors, 2026) | Location capture (GPS or draggable pin) and incident maps |
 | Charts | Recharts 3 | Analytics visualisation |
 | Command API | Node.js 22 command registry with two adapters: Vercel serverless functions (deployed) and Cloud Functions (local emulator) | Authentication and role checks, validation, business rules, transactions, notifications |
 | Scheduled jobs | GitHub Actions (hourly) and Vercel Cron (daily) calling a secret-protected endpoint, plus a background check after API requests; Cloud Functions scheduler locally | SLA escalation, auto-close, publishing scheduled alerts |
-| Notifications | Firebase Cloud Messaging (web push) via the app's service worker; Twilio REST API for SMS (optional) | Push to devices; SMS for emergency alerts |
-| Offline and caching | Service worker (app shell, map tiles), IndexedDB outbox, Firestore offline cache; Vercel CDN edge cache | Installable app, offline drafts, fast repeat visits, cached public figures |
-| Shared domain package | TypeScript, Zod 4 | Schemas, report/task state machines, duplicate, SLA and resolution policies, analytics |
-| Database | Cloud Firestore | Persistent documents, real-time listeners, transactions |
-| Photo storage | Cloud Firestore binary documents (`photos`) | Report and proof photos, compressed in the browser (decision D3) |
-| Authentication | Firebase Authentication with custom claims | Email/password sign-in, role, department, suburb and active-account claims |
-| Access control | Firestore Security Rules | Server-side enforcement of the permission matrix |
-| Runtime: deployed | Vercel (static site + Node serverless functions, Cape Town region) and Firebase Spark (Auth, Firestore) | Free-tier production configuration (decision D3) |
-| Runtime: local | Firebase Emulator Suite | Local Auth, Firestore and Functions for development, tests and offline demonstration |
-| Testing / CI | Vitest, @firebase/rules-unit-testing, Playwright, axe-core, GitHub Actions, gitleaks | Automated verification |
-| Browser hardening | Content Security Policy, HSTS and related headers in `vercel.json` | Defence against script injection and framing |
+| Notifications | Firebase Cloud Messaging web push (Firebase, 2026c) via the app's service worker; Twilio Programmable Messaging REST API for SMS (Twilio, 2026a) | Push to devices; SMS for emergency alerts |
+| Offline and caching | Web app manifest (W3C, 2023) and service worker (app shell, map tiles), IndexedDB outbox, Firestore offline cache; Vercel CDN edge cache (Vercel, 2026a) | Installable app, offline drafts, fast repeat visits, cached public figures |
+| Shared domain package | TypeScript, Zod 4 (Zod, 2026) | Schemas, report/task state machines, duplicate, SLA and resolution policies, analytics |
+| Database | Cloud Firestore (Firebase, 2026b) | Persistent documents, real-time listeners, transactions |
+| Photo storage | Cloud Firestore binary documents (`photos`) | Report and proof photos, compressed in the browser (decision D2) |
+| Authentication | Firebase Authentication with custom claims; anonymous sign-in for guests (Firebase, 2026a) | Email/password, Google and guest sign-in, role, department, suburb and active-account claims |
+| Access control | Firestore Security Rules (Firebase, 2026e) | Server-side enforcement of the permission matrix |
+| Runtime: deployed | Vercel (static site + Node serverless functions, Cape Town region; Vercel, 2026b) and Firebase Spark (Auth, Firestore) | Free-tier production configuration (decision D2) |
+| Runtime: local | Firebase Emulator Suite (Firebase, 2026d) | Local Auth, Firestore and Functions for development, tests and offline demonstration |
+| Testing / CI | Vitest, @firebase/rules-unit-testing, Playwright (Microsoft, 2026), axe-core, GitHub Actions, gitleaks | Automated verification |
+| Browser hardening | Content Security Policy (MDN contributors, 2026), HSTS and related headers in `vercel.json` | Defence against script injection and framing |
 
 ## Key Architecture and Design Decisions
+
+Four decisions shaped the system most; three smaller supporting decisions are summarised in the table that follows. Each is recorded as an architecture decision record in `docs/adr/`.
 
 **D1: All state changes go through server-side commands (ADR-0001).**
 - *Context:* the core rules span several documents: allocating a reference, the 100 m duplicate search, one active task per report, and resolving a report when its task completes.
@@ -397,47 +399,34 @@ Table: Component responsibilities and technology stack
 - *Rationale:* Security Rules cannot express multi-document transactional rules. (b) keeps a single enforcement point and still gets real-time reads from Firestore listeners. (c) would mean rebuilding authentication, real-time updates and storage, and abandoning three phases of design.
 - *Consequences:* clean separation and testable services, and concurrency is handled by Firestore transactions. On the other hand, Firestore has no foreign-key constraints, so integrity depends on transactions and rules (Section 5.6), and deployed functions require Firebase's paid Blaze plan.
 
-**D2: React single-page application instead of Next.js (ADR-0002).**
-- *Context:* four role-specific interfaces, mobile-first for residents and workers.
-- *Options:* Next.js, React with Vite, Flutter.
-- *Decision:* React + Vite + React Router.
-- *Rationale:* all data comes from the Firebase SDK in the browser, so server rendering adds complexity for no benefit. A static single-page app deploys to Firebase Hosting, and Phase 3 already used React Router conventions.
-- *Consequences:* simple hosting and a fast build. Search-engine indexing is irrelevant for an authenticated application.
-
-**D3: Free-tier deployment: Firebase Spark, a Node API on Vercel, and photos stored in Firestore (ADR-0006).**
+**D2: Free-tier deployment: Firebase Spark, a Node API on Vercel, and photos stored in Firestore (ADR-0006).**
 - *Context:* the system had to be deployable without cost. Cloud Functions and Cloud Storage both require Firebase's paid Blaze plan.
 - *Options:* (a) Blaze with a budget alert; (b) port to Supabase; (c) keep the free Spark plan (Auth, Firestore), serve the command API from a free Node host, and store photos in Firestore.
 - *Decision:* (c). Vercel serverless functions run the API next to the static web app; photos are compressed to ≤ 700 KB and stored as binary documents.
 - *Rationale:* the commands were already transport-independent, so a second adapter reuses every service unchanged and speaks the same callable protocol (the client only switches its URL). Vercel's free functions do not sleep, which matters in a live demonstration. A Supabase port would have meant rewriting the backend and about 90 tests.
 - *Consequences:* two adapters must stay equivalent, so CI runs the complete E2E suite through both. Photo size is bounded by Firestore's 1 MiB document limit, and each photo view is one document read. The hourly SLA job runs from GitHub Actions, because Vercel's free cron is daily. The local emulator configuration remains for development, tests and an offline demonstration.
 
-**D5: Offline reports through an on-device outbox and idempotent commands.**
+**D3: Offline reports through an on-device outbox and idempotent commands (ADR-0007).**
 - *Context:* residents with weak signal must be able to report when they have no connection (FR-27). Reports are created by a server command (D1), so Firestore's own offline write queue cannot be used.
 - *Options:* (a) the Background Sync API in the service worker; (b) an IndexedDB outbox in the app, sent when the browser reports it is online again; (c) disable submission offline (the Phase 3 baseline).
 - *Decision:* (b), with a `clientId` chosen on the device and sent with the report. The server derives the report's document id from the user and this id, so a resend after a lost response returns the stored report instead of creating a second one.
 - *Rationale:* Background Sync is not available in Firefox or Safari (NFR-09). The outbox works in every browser, keeps compressed photos, and belongs to one account. Idempotency makes "at least once" sending safe.
 - *Consequences:* a saved report gets its reference number only when it is sent. Entries the server refuses stay on the phone with the reason, so nothing is lost silently.
 
-**D6: Public figures served through the CDN cache, not from Firestore.**
-- *Context:* the transparency page (FR-36) is open to anyone, so traffic is unpredictable, and Firestore's free quota counts every read.
-- *Options:* (a) public Firestore reads of an aggregate document; (b) a server endpoint that computes the figures, with CDN caching (`s-maxage=300, stale-while-revalidate=600`) and a one-minute cache in the server instance.
-- *Decision:* (b).
-- *Rationale:* no Security Rule has to open data to anonymous users, only aggregates leave the server, and however many people view the page, the database is read at most about once every five minutes.
-- *Consequences:* figures can be up to five minutes old, which is stated on the page.
-
-**D7: Guest reporting through anonymous sign-in, not unauthenticated writes.**
+**D4: Guest reporting through anonymous sign-in, not unauthenticated writes (ADR-0009).**
 - *Context:* residents should be able to report without signing up (FR-39), but every write must still be authorised on the server (D1, NFR-01) and abuse must be limited.
 - *Options:* (a) an unauthenticated "submit" endpoint; (b) Firebase anonymous sign-in plus a server-created guest Resident profile; (c) keep registration mandatory.
 - *Decision:* (b).
-- *Rationale:* the guest is a real Firebase user, so every existing rule, command check and Security Rule applies unchanged, the guest can follow and confirm their report, and the account can later be upgraded in place by linking an email/password or Google sign-in to the same user id, so nothing has to be copied. (a) would need a parallel, weaker authorisation path.
+- *Rationale:* the guest is a real Firebase user (Firebase, 2026a), so every existing rule, command check and Security Rule applies unchanged, the guest can follow and confirm their report, and the account can later be upgraded in place by linking an email/password or Google sign-in to the same user id, so nothing has to be copied. (a) would need a parallel, weaker authorisation path.
 - *Consequences:* guest sessions are cheap to create, so BR-26 adds a lower report limit and a per-address session limit. A guest who clears the browser loses access unless they created an account; the interface says so before sign-out.
 
-**D4: Leaflet and OpenStreetMap instead of Google Maps (ADR-0004).**
-- *Context:* residents must pinpoint incidents, and staff must see them.
-- *Options:* Google Maps with Geocoding, Mapbox, Leaflet with OpenStreetMap.
-- *Decision:* Leaflet with OpenStreetMap.
-- *Rationale:* no API key or billing is needed, and the suburb, which drives alert targeting, is chosen from a list anyway.
-- *Consequences:* there is no reverse geocoding, so officials rely on the pin and the landmark text. Tile usage must follow the OpenStreetMap policy, which suits low volumes.
+Table: Supporting decisions
+
+| Decision | Reason | Record |
+|---|---|---|
+| React single-page application with Vite, not Next.js | All data comes from the Firebase SDK in the browser, so server rendering adds complexity without benefit; a static build deploys to any CDN | ADR-0002 |
+| Leaflet with OpenStreetMap, not Google Maps | No API key or billing; the suburb that drives alert targeting is chosen from a list, so reverse geocoding is not needed (officials rely on the pin and landmark) | ADR-0004 |
+| Public figures and the public feed served from the CDN cache, not public Firestore reads | No Security Rule opens data to anonymous users and only aggregates or the privacy-safe projection leave the server; database reads stay bounded however many people visit (figures ≤ 5 min old, feed ≤ 1 min) | ADR-0008 |
 
 ## Application Class Design
 
@@ -463,91 +452,61 @@ There are four user roles, each with its own area:
 - **Field workers** use the same mobile layout, coloured green and reduced to their task list.
 - **Officials and administrators** use a desktop layout with a sidebar.
 
-Every screen handles loading, empty, error and permission-denied states. The screenshots below were captured from the submitted system with the seeded data (`tests/evidence/capture.spec.ts`). The photos in them are illustrative sample images.
+Every screen handles loading, empty, error and permission-denied states. The screenshots below were captured from the submitted system with the seeded data (`tests/evidence/capture.spec.ts`). The photos in them are illustrative sample images. Phone screens are grouped three to a figure by user journey, labelled (a)–(c); desktop screens are shown one per figure.
 
 Table: User interface evidence
 
 | Figure | User | Purpose and main action | Requirement / workflow |
 |---|---|---|---|
-| 11 | Any | Sign in; demo-account shortcuts in the emulator | FR-02 |
-| 12 | Resident | Three-step report: details with map pin, suburb, description, severity and photo | FR-03, W1 |
-| 13 | Resident | Validation errors before submission | BR-02, NFR-03 |
-| 14 | Resident | Duplicate detected; resident follows the original report | FR-05, W1 alternative path |
-| 15 | Official | Department dashboard with KPIs and reports needing action | FR-08 |
-| 16 | Official | Triage and assignment, with history and internal notes | FR-09, FR-10, W2 |
-| 17 | Field worker | Task completion with notes and proof photo | FR-11, W2 |
-| 18 | Resident | Completed state: resolved report with proof, confirm or reopen | FR-06, FR-14 |
-| 19 | Official | Alert composition with a live resident preview | FR-16 |
-| 20 | Resident | Suburb alerts feed (strike emergency pinned first) | FR-17 |
+| 11 | Visitor, any user, guest | (a) Public home with alerts and open issues; (b) sign in; (c) a guest keeping their reports by creating an account or signing in | FR-38, FR-02, FR-39 |
+| 12 | Resident | (a) Report details with map pin, suburb, description, severity and photo; (b) validation errors before submission; (c) duplicate detected, resident follows the original | FR-03, BR-02, FR-05, W1 and its alternative paths |
+| 13 | Official | Department dashboard with KPIs and reports needing action | FR-08 |
+| 14 | Official | Triage and assignment, with history and internal notes | FR-09, FR-10, W2 |
+| 15 | Official | Bulk assignment of selected reports to one field worker | FR-35 |
+| 16 | Official | Empty state in the report queue | FR-08 |
+| 17 | Field worker, resident | (a) Task completed with notes and proof photo; (b) resolved report with proof (result state); (c) confirming the fix with a rating | FR-11, FR-14, FR-37, W2 |
+| 18 | Official | Alert composition with a live resident preview | FR-16 |
+| 19 | Official | Scheduled alerts with cancel | FR-28 |
+| 20 | Resident | (a) Suburb alerts feed, emergency pinned first; (b) "Me too" on an open issue from the map; (c) offline, with a report saved on the phone | FR-17, FR-33, FR-27, FR-34 |
 | 21 | Official | Analytics computed from live data | FR-19 |
-| 22 | Administrator | User and role management | FR-20 |
-| 23 | Resident | Permission denied when opening an official page | NFR-01 |
-| 24 | Official | Empty state in the report queue | FR-08 |
-| 25 | New resident | First Google sign-in completes the profile | FR-29 |
-| 26 | Resident | Profile editing and POPIA account deletion | FR-31, FR-32 |
-| 27 | Resident | "Me too" on an open issue from the community map | FR-33, BR-23 |
-| 28 | Resident | Offline mode: a report saved on the phone, waiting to be sent | FR-27, FR-34 |
-| 29 | Official | Scheduled alerts with cancel | FR-28 |
-| 30 | Official | Bulk assignment from the report queue | FR-35 |
-| 31 | Public | Transparency page, no sign-in | FR-36 |
-| 32 | Resident | Rating the service when confirming the fix | FR-37 |
-| 33 | Administrator | SMS outbox (simulated gateway) | FR-25 |
-| 34 | Public | Public home: alerts, open-issue map, figures | FR-38 |
-| 35 | Guest | Keeping guest reports: create an account or sign in | FR-39 |
+| 22 | Public | Transparency page, no sign-in | FR-36 |
+| 23 | Administrator | User and role management | FR-20 |
+| 24 | Administrator | SMS outbox and test SMS | FR-25 |
+| 25 | Resident | (a) Permission denied on an official page (error state); (b) first Google sign-in completes the profile; (c) profile editing and POPIA account deletion | NFR-01, FR-29, FR-31, FR-32 |
 
-![Figure: Sign in (all roles)](docs/evidence/01-login.png){width=2.6}
+![Figure: Entry: public home, sign in, guest account](docs/evidence/groups/g1-entry.png){width=6.3}
 
-![Figure: Resident, report step 2 (location, details and photo)](docs/evidence/06-report-step2-details.png){width=2.6}
-
-![Figure: Resident, validation errors](docs/evidence/05-report-validation-errors.png){width=2.6}
-
-![Figure: Resident, duplicate report detected](docs/evidence/09-report-duplicate.png){width=2.6}
+![Figure: Resident reporting (W1): details, validation errors, duplicate](docs/evidence/groups/g2-report.png){width=6.3}
 
 ![Figure: Official dashboard](docs/evidence/20-official-dashboard.png)
 
 ![Figure: Official, triage and assignment](docs/evidence/23-triage-assign.png)
 
-![Figure: Field worker, completion with proof](docs/evidence/43-worker-completed.png){width=2.6}
-
-![Figure: Resident, resolved report with proof and confirm/reopen](docs/evidence/11-report-resolved-confirm.png){width=2.6}
-
-![Figure: Official, alert composer with preview](docs/evidence/26-alert-composer.png)
-
-![Figure: Resident, alerts feed](docs/evidence/13-resident-alerts.png){width=2.6}
-
-![Figure: Service-delivery analytics](docs/evidence/28-analytics.png)
-
-![Figure: Administrator, user management](docs/evidence/30-admin-users.png)
-
-![Figure: Permission-denied state](docs/evidence/15-permission-denied.png){width=2.6}
+![Figure: Official, bulk assignment](docs/evidence/24-bulk-assign.png)
 
 ![Figure: Empty state in the report queue](docs/evidence/22-queue-empty-state.png)
 
-![Figure: First Google sign-in, profile completion](docs/evidence/16-google-welcome.png){width=2.6}
+![Figure: Resolution (W2): worker completion, resolved report, rating](docs/evidence/groups/g3-resolution.png){width=6.3}
 
-![Figure: Resident profile with POPIA account deletion](docs/evidence/17-profile-popia.png){width=2.6}
-
-![Figure: Resident, "Me too" from the community map](docs/evidence/18-map-me-too.png){width=2.6}
-
-![Figure: Resident, offline mode with a report saved on the phone](docs/evidence/19-offline-mode.png){width=2.6}
+![Figure: Official, alert composer with preview](docs/evidence/26-alert-composer.png)
 
 ![Figure: Official, scheduled alerts](docs/evidence/31-scheduled-alerts.png)
 
-![Figure: Official, bulk assignment](docs/evidence/24-bulk-assign.png)
+![Figure: Resident community features: alerts, "Me too", offline report](docs/evidence/groups/g4-community.png){width=6.3}
+
+![Figure: Service-delivery analytics](docs/evidence/28-analytics.png)
 
 ![Figure: Public transparency page](docs/evidence/02-transparency.png)
 
-![Figure: Resident, rating the service](docs/evidence/12-rate-service.png){width=2.6}
+![Figure: Administrator, user management](docs/evidence/30-admin-users.png)
 
 ![Figure: Administrator, SMS outbox](docs/evidence/32-sms-outbox.png)
 
-![Figure: Public home page](docs/evidence/00-public-home.png)
-
-![Figure: Guest, keeping reports with an account](docs/evidence/33-guest-account.png){width=2.6}
+![Figure: Access and accounts: permission denied, Google first sign-in, POPIA deletion](docs/evidence/groups/g5-account.png){width=6.3}
 
 ## Data Design
 
-CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in Firestore as well, as binary documents in the `photos` collection (decision D3), so the system needs no separate file store. Figure 36 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
+CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in Firestore as well, as binary documents in the `photos` collection (decision D2), so the system needs no separate file store. Figure 26 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
 
 ![Figure: Firestore document model](docs/diagrams/data-model.png)
 
@@ -647,13 +606,13 @@ Table: Security controls
 | Input | Malicious or invalid data | Zod schemas on the server; geographic bounds; length limits; photo size limit and real-type check from magic bytes, so renamed or script-bearing files (e.g. SVG) are refused; request body limited to 4 MB |
 | Integrity | Race conditions or partial updates | Firestore transactions TX-1 to TX-3; append-only history; no client writes |
 | File uploads | Malicious or oversized files | Photos accepted only through commands, re-checked server-side (type sniffing, ≤ 700 KB); never served as HTML; displayed from bytes with an explicit image content type |
-| Sensitive data (POPIA) | Exposure or indefinite retention of residents' identity, location or photos | Reports readable only by the reporter, followers and staff; public map uses an anonymised projection with location rounded to about 100 m; minimal data collected; processing region africa-south1; residents can erase their personal data (FR-32), leaving anonymised service records (BR-22) |
+| Sensitive data (POPIA) | Exposure or indefinite retention of residents' identity, location or photos, contrary to the Protection of Personal Information Act (2013) | Reports readable only by the reporter, followers and staff; public map uses an anonymised projection with location rounded to about 100 m; minimal data collected; processing region africa-south1; residents can erase their personal data (FR-32), leaving anonymised service records (BR-22) |
 | Secrets | API key or credential exposure | Service-account key and cron secret only in Vercel's encrypted environment; none in the repository (`.env.example` lists names only); gitleaks scan in CI; the cron endpoint compares the secret in constant time |
 | Error handling | Leaking internals | Unexpected errors return a generic message and are written to the system log |
 | Browser attacks | Script injection, clickjacking, protocol downgrade | Enforced Content Security Policy (scripts only from the site and Google sign-in, no `eval`, no inline script, no framing), HSTS, X-Frame-Options DENY, nosniff (NFR-14) |
 | Public endpoint | Personal data leaking to anonymous users; load on the database | Only aggregates are returned (no names, text, photos or coordinates, test IT-PUB-01); responses come from the CDN cache |
 | Guest abuse | Floods of reports from throwaway sessions | Guests are real authenticated sessions; 3 reports per hour per guest and 10 guest sessions per hour per network address (hashed); transfer codes are random 256-bit, stored only as a hash, single-use and valid 15 minutes (BR-26) |
-| Repeated submissions | A report saved offline being stored twice | Idempotent submission with a device-chosen client id, scoped to the user (D5) |
+| Repeated submissions | A report saved offline being stored twice | Idempotent submission with a device-chosen client id, scoped to the user (D3) |
 | SMS | Phone numbers exposed; messages to people who did not ask | Opt-in with a validated number; SMS records readable by administrators only, numbers masked on screen and erased with the account (BR-25) |
 | Logging and audit | Unaccountable actions | Immutable status history with actor; administrator actions and errors in the system log |
 
@@ -669,7 +628,7 @@ Table: Security controls
 
 ## Deployment and Runtime Design
 
-CivicLink has two runtime configurations built from the same code (Figure 37):
+CivicLink has two runtime configurations built from the same code (Figure 27):
 
 - **Deployed (free tier):** the static web app and the Node command API run on **Vercel** (serverless functions in the Cape Town region). Vercel's CDN serves the hashed assets with a one-year immutable cache and the public figures from its edge cache. Authentication and Firestore run on Firebase's free **Spark** plan, and push goes through Firebase Cloud Messaging. The API uses a service-account key held in Vercel's encrypted environment. A GitHub Actions schedule calls the protected maintenance endpoint hourly, and Vercel Cron calls it daily. The deployed URL is given in Appendix 11.2.
 - **Local:** the web app runs on Vite. Auth, Firestore and Cloud Functions run in the Firebase Emulator Suite on one machine, with the same command registry served by the Cloud Functions adapter. This configuration is used for development, all automated tests and an offline demonstration.
@@ -875,14 +834,14 @@ Table: Non-functional verification results
 
 | NFR | Test | Result | Status |
 |---|---|---|---|
-| NFR-01 Authorisation | RT-* (20 tests: every matrix cell, e.g. a resident cannot read another's report or list all reports, a roads official cannot read water reports, no client can write reports/tasks/history) and API authorisation tests | All denied cases denied; all allowed cases allowed | Pass |
+| NFR-01 Authorisation | RT-* ({{TEST_COUNT:Security rules}} tests: every matrix cell, e.g. a resident cannot read another's report or list all reports, a roads official cannot read water reports, no client can write reports/tasks/history) and API authorisation tests | All denied cases denied; all allowed cases allowed | Pass |
 | NFR-02 Authentication | RT-USR-02 (users cannot change their own role, department or active flag); review: no password fields in Firestore | Pass | Pass |
 | NFR-03 Validation | IT-RPT-02, IT-TRI-03, IT-ALR-03, IT-CFG-01, E2E-05 | Field-level errors, no data written | Pass |
 | NFR-04 Secrets | gitleaks over the full git history in CI | 0 findings | Pass |
-| NFR-05 Propagation | NFT-05 inside E2E-01 | Submit → official queue 0.09 s; completion → resident screen 2.47 s (target 5 s) | Pass |
-| NFR-06 Responsiveness | NFT-06 | Dashboard 1.10 s, queue 0.92 s, alerts 0.92 s (target 3 s); p95 of 50 commands 28 ms (target 2 s) | Pass |
+| NFR-05 Propagation | NFT-05 inside E2E-01 | Submit → official queue 0.07 s; completion → resident screen 1.90 s (target 5 s) | Pass |
+| NFR-06 Responsiveness | NFT-06 | Dashboard 1.20 s, queue 1.32 s, alerts 0.95 s (target 3 s); p95 of 50 commands 73 ms (target 2 s) | Pass |
 | NFR-07 Mobile | NFT-07 at 360×640 on resident and worker screens; report form has 3 steps | No horizontal overflow | Pass |
-| NFR-08 Accessibility | NFT-08 axe-core WCAG 2.1 A/AA on login, report form, my reports, queue | 0 violations (after DEF-03) | Pass |
+| NFR-08 Accessibility | NFT-08 axe-core audit against WCAG 2.1 A/AA (W3C, 2018) on login, report form, my reports, queue | 0 violations (after DEF-03) | Pass |
 | NFR-09 Compatibility | E2E suite on Chromium and Firefox in CI | All pass | Pass |
 | NFR-10 Integrity | IT-RPT-08, IT-ASG-07, IT-TSK-06 | Atomic, exactly-once outcomes | Pass |
 | NFR-11 Privacy | RT-RPT-03, RT-PUB-01, RT-PHO-01, RT-PHO-02, UT-PRV-01, IT-RPT-07 | No PII in public data; photos restricted | Pass |
@@ -891,7 +850,7 @@ Table: Non-functional verification results
 | NFR-13 Caching and CDN | NFT-11 on the deployed site | Assets `max-age=31536000, immutable`; app shell revalidated; public figures served from the edge cache (HIT on every repeat request) | Pass |
 | NFR-14 Browser hardening | NFT-12 on the deployed site; manual check of every screen and the Google sign-in popup | CSP without `unsafe-eval`, HSTS two years, framing denied, nosniff; 0 CSP violations | Pass |
 
-Timings were measured on the development laptop running the emulators, Vite and the browsers at the same time (local configuration).
+Timings come from the full local run recorded in Appendix 11.3 (20 October 2026), on the development laptop running the emulators, Vite and the browsers at the same time.
 
 **Production verification.** The same Playwright tests were run against the deployed system (https://civiclink-five.vercel.app) on 20 October 2026:
 
@@ -906,7 +865,7 @@ Timings were measured on the development laptop running the emulators, Vite and 
 | E2E-11 to E2E-17 ("Me too", offline drafts, scheduled alerts, bulk assignment, transparency page, public home with guest reporting and account) | Pass |
 | NFT-08 accessibility, including the public home and transparency pages | 0 serious or critical violations |
 | NFT-11 CDN caching, NFT-12 security headers | Pass; public figures served from the edge cache after the first request |
-| SMS gateway (FR-25), administrator test SMS through Twilio | First attempt: authenticated, but refused (recorded as Failed with Twilio's reason) because trial accounts may only send predefined templates. With `TWILIO_TRIAL_TEMPLATE=sms_event_notifications`, Twilio accepted the message (status Sent) to a verified South African number. With an upgraded account the real alert text is sent; no code change |
+| SMS gateway (FR-25), administrator test SMS through Twilio | First attempt: authenticated, but refused (recorded as Failed with Twilio's reason) because trial accounts may only send predefined templates (Twilio, 2026b). With `TWILIO_TRIAL_TEMPLATE=sms_event_notifications`, Twilio accepted the message (status Sent) to a verified South African number. With an upgraded account the real alert text is sent; no code change |
 | Web push (FR-24), manual | An alert broadcast by an official appeared as a system notification in a separate signed-in browser about 5 s later; the test alert was then ended |
 
 ## Defects and Known Issues
@@ -985,10 +944,10 @@ Table: Evaluation against the success criteria
 
 | Success criterion | Outcome | Evidence |
 |---|---|---|
-| SC-01: The complete incident lifecycle runs end to end | Achieved | E2E-01 passes in Chromium and Firefox across three independent browser sessions (resident, official, field worker); Figures 12–18 |
+| SC-01: The complete incident lifecycle runs end to end | Achieved | E2E-01 passes in Chromium and Firefox across three independent browser sessions (resident, official, field worker); Figures 12–17 |
 | SC-02: Key business rules are enforced server-side | Achieved | BR-03 to BR-11 each have unit and integration tests that bypass the user interface and call the API directly (UT-DUP, UT-RSM, IT-ASG-04/07, IT-TSK-03/06, IT-ESC-01, IT-RES-03); all pass |
-| SC-03: Role-based access control holds | Achieved | 20 Security Rule tests covering every cell of the permission matrix, plus authorisation cases for every command and E2E-04; all pass |
-| SC-04: Residents receive timely, targeted information | Achieved | NFT-05: report visible to the official in 0.09 s and the resolution visible to the resident in 2.47 s (target 5 s); E2E-03 shows suburb targeting |
+| SC-03: Role-based access control holds | Achieved | {{TEST_COUNT:Security rules}} Security Rule tests covering every cell of the permission matrix, plus authorisation cases for every command and E2E-04; all pass |
+| SC-04: Residents receive timely, targeted information | Achieved | NFT-05: report visible to the official in 0.07 s and the resolution visible to the resident in 1.90 s (target 5 s); E2E-03 shows suburb targeting |
 | SC-05: Officials have operational visibility from live data | Achieved | UT-ANL-01 and IT-ANL-01 reproduce the expected metrics; Figure 21 |
 
 The final system meets its purpose. The core lifecycle was built and verified first, with a deliberately smaller scope than the partly simulated Phase 3 prototype. Once it was complete, the four capabilities deferred at the baseline (SMS, offline drafts, scheduled alerts, bulk assignment) and three additions (a public transparency page, service ratings, and caching and browser hardening) were brought in through change requests, each with its own requirements, rules and tests. Every requirement is implemented on a real backend and verified automatically, and the deployed system was checked with the same tests.
@@ -1001,21 +960,25 @@ Auditor-General South Africa. (2024). *Consolidated general report on local gove
 
 Diamond Fields Advertiser. (2026, February 16). *Kimberley residents frustrated as Sol Plaatje Municipality struggles with burst pipes and service delivery* [Opinion]. https://dfa.co.za/diamond-fields-advertiser/opinion/2026-02-16-kimberley-residents-frustrated-as-sol-plaatje-municipality-struggles-with-burst-pipes-and-service-delivery/
 
-Firebase. (2026). *Cloud Firestore documentation*. Google. https://firebase.google.com/docs/firestore
+Firebase. (2026a). *Authenticate with Firebase anonymously using JavaScript*. Google. https://firebase.google.com/docs/auth/web/anonymous-auth
 
-Firebase. (2026). *Firebase Cloud Messaging: Web push*. Google. https://firebase.google.com/docs/cloud-messaging/js/client
+Firebase. (2026b). *Cloud Firestore documentation*. Google. https://firebase.google.com/docs/firestore
 
-Firebase. (2026). *Firebase Local Emulator Suite*. Google. https://firebase.google.com/docs/emulator-suite
+Firebase. (2026c). *Firebase Cloud Messaging: Web push*. Google. https://firebase.google.com/docs/cloud-messaging/js/client
 
-Firebase. (2026). *Firebase Security Rules documentation*. Google. https://firebase.google.com/docs/rules
+Firebase. (2026d). *Firebase Local Emulator Suite*. Google. https://firebase.google.com/docs/emulator-suite
+
+Firebase. (2026e). *Firebase Security Rules documentation*. Google. https://firebase.google.com/docs/rules
 
 Leaflet. (2023). *Leaflet: An open-source JavaScript library for interactive maps* (Version 1.9.4) [Computer software]. https://leafletjs.com
+
+MDN contributors. (2026). *Content-Security-Policy*. Mozilla. https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy
 
 Meta Platforms. (2026). *React* (Version 19) [Computer software]. https://react.dev
 
 Microsoft. (2026). *Playwright* (Version 1.63) [Computer software]. https://playwright.dev
 
-Noordkaap Bulletin. (2024, January 30). *Sol Plaatje 'has a plan' to solve water crisis*. News24. https://www.news24.com/news24/community-newspaper/noordkaapbulletin/sol-plaatje-has-a-plan-20240130
+Noordkaap Bulletin. (2024, January 30). *Sol Plaatje 'has a plan' to solve water crisis*. https://noordkaapbulletin.co.za/sol-plaatje-has-a-plan-20240130/
 
 OpenStreetMap contributors. (2026). *OpenStreetMap* [Data set]. OpenStreetMap Foundation. https://www.openstreetmap.org
 
@@ -1025,7 +988,13 @@ Sol Plaatje Local Municipality. (2022). *Integrated development plan 2022–2027
 
 Statistics South Africa. (2023). *Census 2022: Municipal fact sheet*. https://census.statssa.gov.za/assets/documents/2022/Census_2022_Municipal_factsheet-Web.pdf
 
-Vercel. (2026). *Vercel Functions documentation*. https://vercel.com/docs/functions
+Twilio. (2026a). *Programmable Messaging API: Message resource*. https://www.twilio.com/docs/messaging/api/message-resource
+
+Twilio. (2026b). *Twilio trial account*. https://www.twilio.com/docs/usage/trials
+
+Vercel. (2026a). *Caching on the Vercel CDN*. https://vercel.com/docs/edge-cache
+
+Vercel. (2026b). *Vercel Functions documentation*. https://vercel.com/docs/functions
 
 W3C. (2018). *Web Content Accessibility Guidelines (WCAG) 2.1*. World Wide Web Consortium. https://www.w3.org/TR/WCAG21/
 
@@ -1043,7 +1012,7 @@ Submitted version: tag **{{TAG}}**, commit **{{COMMIT}}**.
 
 ## Deployed System
 
-URL: **{{APP_URL}}** (Vercel + Firebase Spark, decision D3). Demo accounts are listed in Section 8. The local emulator configuration in Section 8 reproduces the same system offline.
+URL: **{{APP_URL}}** (Vercel + Firebase Spark, decision D2). Demo accounts are listed in Section 8. The local emulator configuration in Section 8 reproduces the same system offline.
 
 ## Additional Supporting Material
 

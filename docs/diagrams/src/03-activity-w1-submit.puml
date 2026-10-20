@@ -1,10 +1,21 @@
 @startuml activity-w1
 !include _style.iuml
-title W1: Submit incident report (FR-03, FR-04, FR-05, TX-1)
+title W1: Submit incident report (FR-03, FR-04, FR-05, FR-27, FR-39, TX-1)
 
 |Resident|
 start
 :Open "Report an issue";
+if (Signed in?) then (no)
+  |CivicLink (submitReport)|
+  :Anonymous sign-in + startGuestSession\n(guest RESIDENT profile, FR-39);
+  if (Under 10 guest sessions/hour\nfor this address? (BR-26)) then (no)
+    :Reject: resource-exhausted;\nsuggest signing in;
+    stop
+  else (yes)
+  endif
+  |Resident|
+else (yes)
+endif
 :Step 1: choose category;
 :Step 2: set location (GPS or drag pin),\nsuburb, description, severity, photos;
 if (Client validation passes?\n(BR-02 schema)) then (no)
@@ -19,6 +30,13 @@ if (Photo can be compressed?) then (no)
   stop
 else (yes)
 endif
+:Attach clientId (chosen on the device);
+if (Online and request gets through?) then (no)
+  :Save in the on-device outbox (IndexedDB);\nshow "Saved on this phone" (FR-27);
+  :Wait for the connection to return;
+  :Send automatically with the same clientId;
+else (yes)
+endif
 |CivicLink (submitReport)|
 :Authenticate and load caller profile;
 if (Active RESIDENT? (BR-01, BR-16)) then (no)
@@ -26,10 +44,10 @@ if (Active RESIDENT? (BR-01, BR-16)) then (no)
   stop
 else (yes)
 endif
-if (Under hourly limit? (BR-21)) then (no)
-  :Reject: resource-exhausted;
+if (Report with this clientId\nalready stored? (FR-27)) then (yes)
+  :Return the stored result\n(a resend is stored once);
   stop
-else (yes)
+else (no)
 endif
 :Validate input (zod);\ndecode photos, check size\nand real type (magic bytes);
 if (Valid? (BR-02)) then (no)
@@ -40,6 +58,11 @@ if (Valid? (BR-02)) then (no)
 else (yes)
 endif
 |CivicLink (submitReport)|
+if (Under hourly limit?\n(BR-21; guests 3, BR-26)) then (no)
+  :Reject: resource-exhausted;
+  stop
+else (yes)
+endif
 partition "Firestore transaction (TX-1)" {
   :Read category (active?) and department;
   if (Category active? (BR-19)) then (no)

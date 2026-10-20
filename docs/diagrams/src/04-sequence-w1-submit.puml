@@ -1,10 +1,11 @@
 @startuml sequence-w1
 !include _style.iuml
-title W1: Submit incident report, sequence (TX-1)
+title W1: Submit incident report, sequence (TX-1; offline outbox FR-27, guest FR-39)
 autonumber
 
 actor Resident
 participant "NewReportPage\n(React)" as UI
+participant "Outbox\n(IndexedDB)" as OB
 participant "Command API\n(http.ts on Vercel /\nCloud Functions locally)" as API
 participant "execute()\n+ ReportService" as RS
 participant "photoService" as PS
@@ -17,7 +18,14 @@ alt client validation fails
   UI --> Resident : field errors (no request sent)
 else valid
   UI -> UI : compressPhoto() each photo\n(≤ 1280 px, ≤ 700 KB JPEG)
-  UI -> API : POST submitReport {data, photos: base64}\n+ Firebase ID token
+  UI -> UI : clientId = randomUUID()
+  opt offline, or the request cannot get through
+    UI -> OB : save {payload, clientId, uid}
+    UI --> Resident : "Saved on this phone"
+    ... connection returns ...
+    OB -> API : resend the same payload and clientId
+  end
+  UI -> API : POST submitReport {data, photos: base64, clientId}\n+ Firebase ID token (account or guest)
   API -> API : verify ID token (revocation checked)
   API -> RS : execute(submitReport, caller, data)
   RS -> DB : get users/{uid}
@@ -25,18 +33,22 @@ else valid
     RS --> UI : permission-denied
   else
     RS -> RS : parse(submitReportSchema)
+    RS -> DB : get reports/{hash(uid, clientId)}
+    alt already stored (resend)
+      RS --> UI : stored {reportId, ref} (replayed)
+    end
     RS -> PS : decodePhotos(): size ≤ 700 KB,\nreal type = declared type (magic bytes)
     alt invalid input or photo
       RS --> UI : invalid-argument {fields}
       UI --> Resident : field errors
     else
       RS -> DB : pre-reads outside the transaction:\nsettings, profile, count(recent reports)
-      alt over hourly limit (BR-21)
+      alt over hourly limit (BR-21; guest: 3, BR-26)
         RS --> UI : resource-exhausted
       else
         RS -> DB : runTransaction
         activate DB
-        RS -> DB : get category, department
+        RS -> DB : re-check reports/{hash(uid, clientId)}\nget category, department
         RS -> DB : query reports by geohash ranges (100 m)
         RS -> DP : findParent(new, candidates, now)
         DP --> RS : parent | null
