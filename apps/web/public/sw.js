@@ -2,7 +2,7 @@
  * Navigations: network-first, falling back to the cached shell. Hashed build assets: cache-first.
  * Map tiles (NFR-13): stale-while-revalidate in a separate, size-capped cache, so maps of areas already
  * viewed still show offline. The API and Firebase are never cached here (Firestore keeps its own offline cache). */
-const VERSION = 'civiclink-v2';
+const VERSION = 'civiclink-v3'; // bump on every change to this file or to the site's security policy (DEF-15)
 const TILES = 'civiclink-tiles-v1';
 const MAX_TILES = 400; // about 10 MB of 256 px PNG tiles
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png'];

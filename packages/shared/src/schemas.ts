@@ -1,4 +1,11 @@
 import { z } from 'zod';
+
+/**
+ * NFR-14: the web app's Content Security Policy forbids `eval`. zod would otherwise probe it with
+ * `new Function` the first time a schema is used (caught, but reported as a CSP violation). Setting
+ * jitless here, when the shared package loads, runs before any schema can be used (DEF-15).
+ */
+z.config({ jitless: true });
 import { ALERT_TYPES, ALL_SUBURBS, LIMITS, MUNICIPAL_BOUNDS, ROLES, SEVERITIES, SUBURBS } from './constants';
 
 const id = z.string().trim().min(1, 'Required').max(128);
@@ -253,12 +260,4 @@ export function fieldErrors(error: z.ZodError): Record<string, string> {
     out[key] ??= issue.message;
   }
   return out;
-}
-
-/**
- * NFR-14: the web app's Content Security Policy forbids `eval`. zod would otherwise probe it with
- * `new Function` (caught, but reported as a CSP violation); jitless validation skips the probe.
- */
-export function configureJitlessValidation() {
-  z.config({ jitless: true });
 }
