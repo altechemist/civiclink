@@ -227,6 +227,12 @@ Task: ASSIGNED → ACCEPTED → IN_PROGRESS → COMPLETED. Any active state goes
 
 **FR-20 User admin.** Creating a staff account sets claims and a profile. Deactivation blocks sign-in and function calls immediately. A role change takes effect on the user's next token refresh (forced). An admin cannot deactivate or demote themselves. Non-admins are refused.
 
+**FR-22 Internal comments.** Officials of the report's department, its assigned field worker and Admins can add a note (1–1000 characters), and notes appear in time order with author and role. Residents and staff of other departments cannot read or add notes.
+
+**FR-23 System log.** Administrative actions (account, role, configuration and settings changes), scheduled runs and unexpected server errors are recorded with level, source, time and actor. Only Administrators can view the log. Entries are never edited.
+
+**FR-26 CSV export.** The export contains exactly the reports matching the current queue filters and search, with reference, category, department, suburb, severity, status, assignee, affected count and submitted/resolved times. Values with commas, quotes or line breaks are quoted correctly. The button is disabled when no reports match.
+
 **FR-29 Google sign-in.** "Continue with Google" signs the user in. A first-time user is sent to a profile step, which needs a name and a suburb. The account is always created as a Resident. An existing profile cannot be re-created.
 
 **FR-30 Password reset.** With an email entered, the same confirmation is shown whether or not the account exists. Without an email, the user is asked to enter one.

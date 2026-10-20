@@ -7,7 +7,7 @@ actor Official
 actor "Field Worker" as Worker
 actor Resident
 participant "Web app" as UI
-participant "assignReport /\ncompleteTask (callable)" as API
+participant "Command API\n(http.ts on Vercel /\nCloud Functions locally)" as API
 participant "ReportService /\nTaskService" as SVC
 participant "ReportStateMachine\nTaskStateMachine" as SM
 database Firestore as DB
@@ -47,15 +47,16 @@ end
 
 == Complete (TX-3) ==
 Worker -> UI : notes + proof photos, Mark as resolved
-UI -> DB : upload proofs/{reportId}/{uid}/... (Storage)
-UI -> API : completeTask({taskId, notes, proofPaths})
+UI -> UI : compressPhoto() proof photos
+UI -> API : completeTask({taskId, notes, proofs: base64})
 API -> SVC : complete(input, actor)
+SVC -> SVC : photoService.decodePhotos()\n(size, magic bytes)
 SVC -> DB : runTransaction: get task, report
 alt report.activeTaskId != taskId
   SVC --> UI : failed-precondition (reassigned)
 else
   SVC -> SM : next(IN_PROGRESS, complete) / next(IN_PROGRESS, completeTask)
-  SVC -> DB : task COMPLETED, report RESOLVED + resolvedAt,\nhistory, notifications (one commit)
+  SVC -> DB : photos/{id} (PROOF), task COMPLETED,\nreport RESOLVED + resolvedAt + resolutionPhotoIds,\nhistory, notifications (one commit)
   SVC --> UI : {status: COMPLETED}
 end
 DB -->> Resident : onSnapshot: Resolved (< 5 s, NFT-05)

@@ -266,6 +266,12 @@ Table: Business rules
 
 **FR-21 Configuration.** SLA hours must be a whole number from 1 to 720. Names are unique. A deactivated category disappears from the report form. The hourly report limit (BR-21) must be from 1 to 100.
 
+**FR-22 Internal comments.** Officials of the report's department, its assigned field worker and Admins can add a note (1–1000 characters), and notes appear in time order with author and role. Residents and staff of other departments cannot read or add notes.
+
+**FR-23 System log.** Administrative actions (account, role, configuration and settings changes), scheduled runs and unexpected server errors are recorded with level, source, time and actor. Only Administrators can view the log. Entries are never edited.
+
+**FR-26 CSV export.** The export contains exactly the reports matching the current queue filters and search, with reference, category, department, suburb, severity, status, assignee, affected count and submitted/resolved times. Values with commas, quotes or line breaks are quoted correctly. The button is disabled when no reports match.
+
 **FR-29 Google sign-in.** A first-time Google user is taken to a profile step that needs a name and a suburb, and always becomes a Resident. An existing profile cannot be re-created.
 
 **FR-30 Password reset.** The same confirmation is shown whether or not the email is registered.

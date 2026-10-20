@@ -36,7 +36,7 @@ partition "Transaction TX-2" {
 :Accept task (ASSIGNED → ACCEPTED);
 :On site: start (ACCEPTED → IN_PROGRESS);
 note right: Skipping a step is refused (BR-08)
-:Enter completion notes,\nupload 1–3 proof photos;
+:Enter completion notes,\nadd 1–3 proof photos\n(compressed in the browser);
 |CivicLink|
 partition "Transaction TX-3" {
   if (Notes ≥10 chars and ≥1 proof? (BR-09)) then (no)
