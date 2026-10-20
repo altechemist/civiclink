@@ -1,0 +1,38 @@
+@startuml overview
+!include _style.iuml
+title CivicLink at a glance
+left to right direction
+skinparam defaultFontSize 15
+
+actor "Residents,\nguests, public" as R
+actor "Officials,\nfield workers,\nadmins" as S
+
+rectangle "Browser / installed app\n(React PWA, service worker,\noffline outbox)" as App
+rectangle "Vercel\n(CDN + serverless,\nCape Town)" as V {
+  rectangle "Static app\n(cached at the edge)" as Static
+  rectangle "Command API\n36 commands:\nauth · roles · validation ·\ntransactions" as API
+  rectangle "Public API\n(cached figures,\nalerts, open issues)" as Pub
+}
+rectangle "Firebase (Spark)" as FB {
+  rectangle "Authentication\n(password, Google, guest)" as Auth
+  database "Firestore\n(data, photos,\nSecurity Rules)" as DB
+}
+cloud "FCM push" as FCM
+cloud "Twilio SMS" as TW
+cloud "OpenStreetMap" as OSM
+rectangle "GitHub Actions\n(hourly rules)" as GHA
+
+R --> App
+S --> App
+App --> Static
+App --> API : commands
+App --> Pub
+App --> DB : live reads
+App --> Auth
+App --> OSM : map tiles
+API --> DB : transactions
+Pub --> DB
+API --> FCM
+API --> TW
+GHA --> API
+@enduml

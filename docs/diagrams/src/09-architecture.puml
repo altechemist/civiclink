@@ -14,7 +14,7 @@ package "Web client: apps/web (React SPA)" {
   [Live hooks\n(onSnapshot)] as Hooks
   [Leaflet map /\nRecharts] as Viz
   [Offline outbox\n(IndexedDB)] as Outbox
-  [Transparency page\n(public)] as Transp
+  [Public home ·\ntransparency page\n(no sign-in)] as Transp
 }
 
 package "Shared domain: packages/shared" as Shared {
@@ -28,11 +28,12 @@ package "Command API: functions/ (Node.js 22)" {
   [commands.ts registry +\nexecute(): auth · role ·\nvalidation · errors] as Cmd
   [ReportService · TaskService ·\nAlertService · UserService ·\nConfigService · CommentService ·\nAnalyticsService · photoService] as Svc
   [MaintenanceService\n(escalate, auto-close,\npublish scheduled alerts)] as Sched
-  [PublicStatsService\n(anonymous figures,\n1-min cache)] as Stats
+  [PublicStatsService ·\nPublicFeedService\n(figures, alerts + open issues;\nper-instance cache)] as Stats
+  [GuestService\n(guest sessions, upgrade,\ntransfer)] as Guest
   [smsService\n(SmsGateway)] as Sms
 }
 package "Firebase (Spark plan; emulator locally)" {
-  [Firebase Authentication\n(password + Google;\nclaims: role, dept, suburb, active)] as Auth
+  [Firebase Authentication\n(password, Google, anonymous guests;\nclaims: role, dept, suburb, active, guest)] as Auth
   database "Cloud Firestore + Security Rules\n(incl. photos as binary documents)" as FS
 }
 [GitHub Actions hourly /\nVercel Cron daily] as Cron
@@ -66,10 +67,12 @@ Pages ..> SW : registers (PWA)
 Pages --> Outbox : save offline
 Outbox --> Api : send on reconnect\n(clientId)
 PUB --> Transp
-Transp --> CDN : GET /api/public/stats
+Transp --> CDN : GET /api/public/feed,\n/api/public/stats
 CDN --> Adapt : on cache miss
 Adapt --> Stats
 Stats --> FS : aggregate reads
+Cmd --> Guest
+Guest --> Auth : anonymous users,\nclaims, link/upgrade
 Svc --> Sms
 Sms --> TW : emergency SMS
 Pages ..> Sch : client validation

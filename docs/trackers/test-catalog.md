@@ -123,7 +123,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-SMS-02 | a gateway failure is recorded per message and logged, and does not fail the alert | `functions/test/extras.test.ts` |
 | IT-SMS-03 | removing the number ends the opt-in; deleting the account deletes the SMS records | `functions/test/extras.test.ts` |
 | IT-SMS-04 | an administrator can send a test SMS (simulated without credentials); others cannot | `functions/test/extras.test.ts` |
-| IT-SMS-05 | with Twilio credentials, messages go to Twilio’s REST API in the documented form; errors are recorded | `functions/test/extras.test.ts` |
+| IT-SMS-05 | with Twilio credentials, messages go to Twilio’s REST API in the documented form (trial: a predefined template); errors are recorded | `functions/test/extras.test.ts` |
 | IT-GST-01 | an anonymous session becomes a guest Resident; starting again changes nothing | `functions/test/guest.test.ts` |
 | IT-GST-02 | a guest can report and follow it, within a lower hourly limit; account-only actions are refused | `functions/test/guest.test.ts` |
 | IT-GST-03 | a guest creates an account in the same session and keeps their reports | `functions/test/guest.test.ts` |

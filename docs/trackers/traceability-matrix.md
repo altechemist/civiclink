@@ -82,12 +82,12 @@ Problem evidence keys (Phase 1): **P1** no digital capture / location · **P2** 
 
 | NFR | Verification | Result |
 |---|---|---|
-| NFR-01 | RT-* (20 rules tests), IT-*-authz cases, E2E-04 | Pass |
+| NFR-01 | RT-* (22 rules tests), IT-*-authz cases, E2E-04 | Pass |
 | NFR-02 | Firebase Auth only; custom claims; RT-USR-02; no password fields in Firestore | Pass |
 | NFR-03 | IT-RPT-02, IT-TRI-03, IT-ALR-03, IT-CFG-01, E2E-05 | Pass |
 | NFR-04 | gitleaks CI job; `.env.example`; demo config only | Pass |
-| NFR-05 | NFT-05 in E2E-01: submit→queue 87 ms, complete→resident 2.47 s (local run 19 Oct) | Pass |
-| NFR-06 | NFT-06: `/official` 1.10 s, `/official/reports` 0.92 s, `/official/alerts` 0.92 s to interactive (< 3 s); p95 of 50 `getAnalytics` calls 28 ms (< 2 s) | Pass |
+| NFR-05 | NFT-05 in E2E-01: submit→queue 72 ms, complete→resident 1.90 s (full local run, 20 Oct) | Pass |
+| NFR-06 | NFT-06: `/official` 1.20 s, `/official/reports` 1.32 s, `/official/alerts` 0.95 s to interactive (< 3 s); p95 of 50 `getAnalytics` calls 73 ms (< 2 s) | Pass |
 | NFR-07 | NFT-07 (360×640, no horizontal scroll; report in 3 steps) | Pass |
 | NFR-08 | NFT-08 axe-core WCAG 2.1 A/AA: login, report form, my reports, queue → 0 violations (after DEF-03 fix) | Pass |
 | NFR-09 | E2E on Chromium and Firefox in CI | Pass (CI) |

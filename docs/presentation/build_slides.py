@@ -94,11 +94,11 @@ bullets(s, [
     'Reach|web push, SMS for emergencies, "Me too" on the map, installable app that saves reports offline',
     'Open to everyone|a public home with alerts and open issues nearby; report as a guest, keep it with an account later; public time-to-fix figures from the CDN',
 ], width=7.4, size=17)
-picture(s, 'docs/diagrams/state-report.png', 8.2, 1.6, width=4.7)
+picture(s, 'docs/evidence/groups/g1-entry.png', 8.0, 1.8, width=5.0)
 
 # 3. Architecture
 s = slide('Commands on the server, real-time reads in the browser', 'Architecture')
-picture(s, 'docs/diagrams/architecture.png', 0.6, 1.6, height=5.2)
+picture(s, 'docs/diagrams/overview.png', 0.5, 1.6, width=7.8)
 bullets(s, [
     'React SPA|reads Firestore through live listeners, under Security Rules',
     'Node command API|one registry of 36 commands: auth, roles, Zod validation, transactions; served by Vercel (deployed) or Cloud Functions (local)',
@@ -110,10 +110,11 @@ bullets(s, [
 s = slide('Decisions that shaped the system', 'Engineering decisions')
 bullets(s, [
     'D1: Every state change is a server command in a transaction|Rules alone cannot enforce "one active task", reference counters or the 100 m duplicate search. TX-1 submit, TX-2 assign, TX-3 complete are atomic; two simultaneous assignments → exactly one wins.',
-    'D3: Free-tier deployment without Cloud Functions|Firebase Spark + a Node API on Vercel; photos compressed to ≤ 700 KB and stored in Firestore with real-type checks. One command registry, two adapters, and CI runs every E2E test through both.',
-    'D5: Offline reports through an outbox and idempotent commands|Saved on the phone (IndexedDB) and sent on reconnect with a device-chosen id, so a resend is stored once. Works in every browser, unlike Background Sync.',
-    'Also:|public figures from the CDN cache (D6); enforced CSP + HSTS; Leaflet + OpenStreetMap instead of Google Maps; React SPA instead of Next.js.',
-], width=12, size=18)
+    'D2: Free-tier deployment without Cloud Functions|Firebase Spark + a Node API on Vercel; photos compressed to ≤ 700 KB and stored in Firestore with real-type checks. One command registry, two adapters; CI runs every E2E test through both.',
+    'D3: Offline reports through an outbox and idempotent commands|Saved on the phone (IndexedDB), sent on reconnect with a device-chosen id, so a resend is stored once. Works in every browser, unlike Background Sync.',
+    'D4: Guests through anonymous sign-in, not open endpoints|A guest is a real authenticated user, so every rule still applies; upgrade in place by linking email or Google; 3 reports/hour per guest, 10 sessions/hour per address.',
+    'Also:|public data from the CDN cache; enforced CSP + HSTS; Leaflet + OpenStreetMap; React SPA instead of Next.js.',
+], width=12, size=16)
 
 # 5. Verification
 s = slide(f"{RESULTS['total']} automated tests, all green", 'Verification')
@@ -122,17 +123,17 @@ bullets(s, [
     f"Security rules ({count('Security rules')})|every cell of the permission matrix, allow and deny",
     f"API integration ({count('Integration')})|validation, authorisation, wrong-state and concurrency for every command; push and SMS with fake gateways",
     f"End-to-end, PWA, live site ({count('E2E') + count('PWA') + count('Deployed')})|full lifecycle across 3 browsers, offline drafts, scheduled alerts, bulk assign, transparency, access denied, Google sign-in; CDN and CSP on the live site",
-    'NFRs|update reaches the resident in 2.5 s (target 5 s), screens < 1.1 s, p95 command 28 ms, 0 WCAG and 0 CSP violations',
+    'NFRs|update reaches the resident in 1.9 s (target 5 s), screens < 1.4 s, p95 command 73 ms, 0 WCAG and 0 CSP violations',
 ], width=7.6, size=16)
 picture(s, 'docs/evidence/23-triage-assign.png', 8.4, 1.7, width=4.5)
 
 # 6. Evaluation
 s = slide('All five success criteria achieved', 'Evaluation and next steps')
 bullets(s, [
-    'SC-01 End-to-end lifecycle|E2E-01 passes in Chromium and Firefox',
+    'SC-01 End-to-end lifecycle|E2E-01 passes in Chromium and Firefox, locally and on the live site',
     'SC-02 Server-side rules|BR-03 to BR-11 tested through the API, bypassing the UI',
-    'SC-03 Access control|20 rule tests + authorisation tests + E2E-04',
-    'SC-04 Timely information|0.09 s to the official, 2.47 s to the resident',
+    f"SC-03 Access control|{count('Security rules')} rule tests + authorisation tests + E2E-04",
+    'SC-04 Timely information|0.07 s to the official, 1.9 s to the resident',
     'SC-05 Live visibility|analytics verified against the dataset',
     'Next|a paid SMS gateway with a send queue; Cloud Scheduler for exact alert times; a pilot with one department',
 ], width=12, size=18)
