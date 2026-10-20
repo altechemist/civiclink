@@ -19,6 +19,12 @@ export const NotificationService = {
     }
   },
 
+  /** Active officials of a department, read outside a transaction (no locks). */
+  async departmentOfficialsNow(departmentId: string): Promise<string[]> {
+    const snap = await col.users().where('role', '==', 'OFFICIAL').where('departmentId', '==', departmentId).where('isActive', '==', true).get();
+    return snap.docs.map((d) => d.id);
+  },
+
   /** Active officials of a department, read before any transaction writes. */
   async departmentOfficials(tx: Transaction, departmentId: string): Promise<string[]> {
     const snap = await tx.get(
