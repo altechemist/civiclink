@@ -235,6 +235,29 @@ test('capture map "Me too" and offline screens', async ({ browser }) => {
 });
 
 test('capture release 1.1 screens', async ({ browser }) => {
+  // FR-38: public home for signed-out visitors.
+  const home = await open(browser, null, PHONE);
+  await home.goto('/');
+  await expect(home.getByTestId('public-alerts')).toBeVisible();
+  await home.waitForTimeout(2000);
+  await shot(home, '00-public-home');
+
+  // FR-39: report as a guest, then the account page.
+  const guest = await open(browser, null, PHONE, { latitude: -28.7121, longitude: 24.7455 });
+  await guest.goto('/report');
+  await guest.getByRole('radio', { name: 'Illegal Dumping' }).click();
+  await guest.getByRole('button', { name: 'Use my location' }).click();
+  await expect(guest.getByTestId('location-coords')).not.toHaveText(/Tap the map/);
+  await guest.getByLabel('Suburb', { exact: true }).selectOption('Galeshewe');
+  await guest.getByLabel('What is happening?').fill('Building rubble dumped next to the sports field.');
+  await guest.locator('label', { hasText: 'Low' }).first().click();
+  await guest.getByRole('button', { name: 'Review' }).click();
+  await guest.getByRole('button', { name: 'Submit report' }).click();
+  await expect(guest.getByTestId('report-ref')).toBeVisible();
+  await guest.getByRole('button', { name: 'Sign out' }).click();
+  await expect(guest.getByTestId('guest-leaving')).toBeVisible();
+  await shot(guest, '33-guest-account');
+
   // FR-36: public page, no sign-in.
   const pub = await open(browser, null, DESKTOP);
   await pub.goto('/transparency');

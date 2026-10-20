@@ -66,6 +66,16 @@ package "Application services (functions/src/services)" {
     -cached: PublicStats  «1 min»
     +get(): PublicStats
   }
+  class PublicFeedService {
+    -cached: PublicFeed  «30 s»
+    +get(): PublicFeed
+  }
+  class GuestService {
+    +start(actor)  «per-address limit»
+    +upgrade(input, actor)
+    +startTransfer(actor): code
+    +claim(code, actor): moved
+  }
   class smsService <<module>> {
     +sendAlertSms(alertId, alert, recipients, now)
     +setSmsGateway(g)
@@ -139,6 +149,9 @@ package "Domain entities (see part 1)" {
 }
 HttpAdapter ..> CommandRegistry
 HttpAdapter ..> PublicStatsService
+HttpAdapter ..> PublicFeedService
+CommandRegistry ..> GuestService
+GuestService ..> User
 HttpAdapter ..> AlertService : background publishDue
 MaintenanceService ..> AlertService : publishDue
 AlertService ..> smsService

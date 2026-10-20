@@ -13,6 +13,7 @@ package "Domain entities (shared models → Firestore documents)" {
     suburb?: Suburb
     smsAlerts?: boolean
     isActive: boolean
+    isGuest?: boolean
     createdAt, lastLoginAt
   }
   class Report <<reports>> {

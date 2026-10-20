@@ -26,6 +26,8 @@ rectangle CivicLink {
     usecase "Save report offline,\nsend on reconnect (FR-27)" as UC29
     usecase "Opt in to SMS for\nemergency alerts (FR-25)" as UC30
     usecase "View transparency page\n(FR-36)" as UC31
+    usecase "See alerts and open\nissues near me (FR-38)" as UC33
+    usecase "Report as a guest;\nkeep reports with an\naccount later (FR-39)" as UC34
   }
   package "Operations" {
     usecase "Manage report queue\n(FR-08, FR-26)" as UC13
@@ -73,6 +75,9 @@ R --> UC29
 R --> UC30
 R --> UC31
 P --> UC31
+P --> UC33
+P --> UC34
+UC34 ..> UC3 : <<include>>
 S --> UC23
 UC3 <.. UC29 : <<extend>>
 

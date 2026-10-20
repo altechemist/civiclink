@@ -46,7 +46,7 @@ Release status is finalised at the code freeze (30 Oct 2026). Anything still *Pl
 ## 3. Scope
 
 ### 3.1 Solution boundary
-Inside the system: the web client (resident, official, field worker and admin views, plus a public transparency page), the Node.js command API (commands, scheduled rules and the public figures; served by Vercel when deployed and by Cloud Functions locally), Firestore (including photos) and Firebase Authentication. External: the four human actors, the public, OpenStreetMap tile servers, Google sign-in, Firebase Cloud Messaging (push), an SMS gateway (Twilio, optional), the Vercel CDN and the GitHub Actions schedule. The system is deployed on free tiers (Vercel + Firebase Spark, ADR-0006) and also runs locally on the Firebase Emulator Suite (ADR-0003).
+Inside the system: the web client (resident, official, field worker and admin views, plus the public home and transparency pages), the Node.js command API (commands, scheduled rules and the public figures; served by Vercel when deployed and by Cloud Functions locally), Firestore (including photos) and Firebase Authentication. External: the four human actors, the public, OpenStreetMap tile servers, Google sign-in, Firebase Cloud Messaging (push), an SMS gateway (Twilio, optional), the Vercel CDN and the GitHub Actions schedule. The system is deployed on free tiers (Vercel + Firebase Spark, ADR-0006) and also runs locally on the Firebase Emulator Suite (ADR-0003).
 
 ### 3.2 Final release scope (target)
 Core: registration and role login, located incident reporting with photos, reference numbers, duplicate detection, status tracking with history, official queue/triage/reject/assign, field worker accept/start/complete with proof, real-time in-app notifications, suburb-targeted alerts with read receipts, admin user management.
@@ -56,6 +56,7 @@ Supporting: reassignment, escalation (manual + SLA-automatic), resident reopen/c
 
 | Capability | Status | Reason |
 |---|---|---|
+| Guest data cleanup (FR-39) | Not included | Guest sessions that never report are kept; a scheduled cleanup of empty guest accounts is a production follow-up |
 | Live SMS delivery without gateway credentials (FR-25) | Simulated | SMS costs money per message. Without Twilio credentials the system records each SMS as SIMULATED instead of sending it; adding three environment variables switches to real sending (CR-34) |
 | Native mobile apps (iOS/Android) | Excluded | A responsive web app meets the device need (Phase 1) |
 | Google Maps / Geocoding | Excluded, replaced | Replaced by Leaflet + OpenStreetMap (ADR-0004) |
@@ -105,7 +106,8 @@ Priority uses MoSCoW. Release status is *Planned* until the freeze, then becomes
 | FR-22 | The system shall allow Officials and Field Workers to add internal comments to a report that residents cannot see. | Official, Field Worker | Could | Included | BR-18 |
 | FR-23 | The system shall record significant system events (function errors, admin actions) and show them to Administrators. | Admin | Could | Included | — |
 | FR-24 | The system shall send web push notifications (FCM) for status changes, task assignments and suburb alerts to devices where the user has turned them on. | System | Could | Included | — |
-| FR-25 | The system shall also send emergency alerts by SMS to residents who opted in with a mobile number, and record each message's delivery status. | System | Could | Included | BR-25 |
+| FR-25 | The system shall also send emergency alerts by SMS to residents who opted in with a mobile number, and record each message's delivery status. | System | Could | Included | BR-26 | A guest may submit at most 3 reports per rolling hour (or the configured limit if lower); at most 10 guest sessions may start per network address per hour. Guests cannot opt in to SMS or edit a profile; they keep their reports by creating an account in the same session or by moving them into an existing account with a one-time code valid for 15 minutes. |
+| BR-25 |
 | FR-26 | The system shall allow an Official to export the filtered report queue as CSV. | Official | Could | Included | — |
 | FR-27 | The system shall let residents save reports without a connection and send them automatically, exactly once, when the connection returns. | Resident | Could | Included | BR-01, BR-02 |
 | FR-28 | The system shall allow an Official to schedule an alert for a future time, see scheduled alerts and cancel them before they are published. | Official | Could | Included | BR-13, BR-24 |
@@ -117,6 +119,8 @@ Priority uses MoSCoW. Release status is *Planned* until the freeze, then becomes
 | FR-34 | The system shall be installable on a phone's home screen and shall open, with previously viewed information, without a connection. | All | Should | Included | — |
 | FR-35 | The system shall allow an Official to assign several triaged reports of their department to one field worker in a single step, reporting any that could not be assigned. | Official | Could | Included | BR-06, BR-07, BR-20 |
 | FR-36 | The system shall publish anonymous performance figures (open issues, resolution time, SLA compliance per department, satisfaction) on a public page that needs no sign-in. | Public | Could | Included | BR-17 |
+| FR-38 | The system shall show visitors who are not signed in a public home page with the active alerts, a map of open issues (approximate locations) filterable by area, and headline performance figures. | Public | Should | Included | BR-17 |
+| FR-39 | The system shall allow anyone to report an incident without an account (as a guest), follow it on the same device, and later keep it by creating an account or signing in to an existing one. | Public, Resident | Should | Included | BR-01, BR-26 |
 | FR-37 | The system shall allow a Resident confirming a fix to rate the service from 1 to 5 stars with an optional comment, visible to staff and as an average on the public page. | Resident | Could | Included | BR-11 |
 
 ## 5. Non-functional requirements
@@ -144,7 +148,7 @@ All are verified in the assessment environment: local Firebase Emulator Suite, s
 
 | ID | Rule |
 |---|---|
-| BR-01 | Only an authenticated, active user with role RESIDENT may submit a report. |
+| BR-01 | Only an authenticated, active user with role RESIDENT may submit a report. A guest (FR-39) is an anonymous sign-in that the server gives a guest RESIDENT profile; it is authenticated for this rule. |
 | BR-02 | A report needs a category (active), a description of 10–300 characters, a location inside the Sol Plaatje municipal bounding box, a suburb from the configured list, and a severity. A report may carry 0–3 photos: the resident may pick JPEG/PNG/WebP files of up to 15 MB, which are compressed; each stored photo must be at most 700 KB and really be an image of its declared type (checked from its content). |
 | BR-03 | A new report is a duplicate if an *open* report with the same category exists within 100 m and was created in the last 72 hours. The duplicate is stored with status DUPLICATE and `parentReportId`, and the parent's `affectedCount` is incremented. DUPLICATE is terminal. |
 | BR-04 | References are `CL-<year>-<4-digit sequence>`, allocated in a transaction, unique and never reused. |
@@ -257,6 +261,10 @@ Task: ASSIGNED → ACCEPTED → IN_PROGRESS → COMPLETED. Any active state goes
 **FR-35 Bulk assignment.** In the queue, reports that can be assigned (under review or escalated, no active task) have a checkbox. With 1 to 20 selected from one department, the official chooses a field worker and assigns them in one step. Each report is assigned in its own transaction; any that cannot be assigned are listed with the reason and do not block the rest.
 
 **FR-36 Public transparency page.** Anyone can open /transparency without signing in and see open issues, issues fixed in the last 30 days, average time to fix, SLA compliance per department, reports by category, open issues by area and the average rating. The figures contain no names, descriptions, photos or exact locations, and are at most a few minutes old.
+
+**FR-38 Public home.** A visitor who is not signed in lands on the public page. It lists the active, unexpired alerts (emergencies first) and shows open issues on a map with approximate locations; choosing an area filters both. It shows no names, descriptions, photos or exact locations, and needs no sign-in. Signed-in users still go to their own home.
+
+**FR-39 Guest reporting.** "Report an issue" opens the report form without an account; the report gets a reference number and appears under My reports on that device, with a banner offering an account. Creating an account (email/password or Google) keeps the same reports and adds the name to them. Signing in to an existing account moves the guest's reports into it, and the code cannot be reused. A guest's fourth report in an hour, an eleventh guest session from one address in an hour, and SMS opt-in or profile changes by a guest are refused. Signing out as a guest is explained first.
 
 **FR-37 Service rating.** When confirming a fix, the resident may choose 1 to 5 stars and add a comment of up to 300 characters. Values outside 1–5 are refused. The rating appears on the report for staff and the resident, and in the public average.
 

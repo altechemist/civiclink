@@ -17,7 +17,7 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
 ## Slides (≤ 5 min), see `CivicLink_Presentation.pptx`
 
 1. **Problem:** the 31 March strike; phone and WhatsApp reporting; no tracking; no alerts.
-2. **Solution and scope:** four roles; all 37 requirements included (all 14 Must-haves); four deferred at baseline were brought back by change requests once the core was verified.
+2. **Solution and scope:** four roles; all 39 requirements included (all 14 Must-haves); four deferred at baseline were brought back by change requests once the core was verified.
 3. **Architecture:** React SPA → callable commands → transactions; Security Rules; shared domain package (Figure 9).
 4. **Key decisions:** server-side commands with transactions (D1); free-tier deployment, with a Node API on Vercel and photos in Firestore (D3); offline outbox with idempotent submission (D5).
 5. **Verification:** 173 automated tests (all pass), CI green, NFR measurements, CDN/CSP checks on the live site, SC-01 to SC-05 all achieved.
@@ -77,6 +77,8 @@ For every included requirement and rule: how to show it, and a failure case to s
 | FR-35 | Queue → tick two reports under review → choose worker → Assign selected | One already assigned → listed with the reason, the rest still assigned |
 | FR-36 | Log out → "See how the municipality is responding" → public page | No names, descriptions or locations; figures cached ≤ 5 min (DevTools: `x-vercel-cache: HIT`) |
 | FR-37 | Resident confirms a fix with 4 stars → official sees "Resident rating: 4/5" | Rating is optional; 6 stars refused by the API |
+| FR-38 | Signed out, open the site: alerts, open-issue map, figures; choose "Galeshewe" in "Show my area" | No names, descriptions or exact locations (≈ 100 m) |
+| FR-39 / BR-26 | "Report an issue" without an account → submit → banner → Account → create account → report still under My reports | Sign out as a guest → warning first; 4th guest report in an hour refused; "I already have an account" moves the reports |
 | NFR-13 / NFR-14 | DevTools → Network: assets `immutable`; Response headers: CSP, HSTS | Console shows no CSP violations |
 | FR-32 / BR-22 | Profile → type DELETE → delete; sign-in now fails | Show that the old report now reads "Former resident" (official view) |
 | BR-21 | Admin → config → limit 2; resident submits a third report | "You have submitted 2 reports in the last hour" |

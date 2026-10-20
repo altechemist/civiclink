@@ -11,6 +11,7 @@ entity "users/{uid}" as users {
   * email : string <<unique via Auth>>
   phone : string
   smsAlerts : boolean
+  isGuest : boolean
   * role : RESIDENT|OFFICIAL|FIELD_WORKER|ADMIN
   departmentId : string <<FK departments>>
   suburb : string
@@ -123,6 +124,20 @@ entity "smsOutbox/{id}" as sms {
   * createdAt : timestamp
   sentAt : timestamp
 }
+entity "guestTransfers/{hash}" as gt {
+  * hash <<PK, sha256(code)>>
+  --
+  * guestUid <<FK users>>
+  * expiresAt : timestamp
+  usedAt : timestamp
+  claimedBy <<FK users>>
+}
+entity "rateLimits/{id}" as rl {
+  * id <<PK, hash(address)+hour>>
+  --
+  * count : int
+  * expiresAt : timestamp
+}
 entity "photos/{id}" as photos {
   * id <<PK>>
   --
@@ -195,4 +210,5 @@ alerts ||--o{ sms
 users ||--o{ sms
 reports ||--o{ photos
 tasks ||--o{ photos : proofIds
+users ||--o{ gt : guestUid
 @enduml

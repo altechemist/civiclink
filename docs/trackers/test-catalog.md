@@ -2,9 +2,9 @@
 
 Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cited in the report appears in a test title, so `grep -r "<ID>"` finds the test. Results for the submitted commit are in its GitHub Actions run.
 
-**Total: 143 automated tests.**
+**Total: 185 automated tests.**
 
-## Unit (Vitest): 30 tests
+## Unit (Vitest): 41 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -27,6 +27,17 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | UT-ANL-02 | empty input yields nulls, not NaN | `packages/shared/test/domain.test.ts` |
 | UT-CSV-01 | CSV quoting | `packages/shared/test/domain.test.ts` |
 | UT-LOC-01 | municipal bounds and nearest suburb | `packages/shared/test/domain.test.ts` |
+| UT-ALS-01 | publish time must be 10 min to 30 days ahead and before expiry | `packages/shared/test/release11.test.ts` |
+| UT-ALS-02 | publishAt is optional in the broadcast schema | `packages/shared/test/release11.test.ts` |
+| UT-OFF-01 | clientId is optional and limited to a safe id format | `packages/shared/test/release11.test.ts` |
+| UT-BLK-01 | one to 20 reports per batch | `packages/shared/test/release11.test.ts` |
+| UT-RAT-01 | ratings are whole stars from 1 to 5, with optional short feedback | `packages/shared/test/release11.test.ts` |
+| UT-RAT-02 | average to one decimal; no ratings gives null; invalid values ignored | `packages/shared/test/release11.test.ts` |
+| UT-PUB-01 | open reports per suburb exclude closed, rejected and duplicate reports | `packages/shared/test/release11.test.ts` |
+| UT-SMS-01 | South African numbers convert to E.164 | `packages/shared/test/release11.test.ts` |
+| UT-SMS-02 | SMS text fits one 160-character segment | `packages/shared/test/release11.test.ts` |
+| UT-SMS-03 | opting in to SMS requires a mobile number | `packages/shared/test/release11.test.ts` |
+| UT-GST-01 | an upgrading guest gives a name and suburb; transfer codes have a fixed safe format | `packages/shared/test/release11.test.ts` |
 | UT-SCH-01 | description boundaries 9/10/300/301 | `packages/shared/test/schemas.test.ts` |
 | UT-SCH-02 | photo count 0/3/4 and file size and type | `packages/shared/test/schemas.test.ts` |
 | UT-SCH-03 | location inside / outside municipal bounding box | `packages/shared/test/schemas.test.ts` |
@@ -39,7 +50,7 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | UT-SCH-08 | department SLA hours 1–720 whole numbers | `packages/shared/test/schemas.test.ts` |
 | UT-SCH-09 | real type is detected from magic bytes | `packages/shared/test/schemas.test.ts` |
 
-## Security rules (emulator): 19 tests
+## Security rules (emulator): 22 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -60,10 +71,13 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | RT-ALR-01 | signed-in users read alerts; nobody writes them directly | `tests/rules/rules.test.ts` |
 | RT-ALR-02 | residents read only their own delivery record; officials read all | `tests/rules/rules.test.ts` |
 | RT-CFG-01 | configuration is readable, never client-writable; counters and logs locked | `tests/rules/rules.test.ts` |
+| RT-ALS-01 | scheduled alerts are visible to staff only until published; nobody writes them directly (FR-28) | `tests/rules/rules.test.ts` |
+| RT-GST-01 | guest transfer codes and rate-limit counters are server-only (FR-39) | `tests/rules/rules.test.ts` |
+| RT-SMS-01 | SMS records (phone numbers) are readable by administrators only (FR-25, NFR-11) | `tests/rules/rules.test.ts` |
 | RT-PHO-01 | report photos and proof are visible to the reporter, followers and staff with access (BR-17) | `tests/rules/rules.test.ts` |
 | RT-PHO-02 | other users cannot read photos, and nobody writes them directly | `tests/rules/rules.test.ts` |
 
-## Cloud Functions integration (emulator): 79 tests
+## Cloud Functions integration (emulator): 99 tests
 
 | ID | Scenario | File |
 |---|---|---|
@@ -96,6 +110,26 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-CFG-03 | categories link to an existing department and can be deactivated | `functions/test/admin-alerts.test.ts` |
 | IT-CFG-04 | non-admins cannot change configuration | `functions/test/admin-alerts.test.ts` |
 | IT-ANL-01 | metrics reflect live data and are restricted to officials and admins | `functions/test/admin-alerts.test.ts` |
+| IT-OFF-01 | a report re-sent with the same clientId is stored once and returns the same reference | `functions/test/extras.test.ts` |
+| IT-OFF-02 | another resident cannot reuse a clientId to read someone else’s report; malformed ids are refused | `functions/test/extras.test.ts` |
+| IT-SCH-01 | a scheduled alert is invisible until due, then published once with the same id | `functions/test/extras.test.ts` |
+| IT-SCH-02 | invalid times are refused; a cancelled alert is never published | `functions/test/extras.test.ts` |
+| IT-BLK-01 | assigns every eligible report and reports the rest without blocking them | `functions/test/extras.test.ts` |
+| IT-BLK-02 | other departments, residents and oversized batches are refused | `functions/test/extras.test.ts` |
+| IT-RAT-01 | the reporter rates the fix when confirming; out-of-range ratings are refused | `functions/test/extras.test.ts` |
+| IT-PUB-01 | anyone can GET anonymous figures, with CDN cache headers | `functions/test/extras.test.ts` |
+| IT-PUB-02 | the figures are only readable, not writable | `functions/test/extras.test.ts` |
+| IT-SMS-01 | emergency alerts are queued by SMS for opted-in residents only; other types are not | `functions/test/extras.test.ts` |
+| IT-SMS-02 | a gateway failure is recorded per message and logged, and does not fail the alert | `functions/test/extras.test.ts` |
+| IT-SMS-03 | removing the number ends the opt-in; deleting the account deletes the SMS records | `functions/test/extras.test.ts` |
+| IT-SMS-04 | an administrator can send a test SMS (simulated without credentials); others cannot | `functions/test/extras.test.ts` |
+| IT-SMS-05 | with Twilio credentials, messages go to Twilio’s REST API in the documented form; errors are recorded | `functions/test/extras.test.ts` |
+| IT-GST-01 | an anonymous session becomes a guest Resident; starting again changes nothing | `functions/test/guest.test.ts` |
+| IT-GST-02 | a guest can report and follow it, within a lower hourly limit; account-only actions are refused | `functions/test/guest.test.ts` |
+| IT-GST-03 | a guest creates an account in the same session and keeps their reports | `functions/test/guest.test.ts` |
+| IT-GST-04 | a guest moves their reports into an existing account with a one-time code | `functions/test/guest.test.ts` |
+| IT-GST-05 | guest sessions are limited per network address | `functions/test/guest.test.ts` |
+| IT-PUB-03 | anyone can GET open issues (approximate) and active alerts, cached for a minute | `functions/test/guest.test.ts` |
 | IT-HTTP-01 | a resident submits a report through the HTTP API | `functions/test/http.test.ts` |
 | IT-HTTP-02 | authentication, roles and validation behave exactly as with Cloud Functions | `functions/test/http.test.ts` |
 | IT-HTTP-03 | unknown commands and wrong methods are refused | `functions/test/http.test.ts` |
@@ -147,13 +181,15 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | IT-AFF-02 | own reports, closed reports and staff are refused | `functions/test/reports.test.ts` |
 | IT-CMT-01 | staff with access can comment; residents and other departments cannot | `functions/test/reports.test.ts` |
 
-## End-to-end and non-functional (Playwright): 14 tests
+## End-to-end and non-functional (Playwright): 22 tests
 
 | ID | Scenario | File |
 |---|---|---|
 | E2E-08 | first Google sign-in completes a resident profile (FR-29, BR-16) | `tests/e2e/account.spec.ts` |
 | E2E-09 | password reset gives the same answer whether or not the account exists (FR-30) | `tests/e2e/account.spec.ts` |
 | E2E-10 | profile change and POPIA self-deletion (FR-31, FR-32) | `tests/e2e/account.spec.ts` |
+| NFT-11 | CDN caching: immutable assets, cached public figures, uncached app shell (NFR-13) | `tests/e2e/delivery.spec.ts` |
+| NFT-12 | security headers: CSP, HSTS, no framing, no sniffing (NFR-14) | `tests/e2e/delivery.spec.ts` |
 | E2E-01 | full lifecycle: resident → official → field worker → resident (SC-01, NFT-05) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-02 | a second resident reporting the same issue is linked as a duplicate (FR-05) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-03 | suburb-targeted alert reaches Galeshewe but not Roodepan (FR-16, FR-17, BR-14) | `tests/e2e/lifecycle.spec.ts` |
@@ -163,8 +199,14 @@ Generated from the test code by `python3 scripts/test-catalog.py`. Every ID cite
 | E2E-07 | GPS outside Sol Plaatje is explained, not used; tapping the map sets the pin and suburb (FR-03, BR-02) | `tests/e2e/lifecycle.spec.ts` |
 | E2E-11 | "Me too" from the community map raises the affected count (FR-33, BR-23) | `tests/e2e/lifecycle.spec.ts` |
 | NFT-07 | mobile layouts fit a 360 px screen | `tests/e2e/mobile.spec.ts` |
-| NFT-08 | accessibility of login, report form, my reports and queue | `tests/e2e/quality.spec.ts` |
+| NFT-08 | accessibility of public home, transparency, login, report form, my reports and queue | `tests/e2e/quality.spec.ts` |
 | NFT-06 | responsiveness: screens interactive < 3 s, p95 command < 2 s | `tests/e2e/quality.spec.ts` |
+| E2E-12 | a report made offline is saved on the phone and sent automatically on reconnect (FR-27) | `tests/e2e/release11.spec.ts` |
+| E2E-13 | an official schedules an alert for later and cancels it (FR-28) | `tests/e2e/release11.spec.ts` |
+| E2E-14 | an official assigns several reports to one field worker at once (FR-35) | `tests/e2e/release11.spec.ts` |
+| E2E-15 | the public transparency page works without signing in (FR-36) | `tests/e2e/release11.spec.ts` |
+| E2E-16 | a visitor sees what is happening, reports as a guest, then creates an account and keeps the report (FR-38, FR-39) | `tests/e2e/release11.spec.ts` |
+| E2E-17 | a guest who already has an account signs in and their report moves to it (FR-39) | `tests/e2e/release11.spec.ts` |
 
 ## Installable PWA (Playwright, production build): 1 tests
 

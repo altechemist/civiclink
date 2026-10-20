@@ -84,7 +84,7 @@ picture(s, 'docs/evidence/03-resident-home.png', 7.6, 1.5, height=5.3)
 picture(s, 'docs/evidence/13-resident-alerts.png', 10.2, 1.5, height=5.3)
 
 # 2. Solution & scope
-s = slide('Four roles, one lifecycle: all 37 requirements delivered', 'Solution and final scope')
+s = slide('Four roles, one lifecycle: all 39 requirements delivered', 'Solution and final scope')
 bullets(s, [
     'Residents|report in 3 steps (map pin, photos, severity), even offline; get a reference, follow it live, confirm with a rating or reopen',
     'Officials|department queue, triage, assign (one or many), escalate, suburb alerts now or scheduled, live analytics',
@@ -92,7 +92,7 @@ bullets(s, [
     'Administrators|staff accounts, roles, departments, SLA targets, system log',
     'Accounts|Google sign-in, password reset, profile, POPIA self-deletion with anonymised records',
     'Reach|web push, SMS for emergencies, "Me too" on the map, installable app that saves reports offline',
-    'Transparency|a public page with time-to-fix, SLA compliance and satisfaction, served from the CDN',
+    'Open to everyone|a public home with alerts and open issues nearby; report as a guest, keep it with an account later; public time-to-fix figures from the CDN',
 ], width=7.4, size=17)
 picture(s, 'docs/diagrams/state-report.png', 8.2, 1.6, width=4.7)
 
@@ -101,7 +101,7 @@ s = slide('Commands on the server, real-time reads in the browser', 'Architectur
 picture(s, 'docs/diagrams/architecture.png', 0.6, 1.6, height=5.2)
 bullets(s, [
     'React SPA|reads Firestore through live listeners, under Security Rules',
-    'Node command API|one registry of 31 commands: auth, roles, Zod validation, transactions; served by Vercel (deployed) or Cloud Functions (local)',
+    'Node command API|one registry of 36 commands: auth, roles, Zod validation, transactions; served by Vercel (deployed) or Cloud Functions (local)',
     'Shared domain package|state machines, duplicate/SLA policies, used on both sides',
     'Free tier|Vercel + Firebase Spark; photos stored in Firestore; emulator for offline demo and tests',
 ], left=8.5, width=4.3, size=15)
