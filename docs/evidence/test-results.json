@@ -1,8 +1,8 @@
 {
-  "date": "2026-10-20 09:15 UTC",
-  "commit": "0f52054",
-  "total": 173,
-  "passed": 173,
+  "date": "2026-10-20 12:09 UTC",
+  "commit": "d5f01fe",
+  "total": 185,
+  "passed": 185,
   "tests": [
     {
       "title": "UT-RSM-01 every allowed transition succeeds for its allowed actors",
@@ -150,6 +150,11 @@
       "result": "Pass"
     },
     {
+      "title": "UT-GST-01 an upgrading guest gives a name and suburb; transfer codes have a fixed safe format",
+      "suite": "Unit",
+      "result": "Pass"
+    },
+    {
       "title": "UT-SCH-01 description boundaries 9/10/300/301",
       "suite": "Unit",
       "result": "Pass"
@@ -291,6 +296,11 @@
     },
     {
       "title": "RT-ALS-01 scheduled alerts are visible to staff only until published; nobody writes them directly (FR-28)",
+      "suite": "Security rules",
+      "result": "Pass"
+    },
+    {
+      "title": "RT-GST-01 guest transfer codes and rate-limit counters are server-only (FR-39)",
       "suite": "Security rules",
       "result": "Pass"
     },
@@ -511,6 +521,46 @@
     },
     {
       "title": "IT-SMS-03 removing the number ends the opt-in; deleting the account deletes the SMS records",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-SMS-04 an administrator can send a test SMS (simulated without credentials); others cannot",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-SMS-05 with Twilio credentials, messages go to Twilio\u2019s REST API in the documented form; errors are recorded",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-GST-01 an anonymous session becomes a guest Resident; starting again changes nothing",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-GST-02 a guest can report and follow it, within a lower hourly limit; account-only actions are refused",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-GST-03 a guest creates an account in the same session and keeps their reports",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-GST-04 a guest moves their reports into an existing account with a one-time code",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-GST-05 guest sessions are limited per network address",
+      "suite": "Integration",
+      "result": "Pass"
+    },
+    {
+      "title": "IT-PUB-03 anyone can GET open issues (approximate) and active alerts, cached for a minute",
       "suite": "Integration",
       "result": "Pass"
     },
@@ -820,7 +870,7 @@
       "result": "Pass"
     },
     {
-      "title": "NFT-08 accessibility of login, report form, my reports and queue",
+      "title": "NFT-08 accessibility of public home, transparency, login, report form, my reports and queue",
       "suite": "E2E (chromium)",
       "result": "Pass"
     },
@@ -846,6 +896,16 @@
     },
     {
       "title": "E2E-15 the public transparency page works without signing in (FR-36)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-16 a visitor sees what is happening, reports as a guest, then creates an account and keeps the report (FR-38, FR-39)",
+      "suite": "E2E (chromium)",
+      "result": "Pass"
+    },
+    {
+      "title": "E2E-17 a guest who already has an account signs in and their report moves to it (FR-39)",
       "suite": "E2E (chromium)",
       "result": "Pass"
     },

@@ -1,4 +1,4 @@
-Run 2026-10-20 09:15 UTC on commit `0f52054`: **173 of 173 passed**.
+Run 2026-10-20 12:09 UTC on commit `d5f01fe`: **185 of 185 passed**.
 
 Table: Complete automated test results
 
@@ -33,6 +33,7 @@ Table: Complete automated test results
 | UT-SMS-01 | South African numbers convert to E.164 | Unit | Pass |
 | UT-SMS-02 | SMS text fits one 160-character segment | Unit | Pass |
 | UT-SMS-03 | opting in to SMS requires a mobile number | Unit | Pass |
+| UT-GST-01 | an upgrading guest gives a name and suburb; transfer codes have a fixed safe format | Unit | Pass |
 | UT-SCH-01 | description boundaries 9/10/300/301 | Unit | Pass |
 | UT-SCH-02 | photo count 0/3/4 and file size and type | Unit | Pass |
 | UT-SCH-03 | location inside / outside municipal bounding box | Unit | Pass |
@@ -62,6 +63,7 @@ Table: Complete automated test results
 | RT-ALR-02 | residents read only their own delivery record; officials read all | Security rules | Pass |
 | RT-CFG-01 | configuration is readable, never client-writable; counters and logs locked | Security rules | Pass |
 | RT-ALS-01 | scheduled alerts are visible to staff only until published; nobody writes them directly (FR-28) | Security rules | Pass |
+| RT-GST-01 | guest transfer codes and rate-limit counters are server-only (FR-39) | Security rules | Pass |
 | RT-SMS-01 | SMS records (phone numbers) are readable by administrators only (FR-25, NFR-11) | Security rules | Pass |
 | RT-PHO-01 | report photos and proof are visible to the reporter, followers and staff with access (BR-17) | Security rules | Pass |
 | RT-PHO-02 | other users cannot read photos, and nobody writes them directly | Security rules | Pass |
@@ -106,6 +108,14 @@ Table: Complete automated test results
 | IT-SMS-01 | emergency alerts are queued by SMS for opted-in residents only; other types are not | Integration | Pass |
 | IT-SMS-02 | a gateway failure is recorded per message and logged, and does not fail the alert | Integration | Pass |
 | IT-SMS-03 | removing the number ends the opt-in; deleting the account deletes the SMS records | Integration | Pass |
+| IT-SMS-04 | an administrator can send a test SMS (simulated without credentials); others cannot | Integration | Pass |
+| IT-SMS-05 | with Twilio credentials, messages go to Twilio’s REST API in the documented form; errors are recorded | Integration | Pass |
+| IT-GST-01 | an anonymous session becomes a guest Resident; starting again changes nothing | Integration | Pass |
+| IT-GST-02 | a guest can report and follow it, within a lower hourly limit; account-only actions are refused | Integration | Pass |
+| IT-GST-03 | a guest creates an account in the same session and keeps their reports | Integration | Pass |
+| IT-GST-04 | a guest moves their reports into an existing account with a one-time code | Integration | Pass |
+| IT-GST-05 | guest sessions are limited per network address | Integration | Pass |
+| IT-PUB-03 | anyone can GET open issues (approximate) and active alerts, cached for a minute | Integration | Pass |
 | IT-HTTP-01 | a resident submits a report through the HTTP API | Integration | Pass |
 | IT-HTTP-02 | authentication, roles and validation behave exactly as with Cloud Functions | Integration | Pass |
 | IT-HTTP-03 | unknown commands and wrong methods are refused | Integration | Pass |
@@ -167,12 +177,14 @@ Table: Complete automated test results
 | E2E-06 | wrong password shows a generic error (FR-02) | E2E (chromium) | Pass |
 | E2E-07 | GPS outside Sol Plaatje is explained, not used; tapping the map sets the pin and suburb (FR-03, BR-02) | E2E (chromium) | Pass |
 | E2E-11 | "Me too" from the community map raises the affected count (FR-33, BR-23) | E2E (chromium) | Pass |
-| NFT-08 | accessibility of login, report form, my reports and queue | E2E (chromium) | Pass |
+| NFT-08 | accessibility of public home, transparency, login, report form, my reports and queue | E2E (chromium) | Pass |
 | NFT-06 | responsiveness: screens interactive < 3 s, p95 command < 2 s | E2E (chromium) | Pass |
 | E2E-12 | a report made offline is saved on the phone and sent automatically on reconnect (FR-27) | E2E (chromium) | Pass |
 | E2E-13 | an official schedules an alert for later and cancels it (FR-28) | E2E (chromium) | Pass |
 | E2E-14 | an official assigns several reports to one field worker at once (FR-35) | E2E (chromium) | Pass |
 | E2E-15 | the public transparency page works without signing in (FR-36) | E2E (chromium) | Pass |
+| E2E-16 | a visitor sees what is happening, reports as a guest, then creates an account and keeps the report (FR-38, FR-39) | E2E (chromium) | Pass |
+| E2E-17 | a guest who already has an account signs in and their report moves to it (FR-39) | E2E (chromium) | Pass |
 | NFT-07 | mobile layouts fit a 360 px screen | E2E (mobile-360) | Pass |
 | NFT-10 | the production build is installable and opens offline (FR-34) | PWA () | Pass |
 | NFT-11 | CDN caching: immutable assets, cached public figures, uncached app shell (NFR-13) | Deployed site (chromium) | Pass |
