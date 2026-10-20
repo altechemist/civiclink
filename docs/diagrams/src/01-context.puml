@@ -9,20 +9,27 @@ actor "Field Worker" as W
 actor "Administrator" as A
 
 rectangle "CivicLink system boundary" as SYS #ffffff {
-  rectangle "**CivicLink**\nWeb application (React SPA)\nCloud Functions command API\nFirestore · Cloud Storage · Firebase Auth" as C #d5ebf4
+  rectangle "**CivicLink**\nWeb application (React PWA)\nNode.js command API\nCloud Firestore (data + photos)\nFirebase Authentication" as C #d5ebf4
 }
 
+cloud "Google sign-in\n(identity provider)" as G #f1f5f9
+cloud "Firebase Cloud Messaging\n(web push delivery)" as FCM #f1f5f9
 cloud "OpenStreetMap\ntile servers" as OSM #f1f5f9
+node "GitHub Actions\n(hourly scheduler)" as GHA #f1f5f9
 node "Device GPS /\nbrowser geolocation" as GPS #f1f5f9
 
-R --> C : register, sign in;\nreport incident (location, photos);\nconfirm / reopen
+R --> C : register, sign in;\nreport incident (location, photos);\n"me too"; confirm / reopen
 C --> R : reference number, status updates,\nnotifications, suburb alerts, map
 O --> C : triage, reject, assign, escalate;\nbroadcast alerts
 C --> O : report queue, new-report notifications,\nanalytics, delivery/read counts
 W --> C : accept, start, complete\n(notes + proof photos)
 C --> W : assigned tasks, incident details,\nlocation
-A --> C : manage users, roles,\ndepartments, categories
+A --> C : manage users, roles,\ndepartments, categories, limits
 C --> A : audit log, maintenance results
-C ..> OSM : request map tiles (HTTPS)
+C <..> G : OAuth sign-in (ID token)
+C ..> FCM : push messages
+FCM ..> R : push notifications
+C ..> OSM : map tiles (HTTPS)
+GHA ..> C : hourly SLA escalation /\nauto-close (secret)
 GPS ..> C : coordinates (with consent)
 @enduml

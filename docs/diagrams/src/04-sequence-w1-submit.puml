@@ -5,9 +5,9 @@ autonumber
 
 actor Resident
 participant "NewReportPage\n(React)" as UI
-participant "Cloud Storage" as ST
-participant "submitReport\n(callable)" as API
-participant "ReportService" as RS
+participant "Command API\n(http.ts on Vercel /\nCloud Functions locally)" as API
+participant "execute()\n+ ReportService" as RS
+participant "photoService" as PS
 participant "DuplicatePolicy\n(shared)" as DP
 database "Firestore" as DB
 
@@ -16,48 +16,44 @@ UI -> UI : submitReportSchema.safeParse()
 alt client validation fails
   UI --> Resident : field errors (no request sent)
 else valid
-  loop each photo (0–3)
-    UI -> ST : uploadBytes(reports/{uid}/{uuid}.jpg)
-    alt rule violation (type/size/owner)
-      ST --> UI : storage/unauthorized
-      UI --> Resident : upload error
-    end
-  end
-  UI -> API : submitReport(input, ID token)
-  API -> DB : get users/{uid}
-  alt not active RESIDENT
-    API --> UI : permission-denied
+  UI -> UI : compressPhoto() each photo\n(≤ 1280 px, ≤ 700 KB JPEG)
+  UI -> API : POST submitReport {data, photos: base64}\n+ Firebase ID token
+  API -> API : verify ID token (revocation checked)
+  API -> RS : execute(submitReport, caller, data)
+  RS -> DB : get users/{uid}
+  alt not an active RESIDENT
+    RS --> UI : permission-denied
   else
-    API -> API : parse(submitReportSchema)
-    alt invalid
-      API --> UI : invalid-argument {fields}
+    RS -> RS : parse(submitReportSchema)
+    RS -> PS : decodePhotos(): size ≤ 700 KB,\nreal type = declared type (magic bytes)
+    alt invalid input or photo
+      RS --> UI : invalid-argument {fields}
       UI --> Resident : field errors
     else
-      API -> RS : submit(input, actor)
-      RS -> ST : file(path).exists() for each photo
-      RS -> DB : runTransaction
-      activate DB
-      RS -> DB : get category, department
-      RS -> DB : query reports by geohash ranges (100 m)
-      RS -> DP : findParent(new, candidates, now)
-      DP --> RS : parent | null
-      RS -> DB : get counters/reports-YYYY
-      opt not a duplicate
-        RS -> DB : query active officials of department
+      RS -> DB : pre-reads outside the transaction:\nsettings, profile, count(recent reports)
+      alt over hourly limit (BR-21)
+        RS --> UI : resource-exhausted
+      else
+        RS -> DB : runTransaction
+        activate DB
+        RS -> DB : get category, department
+        RS -> DB : query reports by geohash ranges (100 m)
+        RS -> DP : findParent(new, candidates, now)
+        DP --> RS : parent | null
+        RS -> DB : get counters/reports-YYYY
+        RS -> DB : set counter, report, history,\nphotos/{id} (binary)
+        alt duplicate
+          RS -> DB : update parent (affectedCount+1, followerIds)
+        else new report
+          RS -> DB : set publicReports/{id},\nusers/{official}/notifications
+        end
+        DB --> RS : commit (retried on contention)
+        deactivate DB
+        RS --> API : {reportId, ref, duplicateOf}
+        API --> UI : {result}
+        UI --> Resident : reference number or "already reported"
+        DB -->> UI : onSnapshot: officials' queues update live
       end
-      RS -> DB : set counter, report, history
-      alt duplicate
-        RS -> DB : update parent (affectedCount+1, followerIds)
-      else new report
-        RS -> DB : set publicReports/{id}
-        RS -> DB : set users/{official}/notifications
-      end
-      DB --> RS : commit (or retry on contention)
-      deactivate DB
-      RS --> API : {reportId, ref, duplicateOf}
-      API --> UI : result
-      UI --> Resident : reference number or "already reported"
-      DB -->> UI : onSnapshot: officials' queues update live
     end
   end
 end

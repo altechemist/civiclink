@@ -13,9 +13,9 @@ if (Client validation passes?\n(BR-02 schema)) then (no)
 else (yes)
 endif
 :Step 3: review and submit;
-:Upload photos to\nreports/{uid}/ (Storage);
-if (Storage rules accept?\n(image, ≤5 MB, own folder)) then (no)
-  :Show upload error;
+:Compress photos in the browser\n(≤ 1280 px, ≤ 700 KB JPEG);
+if (Photo can be compressed?) then (no)
+  :Show "try another photo";
   stop
 else (yes)
 endif
@@ -26,7 +26,12 @@ if (Active RESIDENT? (BR-01, BR-16)) then (no)
   stop
 else (yes)
 endif
-:Validate input (zod) and photo paths;
+if (Under hourly limit? (BR-21)) then (no)
+  :Reject: resource-exhausted;
+  stop
+else (yes)
+endif
+:Validate input (zod);\ndecode photos, check size\nand real type (magic bytes);
 if (Valid? (BR-02)) then (no)
   :Reject: invalid-argument\nwith field errors;
   |Resident|
@@ -46,10 +51,10 @@ partition "Firestore transaction (TX-1)" {
   :Read year counter;
   :Allocate reference CL-YYYY-NNNN (BR-04);
   if (Same category, open, ≤100 m, ≤72 h? (BR-03)) then (duplicate)
-    :Write report status DUPLICATE\nlinked to parent;
+    :Write report status DUPLICATE\nlinked to parent (+ photos);
     :Parent affectedCount +1,\nadd resident to followers;
   else (new)
-    :Write report status SUBMITTED;
+    :Write report status SUBMITTED\n+ photo documents;
     :Write public projection (no PII);
     :Notify department officials;
   endif

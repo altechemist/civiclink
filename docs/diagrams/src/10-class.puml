@@ -26,12 +26,12 @@ package "Domain entities (shared models → Firestore documents)" {
     geohash: string
     suburb, landmark?
     severity: Severity
-    photoPaths: string[]
+    photoIds: string[]
     status: ReportStatus
     assignedWorkerId?, activeTaskId?
     parentReportId?, affectedCount
     followerIds: string[]
-    resolutionNotes?, resolutionPhotoPaths
+    resolutionNotes?, resolutionPhotoIds
     createdAt, resolvedAt?, escalatedAt?, closedAt?
   }
   class HistoryEntry <<reports/{id}/history>> {
@@ -48,7 +48,7 @@ package "Domain entities (shared models → Firestore documents)" {
     departmentId, priority: Severity
     status: TaskStatus
     notes?, completionNotes?
-    proofPaths: string[]
+    proofIds: string[]
     assignedAt, acceptedAt?, startedAt?, completedAt?
   }
   class Alert <<alerts>> {
@@ -79,6 +79,12 @@ package "Domain entities (shared models → Firestore documents)" {
   }
   class Settings <<settings/app>> {
     reportsPerHour: int
+  }
+  class Photo <<photos>> {
+    reportId, ownerId
+    kind: EVIDENCE | PROOF
+    contentType, size
+    data: bytes (≤ 700 KB)
   }
   class PublicReport <<publicReports>> {
     ref, categoryId, status
@@ -165,10 +171,24 @@ package "Application services (functions/src/services)" {
   class CommentService {
     +add(reportId, text, actor)
   }
-  class "command()" as Command <<API wrapper>> {
-    +auth → loadActor → role check
-    +parse(schema) → handler
-    +toHttpsError()
+  class CommandRegistry <<commands.ts>> {
+    +COMMANDS: Record<name, CommandDefinition>
+    +execute(def, caller, data)
+    -loadActor(uid): Actor
+    -parse(schema, data)
+    -toHttpsError(err)
+  }
+  class HttpAdapter <<http.ts, Vercel>> {
+    +handleHttp(req, res)
+    -verifyCaller(): Caller
+    -maintenance(): cron
+  }
+  class CallableAdapter <<index.ts, Cloud Functions>> {
+    +command(def): onCall
+  }
+  class photoService <<module>> {
+    +decodePhotos(inputs, field): DecodedPhoto[]
+    +writePhotos(tx, photos, meta, now): ids
   }
 }
 
@@ -179,6 +199,7 @@ Report "1" *-- "0..*" Comment
 Report "1" -- "0..*" Task : generates (≤1 active) >
 Report "0..*" -- "0..1" Report : duplicate of >
 Report "1" -- "1" PublicReport : projected as >
+Report "1" *-- "0..*" Photo : evidence / proof >
 Category "0..*" --> "1" Department : routes to >
 Report "0..*" --> "1" Category
 Report "0..*" --> "1" Department
@@ -187,13 +208,15 @@ User "1" -- "0..*" AlertRecipient
 User "1" *-- "0..*" Notification
 User "1" -- "0..*" Alert : creates >
 
-Command ..> ReportService
-Command ..> TaskService
-Command ..> AlertService
-Command ..> UserService
-Command ..> ConfigService
-Command ..> CommentService
-Command ..> AnalyticsService
+HttpAdapter ..> CommandRegistry
+CallableAdapter ..> CommandRegistry
+CommandRegistry ..> ReportService
+CommandRegistry ..> TaskService
+CommandRegistry ..> AlertService
+CommandRegistry ..> UserService
+CommandRegistry ..> ConfigService
+CommandRegistry ..> CommentService
+CommandRegistry ..> AnalyticsService
 ReportService ..> ReportLifecycle
 TaskService ..> ReportLifecycle
 MaintenanceService ..> ReportLifecycle
@@ -201,6 +224,8 @@ ReportLifecycle ..> ReportStateMachine
 ReportLifecycle ..> NotificationService
 TaskService ..> TaskStateMachine
 ReportService ..> DuplicatePolicy
+ReportService ..> photoService
+TaskService ..> photoService
 MaintenanceService ..> SlaPolicy
 MaintenanceService ..> ResolutionPolicy
 ReportService ..> ResolutionPolicy
