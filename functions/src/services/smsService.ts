@@ -21,14 +21,22 @@ class SimulatedGateway implements SmsGateway {
 }
 
 class TwilioGateway implements SmsGateway {
-  readonly name = 'twilio';
+  readonly name: string;
+  /**
+   * `trialTemplate`: Twilio trial accounts may only send predefined templates (e.g. sms_event_notifications),
+   * so the template name is sent instead of the text. The real text is still stored in smsOutbox.
+   */
   constructor(
     private readonly sid: string,
     private readonly token: string,
     private readonly from: string,
-  ) {}
+    private readonly trialTemplate?: string,
+  ) {
+    this.name = trialTemplate ? 'twilio-trial' : 'twilio';
+  }
 
-  async send(to: string, body: string) {
+  async send(to: string, text: string) {
+    const body = this.trialTemplate ?? text;
     const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${this.sid}/Messages.json`, {
       method: 'POST',
       headers: {
@@ -45,8 +53,8 @@ class TwilioGateway implements SmsGateway {
 }
 
 function gatewayFromEnv(): SmsGateway {
-  const { TWILIO_ACCOUNT_SID: sid, TWILIO_AUTH_TOKEN: token, TWILIO_FROM: from } = process.env;
-  return sid && token && from ? new TwilioGateway(sid, token, from) : new SimulatedGateway();
+  const { TWILIO_ACCOUNT_SID: sid, TWILIO_AUTH_TOKEN: token, TWILIO_FROM: from, TWILIO_TRIAL_TEMPLATE: template } = process.env;
+  return sid && token && from ? new TwilioGateway(sid, token, from, template || undefined) : new SimulatedGateway();
 }
 
 let gateway: SmsGateway | null = null;

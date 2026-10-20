@@ -184,7 +184,7 @@ describe('SMS gateway (FR-25, Twilio)', () => {
     await expectCode(w.officialWater.call('sendTestSms', { to: '0831112222' }), 'permission-denied');
     await expectCode(w.admin.call('sendTestSms', { to: '12345' }), 'invalid-argument');
   });
-  it('IT-SMS-05 with Twilio credentials, messages go to Twilio’s REST API in the documented form; errors are recorded', async () => {
+  it('IT-SMS-05 with Twilio credentials, messages go to Twilio’s REST API in the documented form (trial: a predefined template); errors are recorded', async () => {
     const env = { ...process.env };
     const realFetch = globalThis.fetch;
     const calls: { url: string; auth: string; body: URLSearchParams }[] = [];
@@ -204,6 +204,12 @@ describe('SMS gateway (FR-25, Twilio)', () => {
       expect(calls[0]!.url).toBe('https://api.twilio.com/2010-04-01/Accounts/ACtest/Messages.json');
       expect(calls[0]!.auth).toBe(`Basic ${Buffer.from('ACtest:secret-token').toString('base64')}`);
       expect(Object.fromEntries(calls[0]!.body)).toEqual({ To: '+27831112222', From: '+15005550006', Body: 'CivicLink test: SMS alerts are working.' });
+      // Trial accounts: the predefined template name is sent instead of the text (the text stays in smsOutbox).
+      process.env.TWILIO_TRIAL_TEMPLATE = 'sms_event_notifications';
+      setSmsGateway(null);
+      const trial = await http(w.admin, 'sendTestSms', { to: '0831112222' });
+      expect(trial).toMatchObject({ status: 'SENT', gateway: 'twilio-trial' });
+      expect(calls[1]!.body.get('Body')).toBe('sms_event_notifications');
       fail = true;
       const bad = await http(w.admin, 'sendTestSms', { to: '0831112222' });
       expect(bad).toMatchObject({ status: 'FAILED', error: 'The To number is not verified' });
