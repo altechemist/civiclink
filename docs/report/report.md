@@ -926,6 +926,7 @@ Table: Significant defects found and resolved
 | DEF-11 | CSP report-only trial on the deployed site | The validation library probed `eval` on every page, which an enforced CSP would report as a violation | Validation runs in "jitless" mode; the CSP was then enforced with 0 violations |
 | DEF-12 | E2E-16 | After reporting as a guest, the home screen showed "Welcome" instead of the name: the profile listener started before the guest's claims existed, was refused by the rules and never retried | The listener restarts once claims exist |
 | DEF-13 | E2E-16 | Starting a guest session from the public home redirected to the resident home instead of the report form | A dedicated `/report` entry route starts the guest session, then opens the form |
+| DEF-14 | Client review of the live map | After the CSP was enforced, map tiles stopped loading for returning visitors: the service worker fetches tiles, and worker fetches fall under `connect-src`, which did not list the tile servers (first visits, without the worker, were fine) | Tile servers added to `connect-src`; NFT-12 now checks that tiles load with the worker in control |
 | DEF-04 | CI on a clean checkout | An over-broad `lib/` ignore rule had kept two source folders out of the repository | Ignore rule narrowed to the build output; CI now builds from a clean clone on every push |
 
 There are no unresolved defects. The limitations of included functionality are listed in Section 3.4.

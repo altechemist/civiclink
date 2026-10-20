@@ -41,4 +41,10 @@ test('NFT-12 security headers: CSP, HSTS, no framing, no sniffing (NFR-14)', asy
     await page.waitForLoadState('networkidle');
   }
   expect(violations).toEqual([]);
+
+  // DEF-14: with the service worker in control, map tiles are fetched by the worker (connect-src) and must still load.
+  await page.goto('/');
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  await expect.poll(() => page.locator('img.leaflet-tile-loaded').count(), { timeout: 15_000 }).toBeGreaterThan(0);
 });
