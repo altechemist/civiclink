@@ -2,20 +2,24 @@
 
 Architecture: ADR-0006. The static web app and the Node command API run on Vercel. Auth and Firestore run on Firebase's free Spark plan (project `civiclink-2ae84`, alias `prod` in `.firebaserc`). No payment card is needed.
 
-## Status (20 Oct 2026)
+## Status (20 Oct 2026): live at https://civiclink-five.vercel.app
 
 | Step | State |
 |---|---|
-| Firebase project `civiclink-2ae84` | Created; CLI logged in |
-| Web app "CivicLink Web" | Registered (`1:946087552522:web:3112c2fe40cc7b8388a1f3`); config in `apps/web/.env.production.local` (git-ignored) |
-| Firestore | Database `(default)` exists, **location nam5 (US)**. It was created automatically by the first rules deploy, not in africa-south1; see the note below |
-| Security Rules + indexes | Deployed (`npm run deploy:rules`) |
-| Google sign-in | Enabled |
-| Email/Password sign-in | Confirm it is enabled (console → Authentication → Sign-in method) |
-| Service-account key | To generate (step 1.4) |
-| Vercel | To log in, then run `scripts/vercel-setup.sh <key.json>` |
+| Firebase project `civiclink-2ae84` (Spark) | Ready |
+| Firestore `(default)` | **africa-south1**, free tier; rules and indexes deployed (`npm run deploy:rules`) |
+| Web app "CivicLink Web" | Registered; config in `apps/web/.env.production.local` (git-ignored) and in Vercel |
+| Authentication | Email/Password and Google enabled; `civiclink-five.vercel.app` authorised |
+| Vercel project `karadevs-projects/civiclink` | Production alias `civiclink-five.vercel.app`; API in `cpt1`; env vars set (secrets marked sensitive) |
+| GitHub schedule | `CRON_SECRET` secret and `APP_URL` variable set; manual run succeeded |
+| Demo data | Seeded (150 reports, 15 accounts). The demo password is private: give it to the lecturer separately |
+| Production verification | E2E-01, E2E-02, E2E-04, E2E-06, E2E-07, NFT-06 (page loads), NFT-08 pass against the live URL |
 
-> **Firestore location.** The design specifies africa-south1 (latency to the Cape Town API region, and POPIA data residency). The current database is empty. To move it: console → Firestore → Databases → delete `(default)`, recreate it in **africa-south1**, then run `npm run deploy:rules`. Keeping nam5 works, but each command makes several US round trips (about 1–2 s slower).
+**Notes from the first deployment:**
+- `firebase-admin` 14 depends on `jwks-rsa` 4, whose `jose` 6 is ESM-only. Vercel's Node loader cannot `require()` it, so `package.json` overrides `jwks-rsa` to 3.2.2 (same API, CommonJS `jose` 4).
+- The Firestore **emulator does not enforce composite indexes**. A missing index (reports by `reporterId` + `createdAt` ascending) only showed up in production. After changing any query, deploy the indexes and run the E2E suite against the live URL:
+  `E2E_BASE_URL=https://civiclink-five.vercel.app E2E_PASSWORD=<demo password> npx playwright test -g "E2E-01|E2E-02|E2E-07" --project chromium`
+- A rules deploy on a project without a database creates one in **nam5**. Always create the database explicitly first: `npx firebase firestore:databases:create "(default)" --location africa-south1 --project prod`.
 
 ## 1. Firebase console (once)
 

@@ -727,7 +727,18 @@ Table: Non-functional verification results
 | NFR-11 Privacy | RT-RPT-03, RT-PUB-01, RT-PHO-01, RT-PHO-02, UT-PRV-01, IT-RPT-07 | No PII in public data; photos restricted | Pass |
 | NFR-12 Maintainability | CI: ESLint, TypeScript strict, coverage threshold | 0 lint errors; 97.9% line coverage of the domain package | Pass |
 
-Timings were measured on the development laptop running the emulators, Vite and the browsers at the same time, which is the assessed configuration.
+Timings were measured on the development laptop running the emulators, Vite and the browsers at the same time (local configuration).
+
+**Production verification.** The same Playwright tests were run against the deployed system (https://civiclink-five.vercel.app) on 20 October 2026:
+
+| Test | Result on the live system |
+|---|---|
+| E2E-01 full lifecycle (three browser sessions) | Pass. New report on the official's queue after 0.11 s; resolution on the resident's screen after 0.85 s (NFR-05 target 5 s) |
+| E2E-02 duplicate detection, E2E-07 out-of-area GPS | Pass |
+| E2E-04 access denied per role, E2E-06 wrong password | Pass |
+| NFT-06 page loads | Dashboard 1.02 s, queue 1.06 s, alerts 0.50 s (target 3 s) |
+| NFT-08 accessibility (axe-core) | 0 violations |
+| Hourly maintenance schedule (GitHub Actions → `/api/cron/maintenance`) | Run succeeded with the secret; refused without it |
 
 ## Defects and Known Issues
 
@@ -740,6 +751,8 @@ Table: Significant defects found and resolved
 | DEF-03 | NFT-08 | Three text styles were below the WCAG AA contrast ratio | Darker text colours |
 | DEF-05 | E2E-10 | The profile form opened with an empty name, because it read the profile before it had loaded | The form is rendered only after the profile loads |
 | DEF-06 | IT-RPT-08 in CI | Under concurrency, extra reads inside the submission transaction (rate-limit count, profile, settings, officials) caused lock timeouts | Those reads moved before the transaction; it now contends only on the reference counter |
+| DEF-07 | E2E-01 run against production | Submission failed in production because the rate-limit query needed a composite index, which the emulator never requires | Index added and deployed; the E2E suite can now run against the deployed URL |
+| DEF-08 | First Vercel deployment | API calls crashed because a firebase-admin dependency pulls in an ESM-only package that Vercel's loader cannot `require()` | Dependency pinned to a compatible version (npm override) |
 | DEF-04 | CI on a clean checkout | An over-broad `lib/` ignore rule had kept two source folders out of the repository | Ignore rule narrowed to the build output; CI now builds from a clean clone on every push |
 
 There are no unresolved defects. The limitations of included functionality are listed in Section 3.4.
@@ -760,7 +773,7 @@ npm run dev
 
 `npm run dev` builds the Cloud Functions, starts the Auth, Firestore and Functions emulators, initialises the database with the deterministic seed (departments, categories, 15 accounts, 150 reports with valid histories, and alerts), and starts the web application. Open **http://127.0.0.1:5173**. The emulator data browser is at http://127.0.0.1:4000. Restarting the command resets the database to the same seed. npm 11 is used because npm 10 has a known workspace-resolution defect.
 
-**Demo accounts.** All accounts use the password `CivicLink#2026`. The login page offers one-click shortcuts for the main four.
+**Demo accounts.** Locally, all accounts use the password `CivicLink#2026`, and the login page offers one-click shortcuts for the main four. The deployed system at **{{APP_URL}}** has the same accounts with a private password, supplied to the lecturer separately.
 
 Table: Demo accounts
 
@@ -848,8 +861,6 @@ Submitted version: tag **{{TAG}}**, commit **{{COMMIT}}**.
 ## Deployed System
 
 URL: **{{APP_URL}}** (Vercel + Firebase Spark, decision D3). Demo accounts are listed in Section 8. The local emulator configuration in Section 8 reproduces the same system offline.
-
-> VERIFY: Confirm the deployed URL works and the demo accounts exist in the deployed project before submission.
 
 ## Additional Supporting Material
 
