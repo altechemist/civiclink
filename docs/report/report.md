@@ -10,9 +10,9 @@ Conventions: "#!" = unnumbered Heading 1; "#" Heading 1; "##" Heading 2; "###" H
 
 Sol Plaatje Local Municipality in Kimberley receives reports of burst pipes, power outages, potholes and illegal dumping by telephone, walk-in visits and community WhatsApp groups. Reports are logged by hand without a precise location. The same incident is reported many times. Field teams are dispatched by phone with no record of progress, and residents hear nothing back unless they call again. When municipal workers went on strike on 31 March 2026 and blocked roads across the city, there was no official way to warn commuters.
 
-CivicLink is a web application that connects four groups in one workflow. **Residents** report incidents from their phones with a map location, photos and a severity, receive a reference number, and follow the report live until it is fixed. **Municipal officials** triage reports for their department, assign them to field workers, escalate overdue work and broadcast alerts to specific suburbs. **Field workers** receive tasks on their phones, record progress and close each task with completion notes and a proof photo. **Administrators** manage staff accounts, departments and incident categories.
+CivicLink is a web application that connects four groups in one workflow, and is open to the public without an account. **Residents** report incidents from their phones with a map location, photos and a severity, receive a reference number, and follow the report live until it is fixed. **Municipal officials** triage reports for their department, assign them to field workers, escalate overdue work and broadcast alerts to specific suburbs. **Field workers** receive tasks on their phones, record progress and close each task with completion notes and a proof photo. **Administrators** manage staff accounts, departments and incident categories.
 
-The final release implements all 37 specified functional requirements, including all 14 Must-have requirements. The core lifecycle runs end to end: report, duplicate detection, triage, assignment, field completion, and resident confirmation or reopening with a service rating. It is supported by real-time notifications, web push, suburb-targeted alerts (immediate or scheduled) with read receipts and SMS for emergencies, a privacy-safe community map with a "Me too" button, live service-delivery analytics, a public transparency page, SLA-based automatic escalation, bulk assignment, a complete audit trail, an installable app that saves reports offline and sends them on reconnect, Google sign-in, and self-service account deletion that meets POPIA's right to erasure.
+The final release implements all 39 specified functional requirements, including all 14 Must-have requirements. The core lifecycle runs end to end: report, duplicate detection, triage, assignment, field completion, and resident confirmation or reopening with a service rating. Anyone can open CivicLink without an account to see the active alerts and open issues around them, and report a problem as a guest, keeping it later by creating an account or signing in. It is supported by real-time notifications, web push, suburb-targeted alerts (immediate or scheduled) with read receipts and SMS for emergencies, a privacy-safe community map with a "Me too" button, live service-delivery analytics, a public transparency page, SLA-based automatic escalation, bulk assignment, a complete audit trail, an installable app that saves reports offline and sends them on reconnect, Google sign-in, and self-service account deletion that meets POPIA's right to erasure.
 
 The system is built with React and TypeScript on Firebase Authentication and Cloud Firestore, with a Node.js command API. Every state-changing operation runs on the server inside a database transaction, and access is enforced by Security Rules. It runs entirely on free tiers: the deployed system uses Vercel and Firebase's free Spark plan, and a local configuration using the Firebase Emulator Suite can be reproduced with two commands and no cloud account. It is verified by {{TEST_TOTAL}} automated tests (unit, security-rule, API integration, end-to-end and non-functional) running in continuous integration. All five success criteria were achieved.
 
@@ -63,7 +63,7 @@ Table: Success criteria
 
 ## Solution Overview
 
-CivicLink is a responsive web application backed by Firebase. The system boundary contains the React single-page application (with separate resident, official, field-worker and administrator areas), a Node.js command API (served by Cloud Functions locally and by Vercel serverless functions when deployed), Cloud Firestore and Firebase Authentication. The external actors are the four user roles and members of the public, who can view the transparency page without an account. The external services are OpenStreetMap (map tiles), Google sign-in, Firebase Cloud Messaging (push), an optional SMS gateway (Twilio), the Vercel CDN, the GitHub Actions schedule and the browser's geolocation service.
+CivicLink is a responsive web application backed by Firebase. The system boundary contains the React single-page application (with separate resident, official, field-worker and administrator areas), a Node.js command API (served by Cloud Functions locally and by Vercel serverless functions when deployed), Cloud Firestore and Firebase Authentication. The external actors are the four user roles and members of the public, who can see alerts, open issues and figures, and report as guests, without an account. The external services are OpenStreetMap (map tiles), Google sign-in, Firebase Cloud Messaging (push), an optional SMS gateway (Twilio), the Vercel CDN, the GitHub Actions schedule and the browser's geolocation service.
 
 Its major functional areas are:
 
@@ -73,7 +73,7 @@ Its major functional areas are:
 - **Field work:** a mobile task list where the worker accepts, starts and completes tasks with notes and proof photos.
 - **Community communication:** suburb-targeted alerts, sent now or scheduled, with delivery and read receipts, push and SMS for emergencies; a community incident map with approximate locations and "Me too".
 - **Management and administration:** live analytics on volumes, resolution time and SLA compliance; bulk assignment; user, role, department and category management; and a system log with the SMS outbox.
-- **Transparency:** a public page, open without an account, with anonymous figures on open issues, time to fix, SLA compliance and resident satisfaction.
+- **Public access:** a public home page with the alerts and open issues around the visitor, reporting without an account (as a guest), and a transparency page, with anonymous figures on open issues, time to fix, SLA compliance and resident satisfaction.
 
 ![Figure: CivicLink system context diagram](docs/diagrams/context.png){width=5.5}
 
@@ -105,6 +105,7 @@ Table: Final release scope
 | Offline report drafts sent on reconnect | FR-27 | Could |
 | Scheduled alerts; bulk assignment | FR-28, FR-35 | Could |
 | Public transparency page; resident service rating | FR-36, FR-37 | Could |
+| Public home page (alerts, open-issue map, figures); reporting as a guest with optional account | FR-38, FR-39 | Should |
 
 ## Excluded and Deferred Capabilities
 
@@ -137,7 +138,7 @@ Table: Known limitations
 
 # SYSTEM REQUIREMENTS SPECIFICATION
 
-The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-40 in `docs/baseline/change-log.md`.
+The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-43 in `docs/baseline/change-log.md`.
 
 ## Functional Requirements
 
@@ -182,6 +183,8 @@ Table: Functional requirements
 | FR-35 | The system shall allow an Official to assign several triaged reports of their department to one field worker in a single step, reporting any that could not be assigned. | Could Have | Included |
 | FR-36 | The system shall publish anonymous performance figures (open issues, time to fix, SLA compliance per department, satisfaction) on a public page that needs no sign-in. | Could Have | Included |
 | FR-37 | The system shall allow a Resident confirming a fix to rate the service from 1 to 5 stars with an optional comment. | Could Have | Included |
+| FR-38 | The system shall show visitors who are not signed in a public home page with the active alerts, a map of open issues (approximate locations) filterable by area, and headline figures. | Should Have | Included |
+| FR-39 | The system shall allow anyone to report an incident without an account (as a guest), follow it on the same device, and later keep it by creating an account or signing in to an existing one. | Should Have | Included |
 
 ## Non-Functional Requirements
 
@@ -212,7 +215,7 @@ Table: Business rules
 
 | ID | Rule |
 |---|---|
-| BR-01 | Only an authenticated, active user with role Resident may submit a report. |
+| BR-01 | Only an authenticated, active user with role Resident may submit a report. A guest (FR-39) is an anonymous sign-in given a guest Resident profile by the server, so it is authenticated for this rule. |
 | BR-02 | A report needs an active category, a description of 10–300 characters, a location inside the Sol Plaatje municipal bounds, a suburb from the configured list and a severity. It may carry 0–3 photos, each a real JPEG/PNG/WebP image (checked by its content) of at most 700 KB once compressed; residents may pick files of up to 15 MB, which the app compresses. |
 | BR-03 | A new report is a duplicate if an open report with the same category exists within 100 m and was created in the last 72 hours. The duplicate is stored as Duplicate, linked to the original; the original's affected count is incremented and the resident follows it. |
 | BR-04 | References are CL-<year>-<sequence>, allocated in a transaction, unique and never reused. |
@@ -235,6 +238,7 @@ Table: Business rules
 | BR-21 | A resident may submit at most N reports in any rolling hour; N is set by an Administrator (1–100, default 10). |
 | BR-23 | A resident may confirm ("Me too") an issue once, only while it is open, and not their own report. |
 | BR-24 | A scheduled alert starts 10 minutes to 30 days ahead and before its expiry; it is published once and keeps its identifier; it can be cancelled only while still scheduled; one that expires before publication is cancelled. |
+| BR-26 | A guest may submit at most 3 reports per rolling hour; at most 10 guest sessions may start per network address per hour. Guests cannot opt in to SMS or edit a profile. They keep their reports by creating an account in the same session, or by moving them into an existing account with a one-time code valid for 15 minutes. |
 | BR-25 | Only Emergency alerts go by SMS, only to active residents of the target suburbs who opted in and gave a mobile number, one 160-character message each. SMS records are visible to Administrators only and are erased with the account. |
 | BR-22 | When a resident deletes their account, their name, email, phone, photos, notifications, alert receipts, profile and sign-in are erased; their reports are kept for service records as "Former resident". Staff accounts are deactivated, never self-deleted. |
 
@@ -303,6 +307,10 @@ Table: Business rules
 **FR-35 Bulk assignment.** Assignable reports have a checkbox. With 1–20 selected from one department, one field worker can be assigned to all of them. Each report has its own transaction; any that cannot be assigned are listed with the reason and do not block the rest.
 
 **FR-36 Transparency page.** Anyone can open it without signing in. It shows open issues, issues fixed in 30 days, average time to fix, SLA compliance per department, reports by category, open issues by area and the average rating, with no names, descriptions, photos or exact locations.
+
+**FR-38 Public home.** A signed-out visitor lands on a page listing active alerts (emergencies first) and open issues on a map with approximate locations; choosing an area filters both. No names, descriptions, photos or exact locations appear. Signed-in users still go to their own home.
+
+**FR-39 Guest reporting.** "Report an issue" opens the form without an account, and the report appears under My reports on that device with a banner offering an account. Creating an account (email/password or Google) keeps the same reports. Signing in to an existing account moves them, and the code works once. A guest's fourth report in an hour, an eleventh guest session from one address in an hour, and guest SMS opt-in or profile changes are refused. Signing out as a guest is explained first.
 
 **FR-37 Service rating.** The resident may give 1–5 stars and a comment of up to 300 characters when confirming a fix. Other values are refused. Staff see the rating on the report, and the public page shows the average.
 
@@ -417,6 +425,13 @@ Table: Component responsibilities and technology stack
 - *Rationale:* no Security Rule has to open data to anonymous users, only aggregates leave the server, and however many people view the page, the database is read at most about once every five minutes.
 - *Consequences:* figures can be up to five minutes old, which is stated on the page.
 
+**D7: Guest reporting through anonymous sign-in, not unauthenticated writes.**
+- *Context:* residents should be able to report without signing up (FR-39), but every write must still be authorised on the server (D1, NFR-01) and abuse must be limited.
+- *Options:* (a) an unauthenticated "submit" endpoint; (b) Firebase anonymous sign-in plus a server-created guest Resident profile; (c) keep registration mandatory.
+- *Decision:* (b).
+- *Rationale:* the guest is a real Firebase user, so every existing rule, command check and Security Rule applies unchanged, the guest can follow and confirm their report, and the account can later be upgraded in place by linking an email/password or Google sign-in to the same user id, so nothing has to be copied. (a) would need a parallel, weaker authorisation path.
+- *Consequences:* guest sessions are cheap to create, so BR-26 adds a lower report limit and a per-address session limit. A guest who clears the browser loses access unless they created an account; the interface says so before sign-out.
+
 **D4: Leaflet and OpenStreetMap instead of Google Maps (ADR-0004).**
 - *Context:* residents must pinpoint incidents, and staff must see them.
 - *Options:* Google Maps with Geocoding, Mapbox, Leaflet with OpenStreetMap.
@@ -477,6 +492,8 @@ Table: User interface evidence
 | 31 | Public | Transparency page, no sign-in | FR-36 |
 | 32 | Resident | Rating the service when confirming the fix | FR-37 |
 | 33 | Administrator | SMS outbox (simulated gateway) | FR-25 |
+| 34 | Public | Public home: alerts, open-issue map, figures | FR-38 |
+| 35 | Guest | Keeping guest reports: create an account or sign in | FR-39 |
 
 ![Figure: Sign in (all roles)](docs/evidence/01-login.png){width=2.6}
 
@@ -524,9 +541,13 @@ Table: User interface evidence
 
 ![Figure: Administrator, SMS outbox](docs/evidence/32-sms-outbox.png)
 
+![Figure: Public home page](docs/evidence/00-public-home.png)
+
+![Figure: Guest, keeping reports with an account](docs/evidence/33-guest-account.png){width=2.6}
+
 ## Data Design
 
-CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in Firestore as well, as binary documents in the `photos` collection (decision D3), so the system needs no separate file store. Figure 34 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
+CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in Firestore as well, as binary documents in the `photos` collection (decision D3), so the system needs no separate file store. Figure 36 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
 
 ![Figure: Firestore document model](docs/diagrams/data-model.png)
 
@@ -540,6 +561,7 @@ Table: Data dictionary (principal collections)
 | departmentId | string | FK departments; required for officials and workers | Department scope (BR-20) |
 | suburb | string | required for residents | Alert targeting (BR-14) |
 | phone, smsAlerts | string, boolean | optional | Mobile number; SMS opt-in for emergency alerts (FR-25) |
+| isGuest | boolean | optional | Guest session without an account (FR-39); also a `guest` claim |
 | isActive | boolean | required | Deactivation (BR-16) |
 | **reports/{id}** | | auto id (PK) | Incident report |
 | ref | string | required, unique | CL-YYYY-NNNN (BR-04) |
@@ -568,6 +590,8 @@ Table: Data dictionary (principal collections)
 | **departments/{id}**, **categories/{id}** | | slug id | name (unique), slaHours (1–720) / icon and departmentId (FK), isActive |
 | **users/{uid}/pushTokens/{hash}** | | SHA-256 of token | uid, token, createdAt (FR-24; server-only) |
 | **photos/{id}** | | auto id | reportId (FK), ownerId (FK users), kind EVIDENCE/PROOF, contentType, size, data (bytes ≤ 700 KB), createdAt; readable by whoever can read the report |
+| **guestTransfers/{sha256(code)}** | | hash of the one-time code | guestUid (FK users), expiresAt, usedAt, claimedBy (FR-39; server-only) |
+| **rateLimits/{id}** | | address hash + hour | count, expiresAt: guest sessions per network address (BR-26; server-only; the address itself is not stored) |
 | **counters/reports-{year}** | | year | next reference sequence |
 | **settings/app** | | fixed id | reportsPerHour (BR-21) |
 | **systemLogs/{id}** | | auto id | level, source, message, actorId, createdAt |
@@ -608,7 +632,7 @@ Table: Role / permission matrix (✓ allowed; scope in brackets)
 | Analytics | — | ✓ | — | ✓ |
 | Manage users, departments, categories; system log; SMS outbox | — | — | — | ✓ |
 
-The public transparency page needs no account: anyone, signed in or not, can view it.
+The public home and transparency pages need no account. A **guest** (FR-39) has the Resident permissions above except SMS opt-in and profile editing, with the lower limits of BR-26.
 
 Table: Security controls
 
@@ -628,6 +652,7 @@ Table: Security controls
 | Error handling | Leaking internals | Unexpected errors return a generic message and are written to the system log |
 | Browser attacks | Script injection, clickjacking, protocol downgrade | Enforced Content Security Policy (scripts only from the site and Google sign-in, no `eval`, no inline script, no framing), HSTS, X-Frame-Options DENY, nosniff (NFR-14) |
 | Public endpoint | Personal data leaking to anonymous users; load on the database | Only aggregates are returned (no names, text, photos or coordinates, test IT-PUB-01); responses come from the CDN cache |
+| Guest abuse | Floods of reports from throwaway sessions | Guests are real authenticated sessions; 3 reports per hour per guest and 10 guest sessions per hour per network address (hashed); transfer codes are random 256-bit, stored only as a hash, single-use and valid 15 minutes (BR-26) |
 | Repeated submissions | A report saved offline being stored twice | Idempotent submission with a device-chosen client id, scoped to the user (D5) |
 | SMS | Phone numbers exposed; messages to people who did not ask | Opt-in with a validated number; SMS records readable by administrators only, numbers masked on screen and erased with the account (BR-25) |
 | Logging and audit | Unaccountable actions | Immutable status history with actor; administrator actions and errors in the system log |
@@ -644,7 +669,7 @@ Table: Security controls
 
 ## Deployment and Runtime Design
 
-CivicLink has two runtime configurations built from the same code (Figure 35):
+CivicLink has two runtime configurations built from the same code (Figure 37):
 
 - **Deployed (free tier):** the static web app and the Node command API run on **Vercel** (serverless functions in the Cape Town region). Vercel's CDN serves the hashed assets with a one-year immutable cache and the public figures from its edge cache. Authentication and Firestore run on Firebase's free **Spark** plan, and push goes through Firebase Cloud Messaging. The API uses a service-account key held in Vercel's encrypted environment. A GitHub Actions schedule calls the protected maintenance endpoint hourly, and Vercel Cron calls it daily. The deployed URL is given in Appendix 11.2.
 - **Local:** the web app runs on Vite. Auth, Firestore and Cloud Functions run in the Firebase Emulator Suite on one machine, with the same command registry served by the Cloud Functions adapter. This configuration is used for development, all automated tests and an offline demonstration.
@@ -691,6 +716,7 @@ Table: Capability implementation
 | Me too and offline | FR-33, FR-34, FR-27 | CommunityMapPage (MeToo) → `affirmReport` → ReportService.affirm; `public/sw.js`, manifest, `components/pwa.tsx`; `lib/outbox.ts` (IndexedDB) and `components/outbox.tsx` (OutboxSync, OutboxCard) → `submitReport` with `clientId` |
 | Scheduled alerts and SMS | FR-28, FR-25 | NewAlertPage ("Schedule for later"), AlertsAdminPage (Scheduled tab) → `broadcastAlert` / `cancelScheduledAlert` → AlertService (scheduledAlerts, publishDue); MaintenanceService.runAll; `smsService` (SmsGateway: Twilio or simulated) → smsOutbox; ProfilePage opt-in; LogsPage SMS outbox |
 | Bulk assignment | FR-35 | ReportQueuePage (checkboxes, BulkAssignBar) → `assignReports` → ReportService.assignMany (one TX-2 per report) |
+| Public home and guests | FR-38, FR-39 | PublicHomePage → GET `/api/public/feed` → PublicFeedService (publicReports, active alerts); `/report` (ReportEntry) → AuthProvider.startGuest (anonymous sign-in) → `startGuestSession` → GuestService.start; GuestAccountPage → `linkWithCredential`/`linkWithPopup` + `upgradeGuest`, or `startGuestTransfer` + sign-in + `claimGuestReports` |
 | Transparency and rating | FR-36, FR-37 | TransparencyPage → GET `/api/public/stats` → PublicStatsService (computeAnalytics, openBySuburb, summariseRatings); ResidentReportPage stars → `confirmResolution` with rating |
 | Accounts | FR-01, FR-02, FR-29–FR-32 | LoginPage, RegisterPage, WelcomePage, ProfilePage, AuthProvider (Google popup, password reset); `registerResident`, `completeProfile`, `updateProfile`, `deleteMyAccount` → UserService; users, Auth claims, photos |
 | Insight and administration | FR-19–FR-23, FR-26 | AnalyticsPage → AnalyticsService → computeAnalytics; UsersPage → UserService; ConfigPage → ConfigService; LogsPage, logService; CommentService; toCsv |
@@ -724,6 +750,9 @@ Table: Callable command API
 | confirmResolution, reopenReport | Resident | Respond to resolution (optional 1–5 rating) | failed-precondition, invalid-argument |
 | addComment | Staff | Internal note | permission-denied |
 | broadcastAlert, deactivateAlert | Official, Admin | Alerts, sent now or scheduled (`publishAt`) | invalid-argument |
+| startGuestSession | signed in (anonymous) | Create the guest profile (FR-39) | resource-exhausted (per-address limit) |
+| upgradeGuest, startGuestTransfer, claimGuestReports | Resident (guest / account) | Keep guest reports: upgrade in place, or move into an existing account | invalid-argument, failed-precondition, not-found |
+| sendTestSms | Admin | Check the SMS gateway | invalid-argument |
 | cancelScheduledAlert | Official, Admin | Cancel a scheduled alert | failed-precondition (already published) |
 | assignReports | Official, Admin | Bulk TX-2 dispatch (1–20 reports) | invalid-argument; per-report failures listed |
 | markAlertRead | Resident | Read receipt | not-found |
@@ -732,7 +761,7 @@ Table: Callable command API
 | getAnalytics | Official, Admin | Metrics | — |
 | runMaintenance | Admin | Run the scheduled rules on demand (SLA, auto-close, scheduled alerts) | — |
 
-Besides the commands, the deployed API has two plain HTTP routes: `GET /api/public/stats` (anonymous figures for FR-36, no sign-in, cacheable by the CDN) and `GET /api/cron/maintenance` (the scheduled rules, protected by a secret).
+Besides the commands, the deployed API has three plain HTTP routes: `GET /api/public/stats` (anonymous figures for FR-36), `GET /api/public/feed` (open issues and active alerts for FR-38), both without sign-in and cacheable by the CDN, and `GET /api/cron/maintenance` (the scheduled rules, protected by a secret).
 
 **External integrations.**
 - **OpenStreetMap tiles** are fetched by the browser over HTTPS. If tiles are unavailable, the map shows a blank background but still works: the pin, map clicks and coordinates function, and the report form, lists and timelines do not depend on tiles.
@@ -741,7 +770,7 @@ Besides the commands, the deployed API has two plain HTTP routes: `GET /api/publ
 - **SMS gateway (Twilio)** is behind an `SmsGateway` interface. With `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM` set, messages are sent through Twilio's REST API with an 8-second timeout; without them a simulated gateway records each message as Simulated. A failure marks that message Failed and is logged, and never stops the alert (IT-SMS-02).
 - **Vercel CDN** caches the hashed assets and the public figures (NFR-13).
 
-**Two adapters, one API.** `functions/src/commands.ts` defines all 31 commands once. `index.ts` exposes them as Cloud Functions (local emulator), and `http.ts` exposes them as a plain Node handler (Vercel). The Node adapter verifies the Firebase ID token (rejecting revoked sessions), limits the request size, and returns errors in the callable protocol. The client therefore uses `httpsCallableFromURL` with no other changes. In the local configuration, Firebase services come from the official Emulator Suite. No integration is mocked in the application code.
+**Two adapters, one API.** `functions/src/commands.ts` defines all 36 commands once. `index.ts` exposes them as Cloud Functions (local emulator), and `http.ts` exposes them as a plain Node handler (Vercel). The Node adapter verifies the Firebase ID token (rejecting revoked sessions), limits the request size, and returns errors in the callable protocol. The client therefore uses `httpsCallableFromURL` with no other changes. In the local configuration, Firebase services come from the official Emulator Suite. No integration is mocked in the application code.
 
 ## AI / Machine-Learning Component
 
@@ -831,6 +860,13 @@ Table: Functional and business-rule test results
 | IT-PUB-01, E2E-15 | FR-36, NFR-11 | Anonymous visitor opens the transparency page | Integration / E2E / privacy | Figures shown without sign-in; no names, descriptions, comments or coordinates in the response; CDN cache header present | As expected | Pass |
 | IT-SMS-01 | FR-25, BR-25 | Opt in without a number; Water and Emergency alerts to an opted-in resident | Validation / integration | Opt-in refused without a number; one SMS (+27…, ≤ 160 characters) for the emergency only | As expected | Pass |
 | IT-SMS-02 | FR-25 | Gateway down during an emergency alert | Failure | Alert delivered; SMS marked Failed with the reason | As expected | Pass |
+| IT-GST-01 | FR-39 | Anonymous session starts a guest; starts again; no session | Integration / authorisation | Guest Resident profile and claim; second start changes nothing; unauthenticated refused | As expected | Pass |
+| IT-GST-02 | FR-39, BR-26 | Guest submits four reports in an hour; tries to opt in to SMS | Boundary / authorisation | Three accepted, fourth refused with "create an account"; opt-in refused | As expected | Pass |
+| IT-GST-03, E2E-16 | FR-39 | Guest reports, then creates an account (email/password) | Integration / E2E | Same user id; report kept and shows the new name; upgrade before linking and a second upgrade refused | As expected | Pass |
+| IT-GST-04, E2E-17 | FR-39 | Guest reports, then signs in to an existing account | Integration / E2E | Report moved; guest deleted; code refused on reuse; unknown code not found | As expected | Pass |
+| IT-GST-05 | BR-26 | 11 guest sessions from one address in an hour | Boundary / security | Eleventh refused (429); another address unaffected | As expected | Pass |
+| IT-PUB-03, E2E-16 | FR-38, NFR-11 | Visitor opens the public home | Integration / E2E / privacy | Active alerts and open issues shown; only rounded locations; no names or descriptions; 60 s cache header | As expected | Pass |
+| IT-SMS-04, IT-SMS-05 | FR-25 | Admin test SMS without and with Twilio credentials (Twilio API stubbed); Twilio error | Integration / contract | Simulated; then the documented Twilio request (URL, Basic auth, To/From/Body) and SENT; error recorded as FAILED | As expected | Pass |
 | IT-SMS-03 | BR-25, BR-22 | Remove the phone number; delete the account | Integration / privacy | Opt-in ends; SMS records erased | As expected | Pass |
 
 ## Non-Functional and Security Verification
@@ -867,7 +903,8 @@ Timings were measured on the development laptop running the emulators, Vite and 
 | NFT-06 page loads | Dashboard 1.02 s, queue 1.06 s, alerts 0.50 s (target 3 s) |
 | NFT-08 accessibility (axe-core) | 0 violations |
 | Hourly maintenance schedule (GitHub Actions → `/api/cron/maintenance`) | Run succeeded with the secret; refused without it |
-| E2E-11 to E2E-15 ("Me too", offline drafts, scheduled alerts, bulk assignment, transparency page) | Pass |
+| E2E-11 to E2E-17 ("Me too", offline drafts, scheduled alerts, bulk assignment, transparency page, public home with guest reporting and account) | Pass |
+| NFT-08 accessibility, including the public home and transparency pages | 0 serious or critical violations |
 | NFT-11 CDN caching, NFT-12 security headers | Pass; public figures served from the edge cache after the first request |
 | Web push (FR-24), manual | An alert broadcast by an official appeared as a system notification in a separate signed-in browser about 5 s later; the test alert was then ended |
 
@@ -887,6 +924,8 @@ Table: Significant defects found and resolved
 | DEF-09 | E2E-11 against production | Map markers lost their per-report CSS class in production builds (set through a styling option Leaflet ignores for classes) | Class passed when the marker is created; production E2E runs now use per-run locations because live data persists |
 | DEF-10 | Manual push check on the deployed site | Turning push on failed silently, because the web configuration lacked FCM's sender ID | The sender ID is derived from the Firebase app ID; push verified end to end |
 | DEF-11 | CSP report-only trial on the deployed site | The validation library probed `eval` on every page, which an enforced CSP would report as a violation | Validation runs in "jitless" mode; the CSP was then enforced with 0 violations |
+| DEF-12 | E2E-16 | After reporting as a guest, the home screen showed "Welcome" instead of the name: the profile listener started before the guest's claims existed, was refused by the rules and never retried | The listener restarts once claims exist |
+| DEF-13 | E2E-16 | Starting a guest session from the public home redirected to the resident home instead of the report form | A dedicated `/report` entry route starts the guest session, then opens the form |
 | DEF-04 | CI on a clean checkout | An over-broad `lib/` ignore rule had kept two source folders out of the repository | Ignore rule narrowed to the build output; CI now builds from a clean clone on every push |
 
 There are no unresolved defects. The limitations of included functionality are listed in Section 3.4.
@@ -928,7 +967,7 @@ Table: Demo accounts
 2. Deploy the rules and indexes with `npx firebase deploy --only firestore --project prod`.
 3. Import the GitHub repository into Vercel, which reads the build settings from `vercel.json`.
 4. Set the environment variables listed in `.env.example`: Firebase web config, `VITE_API_BASE=/api`, `VITE_USE_EMULATORS=false`, `VITE_FIREBASE_VAPID_KEY` (web push), `FIREBASE_SERVICE_ACCOUNT` and `CRON_SECRET`. Optionally, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM` switch SMS from simulated to real sending.
-5. Set the same `CRON_SECRET` and the `APP_URL` in the GitHub repository for the hourly schedule.
+5. Set the same `CRON_SECRET` and the `APP_URL` in the GitHub repository for the hourly schedule. Enable the Anonymous sign-in provider for guest reporting (FR-39).
 6. Seed the deployed project with `npm run seed:prod`.
 
 **Alternative cloud deployment (Blaze plan).**

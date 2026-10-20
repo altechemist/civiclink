@@ -37,6 +37,7 @@ GHA ..> C : hourly SLA escalation /\nauto-close / scheduled alerts (secret)
 GPS ..> C : coordinates (with consent)
 C ..> SMS : emergency alerts
 SMS ..> R : SMS
-P --> CDN : transparency page
+P --> CDN : public home, transparency
+P --> C : report as guest;\ncreate account later
 CDN ..> C : public figures\n(cached ≤ 5 min)
 @enduml

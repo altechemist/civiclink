@@ -15,6 +15,7 @@ package "Domain entities (shared models → Firestore documents)" {
     suburb?: Suburb
     smsAlerts?: boolean
     isActive: boolean
+    isGuest?: boolean
     createdAt, lastLoginAt
   }
   class Report <<reports>> {
@@ -198,6 +199,16 @@ package "Application services (functions/src/services)" {
     -cached: PublicStats  «1 min»
     +get(): PublicStats
   }
+  class PublicFeedService {
+    -cached: PublicFeed  «30 s»
+    +get(): PublicFeed
+  }
+  class GuestService {
+    +start(actor)  «per-address limit»
+    +upgrade(input, actor)
+    +startTransfer(actor): code
+    +claim(code, actor): moved
+  }
   class smsService <<module>> {
     +sendAlertSms(alertId, alert, recipients, now)
     +setSmsGateway(g)
@@ -256,6 +267,9 @@ Alert "1" -- "0..*" SmsMessage : emergency SMS >
 User "1" -- "0..*" SmsMessage : receives >
 HttpAdapter ..> CommandRegistry
 HttpAdapter ..> PublicStatsService
+HttpAdapter ..> PublicFeedService
+CommandRegistry ..> GuestService
+GuestService ..> User
 HttpAdapter ..> AlertService : background publishDue
 MaintenanceService ..> AlertService : publishDue
 AlertService ..> smsService
