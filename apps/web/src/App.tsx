@@ -30,6 +30,7 @@ const LogsPage = lazy(() => import('./pages/admin/LogsPage').then((m) => ({ defa
 // Map and chart libraries are heavy: load them only when needed.
 const CommunityMapPage = lazy(() => import('./pages/common/CommunityMapPage'));
 const AnalyticsPage = lazy(() => import('./pages/official/AnalyticsPage'));
+const TransparencyPage = lazy(() => import('./pages/public/TransparencyPage'));
 
 function Home() {
   const { session, loading, pendingProfile } = useAuth();
@@ -49,6 +50,7 @@ export function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/welcome" element={<WelcomePage />} />
+            <Route path="/transparency" element={<TransparencyPage />} />
 
             <Route element={<RequireRole roles="any" />}>
               <Route element={<RoleShell />}>

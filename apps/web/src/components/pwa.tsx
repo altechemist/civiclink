@@ -29,7 +29,7 @@ export function OfflineBanner() {
       className="fixed inset-x-0 bottom-16 z-[1200] mx-auto flex max-w-md items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm text-white shadow-lg sm:bottom-4"
     >
       <WifiOff className="size-4 shrink-0" aria-hidden />
-      You're offline: showing saved information. Reports and changes need a connection.
+      You're offline: showing saved information. New reports are kept on this phone and sent when you reconnect.
     </div>
   );
 }

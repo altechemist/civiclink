@@ -138,7 +138,9 @@ export class UserService {
     const { ref, user } = await this.load(actor.uid);
     const suburb = user.role === 'RESIDENT' ? (input.suburb ?? user.suburb) : user.suburb;
     if (user.role !== 'RESIDENT' && input.suburb && input.suburb !== user.suburb) throw denied('Only residents have a home suburb');
-    await ref.update({ name: input.name, phone: input.phone ?? null, suburb: suburb ?? null });
+    // FR-25: only residents receive SMS alerts; removing the number also ends the opt-in.
+    const smsAlerts = user.role === 'RESIDENT' && !!input.phone && (input.smsAlerts ?? user.smsAlerts ?? false);
+    await ref.update({ name: input.name, phone: input.phone ?? null, suburb: suburb ?? null, smsAlerts });
     if (suburb !== user.suburb) await auth.setCustomUserClaims(actor.uid, claimsFor({ ...user, suburb }));
     return { ok: true as const };
   }
@@ -160,6 +162,7 @@ export class UserService {
     const followed = await col.reports().where('followerIds', 'array-contains', actor.uid).get();
     for (const d of followed.docs) writes.push((b) => b.update(d.ref, { followerIds: FieldValue.arrayRemove(actor.uid) }));
     for (const d of (await col.photos().where('ownerId', '==', actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
+    for (const d of (await col.smsOutbox().where('uid', '==', actor.uid).get()).docs) writes.push((b) => b.delete(d.ref)); // phone numbers
     for (const d of (await col.notifications(actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));
     for (const d of (await col.users().doc(actor.uid).collection('pushTokens').get()).docs) writes.push((b) => b.delete(d.ref));
     for (const d of (await db.collectionGroup('recipients').where('uid', '==', actor.uid).get()).docs) writes.push((b) => b.delete(d.ref));

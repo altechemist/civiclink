@@ -66,6 +66,7 @@ function ProfileEditor({ profile }: { profile: UserDoc }) {
   const { refreshClaims, signOut } = useAuth();
   const isResident = claims.role === 'RESIDENT';
   const [form, setForm] = useState({ name: profile.name, phone: profile.phone ?? '', suburb: profile.suburb ?? '' });
+  const [smsAlerts, setSmsAlerts] = useState(!!profile.smsAlerts);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -80,7 +81,7 @@ function ProfileEditor({ profile }: { profile: UserDoc }) {
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
-    const input = { name: form.name, phone: form.phone, ...(isResident ? { suburb: form.suburb } : {}) };
+    const input = { name: form.name, phone: form.phone, ...(isResident ? { suburb: form.suburb, smsAlerts } : {}) };
     const parsed = updateProfileSchema.safeParse(input);
     if (!parsed.success) return setErrors(fieldErrors(parsed.error));
     setBusy(true);
@@ -130,6 +131,24 @@ function ProfileEditor({ profile }: { profile: UserDoc }) {
                 ))}
               </Select>
             </Field>
+          )}
+          {isResident && (
+            <label className="flex items-start gap-2 text-sm text-slate-800">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 rounded border-slate-300"
+                checked={smsAlerts}
+                onChange={(e) => {
+                  setSmsAlerts(e.target.checked);
+                  setErrors(({ phone: _, ...rest }) => rest);
+                }}
+                data-testid="sms-opt-in"
+              />
+              <span>
+                Send me <strong>emergency</strong> alerts by SMS too
+                <span className="block text-xs text-slate-500">For when you have no data. Needs a mobile number above.</span>
+              </span>
+            </label>
           )}
           <Button type="submit" busy={busy} icon={Save}>
             Save changes

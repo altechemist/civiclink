@@ -120,3 +120,17 @@ export function toCsv(rows: Record<string, string | number | null | undefined>[]
   };
   return [columns.join(','), ...rows.map((r) => columns.map((c) => esc(r[c])).join(','))].join('\r\n');
 }
+
+/** FR-37: average of 1–5 ratings to one decimal; null when nobody has rated yet. Out-of-range values are ignored. */
+export function summariseRatings(ratings: (number | null | undefined)[]): { average: number | null; ratings: number } {
+  const valid = ratings.filter((r): r is number => typeof r === 'number' && Number.isInteger(r) && r >= 1 && r <= 5);
+  if (valid.length === 0) return { average: null, ratings: 0 };
+  return { average: round1(valid.reduce((a, b) => a + b, 0) / valid.length), ratings: valid.length };
+}
+
+/** FR-36: open (non-duplicate) reports per suburb, for the public transparency page. */
+export function openBySuburb(reports: { status: ReportStatus; suburb: string }[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const r of reports) if (OPEN_REPORT_STATUSES.includes(r.status)) out[r.suburb] = (out[r.suburb] ?? 0) + 1;
+  return out;
+}

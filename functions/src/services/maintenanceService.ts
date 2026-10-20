@@ -1,15 +1,22 @@
 import { ResolutionPolicy, SlaPolicy, type DepartmentDoc, type ReportDoc } from '@civiclink/shared';
 import { col, db, ts } from '../lib/firebase';
+import { AlertService } from './alertService';
 import { NotificationService } from './notificationService';
 import { applyTransition, getReport, SYSTEM_ACTOR } from './reportLifecycle';
 import { writeLog } from './logService';
 
 /**
- * Scheduled rules: SLA escalation (FR-13, BR-10) and auto-close (FR-14, BR-11).
+ * Scheduled rules: SLA escalation (FR-13, BR-10), auto-close (FR-14, BR-11) and publishing scheduled alerts (FR-28).
  * Each report is re-checked inside its own transaction so a concurrent change wins safely and reruns are idempotent.
  */
 export class MaintenanceService {
   constructor(private readonly clock: () => number = Date.now) {}
+
+  /** One maintenance run, used by the cron endpoint, the Cloud Functions schedule and the admin command. */
+  async runAll() {
+    const published = await new AlertService(this.clock).publishDue();
+    return { escalated: await this.escalateOverdue(), closed: await this.autoCloseResolved(), published };
+  }
 
   async escalateOverdue(): Promise<number> {
     const now = this.clock();

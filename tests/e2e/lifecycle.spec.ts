@@ -57,9 +57,11 @@ test('E2E-01 full lifecycle: resident → official → field worker → resident
   await expect(resident.getByText('Pipe joint replaced and pressure tested.').first()).toBeVisible();
   await expect(resident.getByLabel('Proof of repair')).toBeVisible();
 
-  // Resident confirms the fix → Closed.
+  // Resident rates the service (FR-37) and confirms the fix → Closed.
+  await resident.getByRole('radio', { name: '4 stars' }).click();
   await resident.getByRole('button', { name: "Yes, it's fixed" }).click();
   await expect(resident.getByTestId('detail-status')).toContainText('Closed');
+  await expect(resident.getByTestId('my-rating')).toContainText('4 out of 5');
 });
 
 test('E2E-02 a second resident reporting the same issue is linked as a duplicate (FR-05)', async ({ browser }) => {

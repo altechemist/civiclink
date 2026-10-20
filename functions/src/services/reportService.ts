@@ -17,8 +17,11 @@ import {
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { geohashForLocation, geohashQueryBounds } from 'geofire-common';
 import type { z } from 'zod';
+import { createHash } from 'node:crypto';
 import type {
   assignReportSchema,
+  assignReportsSchema,
+  confirmResolutionSchema,
   escalateReportSchema,
   rejectReportSchema,
   reopenReportSchema,
@@ -33,6 +36,17 @@ import { NotificationService } from './notificationService';
 import { applyTransition, assertDepartmentAccess, getReport, type ReportWithId } from './reportLifecycle';
 
 type SubmitInput = z.infer<typeof submitReportSchema>;
+type SubmitResult = { reportId: string; ref: string; duplicateOf: { reportId: string; ref: string } | null; replayed?: boolean };
+
+/** FR-27: the report id for a device-chosen clientId is fixed, so a resend finds the stored report. */
+const reportIdFor = (uid: string, clientId: string) => createHash('sha256').update(`${uid}:${clientId}`).digest('base64url').slice(0, 20);
+
+const replay = (report: ReportDoc, reportId: string): SubmitResult => ({
+  reportId,
+  ref: report.ref,
+  duplicateOf: report.parentReportId ? { reportId: report.parentReportId, ref: report.parentRef ?? '' } : null,
+  replayed: true,
+});
 
 export class ReportService {
   constructor(private readonly clock: () => number = Date.now) {}
@@ -41,7 +55,16 @@ export class ReportService {
    * TX-1 (FR-03, FR-04, FR-05): validates category, allocates the reference, detects duplicates,
    * and writes report + history + public projection + notifications atomically.
    */
-  async submit(input: SubmitInput, actor: Actor) {
+  async submit(input: SubmitInput, actor: Actor): Promise<SubmitResult> {
+    // FR-27: a report queued offline may be sent twice (lost response). The second send returns the first result.
+    const reportRef = input.clientId ? col.reports().doc(reportIdFor(actor.uid, input.clientId)) : col.reports().doc();
+    if (input.clientId) {
+      const existing = (await reportRef.get()).data() as ReportDoc | undefined;
+      if (existing) {
+        if (existing.reporterId !== actor.uid) throw invalid('clientId', 'Invalid client id');
+        return replay(existing, reportRef.id);
+      }
+    }
     const photos = decodePhotos(input.photos, 'photos');
     const { lat, lng } = input.location;
     const geohash = geohashForLocation([lat, lng]);
@@ -64,9 +87,13 @@ export class ReportService {
     const preDepartment = (categorySnapPre.data() as CategoryDoc | undefined)?.departmentId;
     const officialsOfDept = preDepartment ? await NotificationService.departmentOfficialsNow(preDepartment) : [];
 
-    return col.reports().firestore.runTransaction(async (tx) => {
+    return col.reports().firestore.runTransaction(async (tx): Promise<SubmitResult> => {
       const now = this.clock();
       // ---- reads ----
+      if (input.clientId) {
+        const again = (await tx.get(reportRef)).data() as ReportDoc | undefined;
+        if (again) return replay(again, reportRef.id);
+      }
       const categorySnap = await tx.get(col.categories().doc(input.categoryId));
       const category = categorySnap.data() as CategoryDoc | undefined;
       if (!category || !category.isActive) throw invalid('categoryId', 'Choose an available category'); // BR-19
@@ -92,7 +119,6 @@ export class ReportService {
       // ---- writes ----
       const ref = formatReference(year, sequence);
       tx.set(counterRef, { next: sequence }, { merge: true });
-      const reportRef = col.reports().doc();
       const report: ReportDoc = {
         ref,
         reporterId: actor.uid,
@@ -175,6 +201,25 @@ export class ReportService {
         duplicateOf: parent ? { reportId: parent.id, ref: parent.doc.ref } : null,
       };
     });
+  }
+
+  /**
+   * FR-35: assigns several reports to one worker. Each report is its own TX-2, so one report that
+   * cannot be assigned (already assigned, other department) does not block the rest.
+   */
+  async assignMany(input: z.infer<typeof assignReportsSchema>, actor: Actor) {
+    const assigned: { reportId: string; taskId: string }[] = [];
+    const failed: { reportId: string; message: string }[] = [];
+    for (const reportId of [...new Set(input.reportIds)]) {
+      try {
+        const { taskId } = await this.assign({ reportId, workerId: input.workerId, notes: input.notes }, actor);
+        assigned.push({ reportId, taskId });
+      } catch (err) {
+        if (!(err instanceof DomainError)) throw err;
+        failed.push({ reportId, message: err.message });
+      }
+    }
+    return { assigned, failed };
   }
 
   /** FR-09: SUBMITTED → UNDER_REVIEW, optionally rerouting to another active department. */
@@ -319,11 +364,17 @@ export class ReportService {
   }
 
   /** FR-14: resident confirms the fix (RESOLVED → CLOSED). */
-  async confirm(reportId: string, actor: Actor) {
+  async confirm(input: z.infer<typeof confirmResolutionSchema>, actor: Actor) {
     return col.reports().firestore.runTransaction(async (tx) => {
       const now = this.clock();
-      const { ref, report } = await this.residentResolution(reportId, actor, tx, now);
-      const status = applyTransition(tx, { ref, report, event: 'confirm', actor, now, note: 'Resident confirmed the fix', patch: { closedAt: ts(now) }, notifyReporter: false });
+      const { ref, report } = await this.residentResolution(input.reportId, actor, tx, now);
+      // FR-37: the optional rating is stored on the report and shown to staff and (as an average) the public.
+      const rated = input.rating ? ` and rated the service ${input.rating}/5` : '';
+      const status = applyTransition(tx, {
+        ref, report, event: 'confirm', actor, now, note: `Resident confirmed the fix${rated}`,
+        patch: { closedAt: ts(now), rating: input.rating ?? null, feedback: input.feedback || null },
+        notifyReporter: false,
+      });
       return { status };
     });
   }

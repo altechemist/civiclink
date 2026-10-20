@@ -5,14 +5,18 @@ import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
 const env = import.meta.env;
 /** Defaults target the local emulator, so a fresh clone runs without a .env file (ADR-0003). */
-const projectId = env.VITE_FIREBASE_PROJECT_ID ?? 'demo-civiclink';
+export const projectId = env.VITE_FIREBASE_PROJECT_ID ?? 'demo-civiclink';
 export const useEmulators = (env.VITE_USE_EMULATORS ?? 'true') === 'true';
+
+const appId: string = env.VITE_FIREBASE_APP_ID ?? 'demo-app-id';
 
 export const app = initializeApp({
   projectId,
   apiKey: env.VITE_FIREBASE_API_KEY ?? 'demo-api-key',
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN ?? `${projectId}.firebaseapp.com`,
-  appId: env.VITE_FIREBASE_APP_ID ?? 'demo-app-id',
+  appId,
+  // FCM (FR-24) needs the sender ID: the project number, which is the second part of a web app ID ("1:<number>:web:<hash>").
+  messagingSenderId: appId.split(':')[1],
 });
 
 export const auth = getAuth(app);

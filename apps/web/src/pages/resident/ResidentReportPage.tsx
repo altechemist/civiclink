@@ -1,11 +1,11 @@
 import { LIMITS, ResolutionPolicy, type HistoryDoc, type ReportDoc } from '@civiclink/shared';
 import { collection, orderBy, query } from 'firebase/firestore';
-import { CheckCircle2, RotateCcw, Users } from 'lucide-react';
+import { CheckCircle2, RotateCcw, Star, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSession } from '../../auth/AuthProvider';
 import { LifecycleProgress, PhotoGrid, Timeline } from '../../components/domain';
-import { BackLink, Button, Card, ErrorState, Field, LoadingState, Notice, SeverityBadge, StatusBadge, Textarea } from '../../components/ui';
+import { BackLink, Button, Card, cx, ErrorState, Field, Input, LoadingState, Notice, SeverityBadge, StatusBadge, Textarea } from '../../components/ui';
 import { call, type ApiError } from '../../lib/api';
 import { db } from '../../lib/firebase';
 import { formatDateTime, hours } from '../../lib/format';
@@ -21,6 +21,9 @@ export function ResidentReportPage() {
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState<'confirm' | 'reopen' | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
+  // FR-37: optional rating of the service when confirming the fix.
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState('');
 
   if (report.loading) return <LoadingState />;
   if (report.error || !report.data) return <ErrorState error={report.error ?? 'This report does not exist or is not yours.'} />;
@@ -33,7 +36,7 @@ export function ResidentReportPage() {
     setBusy(kind);
     setError(null);
     try {
-      if (kind === 'confirm') await call('confirmResolution', { reportId: id });
+      if (kind === 'confirm') await call('confirmResolution', { reportId: id, ...(rating ? { rating } : {}), ...(feedback.trim() ? { feedback } : {}) });
       else await call('reopenReport', { reportId: id, reason });
       setReopening(false);
       setReason('');
@@ -121,6 +124,32 @@ export function ResidentReportPage() {
               </div>
             </div>
           ) : (
+            <div className="space-y-3">
+            <div>
+              <p className="mb-1 text-sm font-medium text-slate-800">How was the service? (optional)</p>
+              <div role="radiogroup" aria-label="Rate the service" className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    role="radio"
+                    aria-checked={rating === n}
+                    aria-label={`${n} star${n === 1 ? '' : 's'}`}
+                    onClick={() => setRating(rating === n ? 0 : n)}
+                    className="rounded p-1 hover:bg-amber-50"
+                  >
+                    <Star className={cx('size-7', n <= rating ? 'fill-amber-400 text-amber-500' : 'text-slate-300')} aria-hidden />
+                  </button>
+                ))}
+              </div>
+              {rating > 0 && (
+                <div className="mt-2">
+                  <Field label="Anything to add? (optional)" htmlFor="feedback" error={error?.fields.feedback}>
+                    <Input id="feedback" maxLength={LIMITS.feedbackMax} value={feedback} onChange={(e) => setFeedback(e.target.value)} />
+                  </Field>
+                </div>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="success" icon={CheckCircle2} busy={busy === 'confirm'} onClick={() => act('confirm')}>
                 Yes, it's fixed
@@ -129,9 +158,20 @@ export function ResidentReportPage() {
                 No, reopen it
               </Button>
             </div>
+            </div>
           )}
         </Card>
       )}
+
+      {isOwner && r.rating ? (
+        <p className="flex items-center gap-1 text-sm text-slate-700" data-testid="my-rating">
+          You rated this service
+          {[1, 2, 3, 4, 5].map((n) => (
+            <Star key={n} className={cx('size-4', n <= r.rating! ? 'fill-amber-400 text-amber-500' : 'text-slate-300')} aria-hidden />
+          ))}
+          <span className="sr-only">{r.rating} out of 5</span>
+        </p>
+      ) : null}
 
       <Card>
         <h2 className="mb-4 font-semibold text-slate-900">Progress history</h2>

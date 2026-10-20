@@ -10,6 +10,8 @@ export interface UserDoc {
   name: string;
   email: string;
   phone?: string | null;
+  /** FR-25: opted in to emergency alerts by SMS. */
+  smsAlerts?: boolean;
   role: Role;
   departmentId?: string | null;
   suburb?: string | null;
@@ -75,6 +77,9 @@ export interface ReportDoc {
   resolvedAt?: TimestampLike | null;
   escalatedAt?: TimestampLike | null;
   closedAt?: TimestampLike | null;
+  /** FR-37: the reporter's 1–5 rating given when confirming the fix. */
+  rating?: number | null;
+  feedback?: string | null;
 }
 
 export interface HistoryDoc {
@@ -143,8 +148,50 @@ export interface AlertDoc {
   isActive: boolean;
   recipientCount: number;
   readCount: number;
+  /** FR-25: SMS messages queued for opted-in residents (emergency alerts only). */
+  smsCount?: number;
   createdAt: TimestampLike;
   expiresAt: TimestampLike;
+}
+
+/** FR-25: one SMS for one resident (server-only; administrators can read it). */
+export interface SmsDoc {
+  uid: string;
+  to: string;
+  body: string;
+  alertId: string;
+  status: 'QUEUED' | 'SENT' | 'SIMULATED' | 'FAILED';
+  gateway: string;
+  providerId?: string | null;
+  error?: string | null;
+  createdAt: TimestampLike;
+  sentAt?: TimestampLike | null;
+}
+
+/** FR-28: an alert waiting for its publish time. On publishing, the alert is created with the same id. */
+export interface ScheduledAlertDoc {
+  type: AlertType;
+  title: string;
+  message: string;
+  targetSuburbs: string[];
+  createdBy: string;
+  createdByName: string;
+  publishAt: TimestampLike;
+  expiresAt: TimestampLike;
+  status: 'SCHEDULED' | 'PUBLISHED' | 'CANCELLED';
+  createdAt: TimestampLike;
+  publishedAt?: TimestampLike | null;
+  recipientCount?: number;
+}
+
+/** FR-36: anonymous, aggregate figures for the public transparency page (no personal data). */
+export interface PublicStats {
+  generatedAt: number;
+  days: number;
+  summary: import('./analytics').AnalyticsSummary;
+  categories: Record<string, string>;
+  openBySuburb: Record<string, number>;
+  satisfaction: { average: number | null; ratings: number };
 }
 
 export interface AlertRecipientDoc {
@@ -185,18 +232,20 @@ export interface SystemLogDoc {
 /** Callable function names and their result shapes (the API contract between web and functions). */
 export interface CallableResults {
   registerResident: { uid: string };
-  submitReport: { reportId: string; ref: string; duplicateOf: { reportId: string; ref: string } | null };
+  submitReport: { reportId: string; ref: string; duplicateOf: { reportId: string; ref: string } | null; replayed?: boolean };
   triageReport: { status: ReportStatus };
   rejectReport: { status: ReportStatus };
   escalateReport: { status: ReportStatus };
   assignReport: { taskId: string };
+  assignReports: { assigned: { reportId: string; taskId: string }[]; failed: { reportId: string; message: string }[] };
   reassignTask: { taskId: string };
   updateTask: { status: TaskStatus };
   completeTask: { status: TaskStatus };
   confirmResolution: { status: ReportStatus };
   reopenReport: { status: ReportStatus };
   addComment: { commentId: string };
-  broadcastAlert: { alertId: string; recipientCount: number };
+  broadcastAlert: { alertId: string; recipientCount: number; scheduled: boolean };
+  cancelScheduledAlert: { ok: true };
   deactivateAlert: { ok: true };
   markAlertRead: { ok: true };
   createStaffUser: { uid: string };
@@ -212,5 +261,5 @@ export interface CallableResults {
   updateSettings: { ok: true };
   updateProfile: { ok: true };
   deleteMyAccount: { ok: true; anonymisedReports: number };
-  runMaintenance: { escalated: number; closed: number };
+  runMaintenance: { escalated: number; closed: number; published: number };
 }

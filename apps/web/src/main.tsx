@@ -1,7 +1,10 @@
+import { configureJitlessValidation } from '@civiclink/shared';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './index.css';
+
+configureJitlessValidation(); // before any validation runs (NFR-14 Content Security Policy)
 
 // FR-34: capture the install prompt early and register the service worker in production builds only.
 window.addEventListener('beforeinstallprompt', (e) => {

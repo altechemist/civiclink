@@ -129,7 +129,7 @@ test('capture staff screens', async ({ browser }) => {
   await a.waitForTimeout(800);
   await shot(a, '31-admin-config');
   await a.goto('/admin/logs');
-  await a.getByRole('button', { name: /Run SLA/ }).click();
+  await a.getByRole('button', { name: /Run scheduled rules/ }).click();
   await a.waitForTimeout(1500);
   await shot(a, '32-admin-log');
 });

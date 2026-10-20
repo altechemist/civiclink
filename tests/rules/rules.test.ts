@@ -161,6 +161,19 @@ describe('tasks, alerts, config', () => {
     await assertFails(getDoc(doc(db('official'), 'systemLogs/l1')));
     await assertSucceeds(getDoc(doc(db('admin'), 'systemLogs/l1')));
   });
+  it('RT-ALS-01 scheduled alerts are visible to staff only until published; nobody writes them directly (FR-28)', async () => {
+    await assertSucceeds(getDocs(query(collection(db('official'), 'scheduledAlerts'), where('status', '==', 'SCHEDULED'))));
+    await assertSucceeds(getDoc(doc(db('admin'), 'scheduledAlerts/s1')));
+    await assertFails(getDoc(doc(db('resident'), 'scheduledAlerts/s1')));
+    await assertFails(getDoc(doc(db('worker'), 'scheduledAlerts/s1')));
+    await assertFails(setDoc(doc(db('official'), 'scheduledAlerts/s2'), { title: 'direct' }));
+  });
+  it('RT-SMS-01 SMS records (phone numbers) are readable by administrators only (FR-25, NFR-11)', async () => {
+    await assertSucceeds(getDoc(doc(db('admin'), 'smsOutbox/m1')));
+    await assertFails(getDoc(doc(db('official'), 'smsOutbox/m1')));
+    await assertFails(getDoc(doc(db('resident'), 'smsOutbox/m1')));
+    await assertFails(setDoc(doc(db('admin'), 'smsOutbox/m2'), { to: '+27820000000' }));
+  });
 });
 
 describe('photos (ADR-0006)', () => {

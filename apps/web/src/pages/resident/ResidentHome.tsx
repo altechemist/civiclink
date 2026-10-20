@@ -4,6 +4,7 @@ import { collection, orderBy, query, where } from 'firebase/firestore';
 import { ChevronRight, Megaphone, PlusCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../../auth/AuthProvider';
+import { OutboxCard } from '../../components/outbox';
 import { InstallButton } from '../../components/pwa';
 import { ErrorState, LoadingState, Stat } from '../../components/ui';
 import { db } from '../../lib/firebase';
@@ -42,6 +43,8 @@ export function ResidentHome() {
         </div>
         <ChevronRight className="size-6" aria-hidden />
       </Link>
+
+      <OutboxCard />
 
       <InstallButton />
 

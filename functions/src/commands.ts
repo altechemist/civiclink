@@ -10,6 +10,8 @@ import {
   alertIdSchema,
   analyticsQuerySchema,
   assignReportSchema,
+  assignReportsSchema,
+  scheduledAlertIdSchema,
   broadcastAlertSchema,
   completeProfileSchema,
   deleteAccountSchema,
@@ -67,8 +69,9 @@ export const COMMANDS = {
   rejectReport: defineCommand({ name: 'rejectReport', schema: rejectReportSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.reject(i, a) }),
   escalateReport: defineCommand({ name: 'escalateReport', schema: escalateReportSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.escalate(i, a) }),
   assignReport: defineCommand({ name: 'assignReport', schema: assignReportSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.assign(i, a) }),
+  assignReports: defineCommand({ name: 'assignReports', schema: assignReportsSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.assignMany(i, a) }),
   reassignTask: defineCommand({ name: 'reassignTask', schema: reassignTaskSchema, roles: STAFF_MANAGERS, handler: (i, a) => reports.reassign(i, a) }),
-  confirmResolution: defineCommand({ name: 'confirmResolution', schema: confirmResolutionSchema, roles: ['RESIDENT'], handler: (i, a) => reports.confirm(i.reportId, a) }),
+  confirmResolution: defineCommand({ name: 'confirmResolution', schema: confirmResolutionSchema, roles: ['RESIDENT'], handler: (i, a) => reports.confirm(i, a) }),
   registerPushToken: defineCommand({ name: 'registerPushToken', schema: pushTokenSchema, roles: ['RESIDENT', 'OFFICIAL', 'FIELD_WORKER', 'ADMIN'], handler: (i, a) => PushTokens.register(a.uid, i.token) }),
   unregisterPushToken: defineCommand({ name: 'unregisterPushToken', schema: pushTokenSchema, roles: ['RESIDENT', 'OFFICIAL', 'FIELD_WORKER', 'ADMIN'], handler: (i, a) => PushTokens.unregister(a.uid, i.token) }),
   affirmReport: defineCommand({ name: 'affirmReport', schema: affirmReportSchema, roles: ['RESIDENT'], handler: (i, a) => reports.affirm(i.reportId, a) }),
@@ -78,6 +81,7 @@ export const COMMANDS = {
   completeTask: defineCommand({ name: 'completeTask', schema: completeTaskSchema, roles: ['FIELD_WORKER'], handler: (i, a) => tasks.complete(i, a) }),
   broadcastAlert: defineCommand({ name: 'broadcastAlert', schema: broadcastAlertSchema, roles: STAFF_MANAGERS, handler: (i, a) => alerts.broadcast(i, a) }),
   deactivateAlert: defineCommand({ name: 'deactivateAlert', schema: alertIdSchema, roles: STAFF_MANAGERS, handler: (i) => alerts.deactivate(i.alertId) }),
+  cancelScheduledAlert: defineCommand({ name: 'cancelScheduledAlert', schema: scheduledAlertIdSchema, roles: STAFF_MANAGERS, handler: (i, a) => alerts.cancelScheduled(i.scheduledId, a) }),
   markAlertRead: defineCommand({ name: 'markAlertRead', schema: alertIdSchema, roles: ['RESIDENT'], handler: (i, a) => alerts.markRead(i.alertId, a) }),
   upsertDepartment: defineCommand({ name: 'upsertDepartment', schema: upsertDepartmentSchema, roles: ['ADMIN'], handler: (i, a) => config.upsertDepartment(i, a) }),
   upsertCategory: defineCommand({ name: 'upsertCategory', schema: upsertCategorySchema, roles: ['ADMIN'], handler: (i, a) => config.upsertCategory(i, a) }),
@@ -89,8 +93,7 @@ export const COMMANDS = {
     roles: ['ADMIN'],
     handler: async (i) => {
       const clock = isEmulator && i.now ? () => i.now! : Date.now;
-      const m = new MaintenanceService(clock);
-      return { escalated: await m.escalateOverdue(), closed: await m.autoCloseResolved() };
+      return new MaintenanceService(clock).runAll();
     },
   }),
 };
