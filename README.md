@@ -4,6 +4,8 @@ Municipal incident reporting and community alerts for Sol Plaatje Local Municipa
 
 Residents report located, photo-evidenced incidents and follow them to resolution. Officials triage, assign and broadcast suburb-targeted alerts. Field workers complete tasks with proof. Every status change is recorded in an audit trail.
 
+**Live system:** https://civiclink-five.vercel.app (Vercel + Firebase Spark, Johannesburg database). The demo password for the live accounts is supplied separately.
+
 ## Quick start (local, about 5 minutes)
 
 **Prerequisites:** Node.js 22, Java 21 or later (for the Firebase emulators), Git. No Firebase account or API keys are needed: the system runs entirely on the Firebase Emulator Suite (ADR-0003).

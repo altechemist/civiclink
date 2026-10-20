@@ -14,5 +14,5 @@ CONCLUSION=$(gh run list --commit "$SHA" --workflow CI --json conclusion --jq '.
 git tag -a "$TAG" -m "CivicLink $TAG: assessed release (NPRJ740)"
 git push -q origin "$TAG"
 gh release create "$TAG" --title "CivicLink $TAG" --notes-file <(sed -n "/## \[${TAG#v}\]/,/^## \[/p" CHANGELOG.md | sed '$d')
-python3 docs/report/build_report.py
+APP_URL="${APP_URL:-https://civiclink-five.vercel.app}" python3 docs/report/build_report.py
 echo "Tagged $TAG at $SHA. Submit docs/report/CivicLink_Final_Project_Report.docx (not committed, so the tag stays reproducible)."
