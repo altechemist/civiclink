@@ -12,9 +12,9 @@ ENV_FILE=apps/web/.env.production.local
 
 $VERCEL link --yes --project civiclink >/dev/null
 
-set_env() { # name value: replace the Production value without echoing it
-  $VERCEL env rm "$1" production --yes >/dev/null 2>&1 || true
-  printf '%s' "$2" | $VERCEL env add "$1" production >/dev/null
+set_env() { # name value [--sensitive|--no-sensitive]: set the Production value via stdin (never in argv)
+  printf '%s' "$2" | $VERCEL env add "$1" production --force --yes "${3:---no-sensitive}" >/dev/null 2>&1 \
+    || { echo "  failed to set $1"; exit 1; }
   echo "  set $1"
 }
 
@@ -25,9 +25,9 @@ while IFS='=' read -r name value; do
 done < "$ENV_FILE"
 
 echo "Server secrets:"
-set_env FIREBASE_SERVICE_ACCOUNT "$(base64 -w0 "$KEY")"
+set_env FIREBASE_SERVICE_ACCOUNT "$(base64 -w0 "$KEY")" --sensitive
 CRON_SECRET=$(openssl rand -hex 32)
-set_env CRON_SECRET "$CRON_SECRET"
+set_env CRON_SECRET "$CRON_SECRET" --sensitive
 
 echo "Deploying…"
 URL=$($VERCEL deploy --prod --yes 2>/dev/null | tail -1)

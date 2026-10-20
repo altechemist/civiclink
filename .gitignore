@@ -22,3 +22,5 @@ test-results/
 !.vscode/extensions.json
 ~$*.docx
 .vercel/
+.vercel
+.env*

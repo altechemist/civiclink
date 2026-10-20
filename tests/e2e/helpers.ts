@@ -1,6 +1,7 @@
 import { expect, type Browser, type Page } from '@playwright/test';
 
-export const PASSWORD = 'CivicLink#2026';
+/** Demo password; E2E_PASSWORD overrides it for a deployed instance seeded with a private password. */
+export const PASSWORD = process.env.E2E_PASSWORD ?? 'CivicLink#2026';
 export const ACCOUNTS = {
   thandi: 'thandi@civiclink.demo', // resident, Galeshewe
   pieter: 'pieter@civiclink.demo', // resident, Roodepan
