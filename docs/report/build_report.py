@@ -125,25 +125,59 @@ def set_num(paragraph, numpr):
         paragraph._p.get_or_add_pPr().append(copy.deepcopy(numpr))
 
 
+URL = re.compile(r'https?://[^\s)<>]*[^\s)<>.,;:]')
+
+
+def add_link(paragraph, url: str, bold=False, size=None):
+    """External hyperlink, styled like Word's default (blue, underlined)."""
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+    link = OxmlElement('w:hyperlink')
+    link.set(qn('r:id'), paragraph.part.relate_to(url, RT.HYPERLINK, is_external=True))
+    r, rpr = OxmlElement('w:r'), OxmlElement('w:rPr')
+    props = ([('w:b', None)] if bold else []) + [('w:color', '0563C1')] + ([('w:sz', str(int(size.pt * 2)))] if size else []) + [('w:u', 'single')]
+    for tag, val in props:  # schema order: b, color, sz, u
+        el = OxmlElement(tag)
+        if val:
+            el.set(qn('w:val'), val)
+        rpr.append(el)
+    txt = OxmlElement('w:t')
+    txt.text = url
+    txt.set(qn('xml:space'), 'preserve')
+    r.extend([rpr, txt])
+    link.append(r)
+    paragraph._p.append(link)
+
+
+def add_text(paragraph, text: str, bold=False, italic=False, size=None):
+    """Plain text with any http(s) URLs turned into clickable links."""
+    pos = 0
+    for m in list(URL.finditer(text)) + [None]:
+        chunk = text[pos:m.start()] if m else text[pos:]
+        if chunk:
+            run = paragraph.add_run(chunk)
+            run.bold, run.italic = bold or None, italic or None
+            if size:
+                run.font.size = size
+        if m:
+            add_link(paragraph, m.group(0), bold, size)
+            pos = m.end()
+
+
 def add_runs(paragraph, text: str, size=None):
-    """Inline **bold**, `code` and *italic*."""
+    """Inline **bold**, `code` and *italic*; URLs become hyperlinks."""
     for part in re.split(r'(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)', text):
         if not part:
             continue
         if part.startswith('**'):
-            run = paragraph.add_run(part[2:-2])
-            run.bold = True
+            add_text(paragraph, part[2:-2], bold=True, size=size)
         elif part.startswith('`'):
             run = paragraph.add_run(part[1:-1])
             run.font.name = 'Consolas'
             run.font.size = Pt(9)
         elif part.startswith('*') and len(part) > 2:
-            run = paragraph.add_run(part[1:-1])
-            run.italic = True
+            add_text(paragraph, part[1:-1], italic=True, size=size)
         else:
-            run = paragraph.add_run(part)
-        if size and not part.startswith('`'):
-            run.font.size = size
+            add_text(paragraph, part, size=size)
 
 
 def shade(cell, hex_fill: str):

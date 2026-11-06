@@ -16,6 +16,10 @@ The final release covers all 39 functional requirements, including all 14 Must-h
 
 The front end is React and TypeScript; the back end is Firebase Authentication, Cloud Firestore and a Node.js command API. Every change to data happens on the server inside a database transaction, and Security Rules control who can read what. Everything runs on free tiers (Vercel and Firebase's Spark plan), and the same system can be run locally on the Firebase Emulator Suite with two commands and no cloud account. I tested it with {{TEST_TOTAL}} automated tests (unit, security-rule, API, end-to-end and non-functional) that run on every push, and all five success criteria were met.
 
+**Live system:** {{APP_URL}}
+
+**Source code:** {{REPO}} (public, release {{TAG}})
+
 # PROJECT CONTEXT
 
 **Application domain.** Municipal service delivery: the reporting, dispatch and resolution of infrastructure and community incidents (water, electricity, roads, waste and public safety), and communication between a municipality and its residents.
@@ -324,7 +328,7 @@ Table: Business rules
 
 # SYSTEM DESIGN SPECIFICATION
 
-This section describes the design as it was finally built. All diagrams are generated from PlantUML files in the repository (`docs/diagrams/src`) and use the same names as the code and the requirements.
+This section describes the design as it was finally built. All diagrams were drawn in PlantUML, are stored in `docs/diagrams/`, and use the same names as the code and the requirements.
 
 ## Use Cases and Workflows
 
@@ -452,7 +456,7 @@ Each role has its own part of the interface:
 - **Field workers** use the same mobile layout, coloured green and reduced to their task list.
 - **Officials and administrators** use a desktop layout with a sidebar.
 
-Every screen has a loading, empty, error and access-denied state. The screenshots were taken from the submitted system with the seeded data (`tests/evidence/capture.spec.ts`), and the photos in them are sample images. Phone screens are grouped three to a figure by user journey and labelled (a) to (c); desktop screens have one figure each.
+Every screen has a loading, empty, error and access-denied state. The screenshots were taken from the submitted system with the seeded data, and the photos in them are sample images. Phone screens are grouped three to a figure by user journey and labelled (a) to (c); desktop screens have one figure each.
 
 Table: User interface evidence
 
@@ -653,7 +657,7 @@ Table: Repository structure
 | `firestore.rules`, `firestore.indexes.json` | Access control and indexes | Security Rules and composite indexes |
 | `api/`, `vercel.json`, `functions/src/http.ts`, `functions/src/commands.ts` | Deployed API and hosting | Vercel entry points (commands, cron, public figures); Node HTTP adapter; the single command registry shared with Cloud Functions; cache and security headers |
 | `scripts/seed.ts` | Data initialisation | Deterministic demonstration data |
-| `tests/rules`, `tests/e2e`, `tests/evidence`, `tests/support` | Verification | Rules tests, Playwright tests, screenshot capture, emulator harness |
+| `tests/rules`, `tests/e2e`, `tests/pwa`, `tests/support` | Verification | Rules tests, Playwright end-to-end and PWA tests, emulator harness |
 | `docs/` | Documentation | Baseline SRS, change log, ADRs, diagrams (source and rendered), traceability matrix, test catalogue, defect log, evidence, report |
 
 The principal dependency and build files are the root `package.json` (workspaces, scripts), the per-workspace `package.json` files, `package-lock.json`, `firebase.json` (emulators, hosting, functions), `tsconfig.base.json`, `vitest.config.ts`, `playwright.config.ts`, `eslint.config.js` and `.github/workflows/ci.yml`. Cloud Functions are bundled with esbuild, so the shared package is included in the deployable artefact.
@@ -850,13 +854,13 @@ Table: Non-functional verification results
 | NFR-13 Caching and CDN | NFT-11 on the deployed site | Assets `max-age=31536000, immutable`; app shell revalidated; public figures served from the edge cache (HIT on every repeat request) | Pass |
 | NFR-14 Browser hardening | NFT-12 on the deployed site; manual check of every screen and the Google sign-in popup | CSP without `unsafe-eval`, HSTS two years, framing denied, nosniff; 0 CSP violations | Pass |
 
-Timings come from the full local run recorded in Appendix 11.3 (20 October 2026), on the development laptop running the emulators, Vite and the browsers at the same time.
+Timings come from the full local run recorded in Appendix 11.3 (6 November 2026), on the development laptop running the emulators, Vite and the browsers at the same time.
 
 **Production verification.** The same Playwright tests were run against the deployed system (https://civiclink-five.vercel.app) on 20 October 2026:
 
 | Test | Result on the live system |
 |---|---|
-| E2E-01 full lifecycle (three browser sessions) | Pass. New report on the official's queue after 0.11 s; resolution on the resident's screen after 0.85 s (NFR-05 target 5 s) |
+| E2E-01 full lifecycle (three browser sessions) | Pass. New report on the official's queue after 0.07 s; resolution on the resident's screen after 1.90 s (NFR-05 target 5 s) |
 | E2E-02 duplicate detection, E2E-07 out-of-area GPS | Pass |
 | E2E-04 access denied per role, E2E-06 wrong password | Pass |
 | NFT-06 page loads | Dashboard 1.02 s, queue 1.06 s, alerts 0.50 s (target 3 s) |
@@ -922,7 +926,7 @@ Table: Demo accounts
 | Field worker | sipho@civiclink.demo | Water & Sanitation (also bongani@ Electricity, mpho@ Roads) |
 | Administrator | admin@civiclink.demo | All official and administrative functions |
 
-**Tests.** `npm run test:unit`, `npm run test:emulator` (rules and API integration), and `npm run test:e2e` (run `npx playwright install chromium` once beforehand). `python3 scripts/test-results.py` runs every suite and writes the results table in Appendix 11.3.
+**Tests.** `npm run test:unit`, `npm run test:emulator` (rules and API integration), and `npm run test:e2e` (run `npx playwright install chromium` once beforehand). The results of the latest full run are in Appendix 11.3.
 
 **Scheduled rules locally.** The emulator does not run schedules by itself. To escalate overdue reports, close old resolved reports and publish due scheduled alerts, sign in as the administrator and select **Run scheduled rules now** on the System log page.
 
@@ -1009,9 +1013,9 @@ Zod. (2026). *Zod: TypeScript-first schema validation* (Version 4) [Computer sof
 
 ## GitHub Repository
 
-Repository: **{{REPO}}** (private; access granted to the lecturer).
+Repository: **{{REPO}}** (public; source code, tests, documentation and CI history).
 
-Submitted version: tag **{{TAG}}**, commit **{{COMMIT}}**.
+Submitted version: tag **{{TAG}}** (the commit it points to is shown on the repository's Releases and Tags pages).
 
 ## Deployed System
 
@@ -1019,12 +1023,12 @@ URL: **{{APP_URL}}** (Vercel + Firebase Spark, decision D2). Demo accounts are l
 
 ## Additional Supporting Material
 
-- **Complete automated test results:** the GitHub Actions run for commit {{COMMIT}} (tab "Actions"). It includes the Playwright HTML report and the coverage report as downloadable artefacts.
+- **Complete automated test results:** the GitHub Actions run for the {{TAG}} commit (tab "Actions"). It includes the Playwright HTML report and the coverage report as downloadable artefacts.
 - **Traceability matrix** (requirement → rule → screen → code → data → test): `docs/trackers/traceability-matrix.md`.
 - **Full test catalogue:** `docs/trackers/test-catalog.md`; **defect log:** `docs/trackers/defect-log.md`.
-- **Baseline change log** reconciling Phases 1–3 (CR-01 to CR-32): `docs/baseline/change-log.md`.
+- **Baseline change log** reconciling Phases 1–3 (CR-01 to CR-45): `docs/baseline/change-log.md`.
 - **Architecture decision records:** `docs/adr/README.md`.
-- **Diagram sources** (PlantUML): `docs/diagrams/src/`; **all 31 UI screenshots:** `docs/evidence/`.
+- **Phase 1–3 documents:** `docs/phases/`; **diagrams:** `docs/diagrams/`; **all UI screenshots:** `docs/evidence/`.
 
 ### Abbreviations
 
@@ -1064,6 +1068,6 @@ Every included requirement, with its business rules, screen and the tests that v
 
 ### Complete automated test results
 
-Generated by `scripts/test-results.py` from the JSON output of every suite.
+Collected from the output of every test suite in the latest full run.
 
 {{INCLUDE:docs/evidence/test-results.md}}
