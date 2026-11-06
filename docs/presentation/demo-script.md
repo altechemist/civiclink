@@ -14,13 +14,22 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
 4. Have a JPG photo ready on the desktop (e.g. `tests/evidence/fixtures/before.jpg`).
 5. Allow location in window A, or plan to drag the pin.
 
-## Slides (≤ 5 min), see `CivicLink_Presentation.pptx`
+## Slides (about 6 minutes), see `CivicLink_Presentation.pptx`
 
-1. **Problem:** the 31 March strike; phone and WhatsApp reporting; no tracking; no alerts.
-2. **Solution and scope:** four roles; all 39 requirements included (all 14 Must-haves); four deferred at baseline were brought back by change requests once the core was verified.
-3. **Architecture:** React SPA → callable commands → transactions; Security Rules; shared domain package (Figure 9).
-4. **Key decisions:** server-side commands with transactions (D1); free-tier deployment, with a Node API on Vercel and photos in Firestore (D2); offline outbox with idempotent submission (D3); guests through anonymous sign-in (D4).
-5. **Verification:** 173 automated tests (all pass), CI green, NFR measurements, CDN/CSP checks on the live site, SC-01 to SC-05 all achieved.
+About 30 seconds per slide; the speaker notes in the file say what to stress.
+
+1. **Problem and purpose:** the strike, then the everyday problem (no location, duplicates, no record, no feedback).
+2. **Scope:** all 39 requirements; the report state machine is shared by the server and the interface.
+3. **D1 architecture:** reads straight from Firestore, every change through a command; why Security Rules alone were not enough.
+4. **Transactions and idempotency:** TX-1 to TX-3; two officials assigning at once means exactly one wins; the clientId makes offline retries safe.
+5. **D2 free-tier deployment:** Vercel + Firebase Spark, photos in Firestore, two adapters tested by CI.
+6. **Caching and CDN:** immutable app files, public data cached at the edge, x-vercel-cache HIT.
+7. **D3 PWA and offline:** installable, every file saved at install, IndexedDB outbox; the two defects found on the live site.
+8. **Maps:** Leaflet + OSM, GPS checks, geohash duplicate search, rounded public locations, list under the map.
+9. **Notifications and SMS:** push only after commit, SmsGateway interface with Twilio, trial template, scheduled alerts.
+10. **Analytics:** one pure, tested function behind the dashboard and the public page.
+11. **Security and guests (D4):** claims + rules, shared validation, CSP, anonymous guests with limits, POPIA deletion.
+12. **Verification and evaluation:** test levels and timings, live checks, defects, next steps. Then start the demo.
 
 ## Principal workflow (≈ 5 min, 2 marks)
 

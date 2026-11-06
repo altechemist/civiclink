@@ -1,0 +1,18 @@
+@startuml deploy-simple
+!include _style.iuml
+title Free-tier deployment (D2)
+left to right direction
+skinparam defaultFontSize 16
+
+rectangle "Phone / browser\n(installed app)" as B
+rectangle "Vercel (free)\nCDN + static app\nNode command API\n(Cape Town)" as V
+rectangle "Firebase Spark (free)\nAuthentication\nFirestore: data + photos" as F
+rectangle "GitHub Actions\nhourly maintenance" as G
+rectangle "Laptop (demo / tests)\nFirebase Emulator Suite\nsame commands" as L
+
+B --> V : HTTPS
+B --> F : live reads
+V --> F : transactions
+G --> V : cron (secret)
+L ..> F : same code,\nlocal emulators
+@enduml

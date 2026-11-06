@@ -8,13 +8,13 @@ Conventions: "#!" = unnumbered Heading 1; "#" Heading 1; "##" Heading 2; "###" H
 
 #! EXECUTIVE SUMMARY
 
-Sol Plaatje Local Municipality in Kimberley receives reports of burst pipes, power outages, potholes and illegal dumping by telephone, walk-in visits and community WhatsApp groups. Reports are logged by hand without a precise location. The same incident is reported many times. Field teams are dispatched by phone with no record of progress, and residents hear nothing back unless they call again. When municipal workers went on strike on 31 March 2026 and blocked roads across the city, there was no official way to warn commuters.
+Sol Plaatje Local Municipality in Kimberley gets reports of burst pipes, power outages, potholes and illegal dumping by phone, at walk-in counters and through community WhatsApp groups. These reports are written down by hand, usually without an exact location, and the same problem is often reported many times. Field teams are sent out by phone with no record of what happened next, and residents hear nothing unless they call again. When municipal workers went on strike on 31 March 2026 and blocked roads across the city, the municipality had no official way to warn people.
 
-CivicLink is a web application that connects four groups in one workflow, and is open to the public without an account. **Residents** report incidents from their phones with a map location, photos and a severity, receive a reference number, and follow the report live until it is fixed. **Municipal officials** triage reports for their department, assign them to field workers, escalate overdue work and broadcast alerts to specific suburbs. **Field workers** receive tasks on their phones, record progress and close each task with completion notes and a proof photo. **Administrators** manage staff accounts, departments and incident categories.
+I built CivicLink to put this whole process into one web application. **Residents** report a problem from their phone with a map pin, photos and a severity, get a reference number and can follow the report until it is fixed. **Officials** sort the reports for their department, assign them to field workers, escalate work that is running late and send alerts to specific suburbs. **Field workers** get their tasks on their phones and close each one with notes and a photo of the repair. **Administrators** manage staff accounts, departments and categories. Members of the public can also use it without an account.
 
-The final release implements all 39 specified functional requirements, including all 14 Must-have requirements. The core lifecycle runs end to end: report, duplicate detection, triage, assignment, field completion, and resident confirmation or reopening with a service rating. Anyone can open CivicLink without an account to see the active alerts and open issues around them, and report a problem as a guest, keeping it later by creating an account or signing in. It is supported by real-time notifications, web push, suburb-targeted alerts (immediate or scheduled) with read receipts and SMS for emergencies, a privacy-safe community map with a "Me too" button, live service-delivery analytics, a public transparency page, SLA-based automatic escalation, bulk assignment, a complete audit trail, an installable app that saves reports offline and sends them on reconnect, Google sign-in, and self-service account deletion that meets POPIA's right to erasure.
+The final release covers all 39 functional requirements, including all 14 Must-haves. The main lifecycle works from start to finish: a report is submitted, checked for duplicates, triaged, assigned, completed in the field and then confirmed (with a rating) or reopened by the resident. Around that, the system has real-time and push notifications, suburb alerts that can be sent now or scheduled (with SMS for emergencies), a community map with a "Me too" button, live analytics, a public transparency page, automatic SLA escalation, bulk assignment and a full audit trail. It can be installed on a phone, saves reports offline and sends them once the phone reconnects, supports Google sign-in, and lets residents delete their account in line with POPIA. Anyone can open the site without signing in to see alerts and open issues near them, and can report a problem as a guest.
 
-The system is built with React and TypeScript on Firebase Authentication and Cloud Firestore, with a Node.js command API. Every state-changing operation runs on the server inside a database transaction, and access is enforced by Security Rules. It runs entirely on free tiers: the deployed system uses Vercel and Firebase's free Spark plan, and a local configuration using the Firebase Emulator Suite can be reproduced with two commands and no cloud account. It is verified by {{TEST_TOTAL}} automated tests (unit, security-rule, API integration, end-to-end and non-functional) running in continuous integration. All five success criteria were achieved.
+The front end is React and TypeScript; the back end is Firebase Authentication, Cloud Firestore and a Node.js command API. Every change to data happens on the server inside a database transaction, and Security Rules control who can read what. Everything runs on free tiers (Vercel and Firebase's Spark plan), and the same system can be run locally on the Firebase Emulator Suite with two commands and no cloud account. I tested it with {{TEST_TOTAL}} automated tests (unit, security-rule, API, end-to-end and non-functional) that run on every push, and all five success criteria were met.
 
 # PROJECT CONTEXT
 
@@ -22,13 +22,13 @@ The system is built with React and TypeScript on Firebase Authentication and Clo
 
 **Primary users and client.** The intended client is Sol Plaatje Local Municipality, Northern Cape. Its users are residents of the municipal area (Kimberley, Galeshewe, Roodepan, Ritchie, Platfontein and surrounding areas), municipal officials in the five service departments, field workers who carry out repairs, and system administrators.
 
-**Basis of the project.** The project is based on a **real organisation and real events** (the municipality, its departments and the 31 March 2026 strike). The requirements were gathered through a **simulated** stakeholder interview with a senior infrastructure official, an analysis of the municipality's daily reporting transactions, and published sources. CivicLink has not been commissioned or deployed by the municipality.
+**Basis of the project.** The project uses a **real organisation and real events**: the municipality, its departments and the 31 March 2026 strike. The requirements came from a **simulated** interview with a senior infrastructure official, an analysis of how the municipality handles reports day to day, and published sources. The municipality did not commission CivicLink and is not using it.
 
 # PROBLEM, PURPOSE AND SUCCESS CRITERIA
 
 ## Problem Statement
 
-Residents of Sol Plaatje have no dependable digital channel for reporting service failures, and the municipality has no single system for managing them. The Phase 1 investigation found the following:
+At the moment residents have no reliable digital way to report service failures, and the municipality has no single system to manage them. In Phase 1 I found these problems:
 
 - **No precise capture.** Calls are written on paper or in spreadsheets, without GPS coordinates or photos, so field teams are sent to the wrong place and repeat visits are common, especially for illegal dumping.
 - **Duplicate reports.** The same burst pipe or outage is reported many times across channels, which wastes call-centre time and distorts priorities.
@@ -37,14 +37,14 @@ Residents of Sol Plaatje have no dependable digital channel for reporting servic
 - **No targeted public communication.** During the 31 March 2026 strike, road closures were communicated only by radio and informal WhatsApp groups. Residents and taxi commuters received no official guidance.
 - **No management visibility.** Without data, the municipality cannot measure response times, compare departments or identify hotspots.
 
-The stakeholder questionnaire reported response times of 24–72 hours for burst pipes, mainly because reports were routed to the wrong team. These problems are structural rather than individual: they come from analogue, fragmented processes. A shared digital system that records every report, assignment and status change in one place, enforces routing and accountability rules, and pushes updates to the people affected directly addresses each of them.
+In the stakeholder questionnaire, burst pipes took 24–72 hours to fix, mostly because reports went to the wrong team. None of these problems comes from one person doing their job badly; they come from a manual, scattered process. A shared system that records every report, assignment and status change in one place, applies the routing rules and tells the affected people what is happening deals with each of them directly.
 
-Published evidence supports these findings. Sol Plaatje is home to 270,078 people (Statistics South Africa, 2023). The municipality's own plan sets a turnaround strategy for water and electricity losses (Sol Plaatje Local Municipality, 2022), and the municipal manager has reported non-revenue physical and technical water losses of 60%, with the bulk pipelines from Riverton leaking because of corrosion and sabotage (Noordkaap Bulletin, 2024). In 2026 a resident's published opinion piece described burst pipes as "a near-daily occurrence", with a reported burst still running hours later (Diamond Fields Advertiser, 2026), the same response-time gap identified in the interview. Nationally, only 34 of South Africa's municipalities (13%) obtained clean audits in 2022-23, and the Auditor-General reports weak controls over performance information and service delivery (Auditor-General South Africa, 2024). Accountable, traceable records of service delivery are therefore a recognised need, not only a local one.
+Published sources back this up. Sol Plaatje has 270,078 residents (Statistics South Africa, 2023). The municipality's own plan sets a turnaround strategy for water and electricity losses (Sol Plaatje Local Municipality, 2022), and the municipal manager has reported non-revenue physical and technical water losses of 60%, with the bulk pipelines from Riverton leaking because of corrosion and sabotage (Noordkaap Bulletin, 2024). In 2026 a resident's published opinion piece described burst pipes as "a near-daily occurrence", with a reported burst still running hours later (Diamond Fields Advertiser, 2026), the same response-time gap identified in the interview. Nationally, only 34 of South Africa's municipalities (13%) obtained clean audits in 2022-23, and the Auditor-General reports weak controls over performance information and service delivery (Auditor-General South Africa, 2024). So the need for accountable, traceable records of service delivery is not just a local one.
 
 
 ## Project Purpose
 
-CivicLink is intended to replace the municipality's manual, fragmented incident reporting with one accountable digital workflow. Residents should be able to report a located, evidenced incident in under a minute and follow it to resolution. Officials should be able to route and dispatch work and warn affected suburbs immediately. Field workers should be able to close tasks with proof. Every action should leave an auditable record.
+The aim of CivicLink is to replace the manual, scattered reporting process with one accountable workflow. A resident should be able to report a problem with its location and a photo in under a minute and follow it until it is fixed. Officials should be able to send the work to the right team and warn the affected suburbs straight away. Field workers should be able to close a task with proof, and every step should leave a record that can be checked later.
 
 ## Success Criteria
 
@@ -62,9 +62,9 @@ Table: Success criteria
 
 ## Solution Overview
 
-CivicLink is a responsive web application backed by Firebase. The system boundary contains the React single-page application (with separate resident, official, field-worker and administrator areas), a Node.js command API (served by Cloud Functions locally and by Vercel serverless functions when deployed), Cloud Firestore and Firebase Authentication. The external actors are the four user roles and members of the public, who can see alerts, open issues and figures, and report as guests, without an account. The external services are OpenStreetMap (map tiles), Google sign-in, Firebase Cloud Messaging (push), an optional SMS gateway (Twilio), the Vercel CDN, the GitHub Actions schedule and the browser's geolocation service.
+CivicLink is a responsive web application. Inside the system boundary are the React app (with separate areas for residents, officials, field workers and administrators), a Node.js command API (Cloud Functions locally, Vercel serverless functions when deployed), Cloud Firestore and Firebase Authentication. Outside it are the four user roles and members of the public, who can view alerts, open issues and figures and report as guests without an account. The external services are OpenStreetMap for map tiles, Google sign-in, Firebase Cloud Messaging for push, Twilio for SMS (optional), the Vercel CDN, the GitHub Actions schedule and the phone's location service.
 
-Its major functional areas are:
+The main functional areas are:
 
 - **Incident reporting:** a three-step report form with category, map location, suburb, landmark, description, severity and up to three photos; reference numbers; and duplicate detection within 100 m.
 - **Tracking and feedback:** a live status lifecycle, an audit timeline, in-app notifications, confirmation or reopening by the resident, and automatic closure.
@@ -78,7 +78,7 @@ Its major functional areas are:
 
 ## Final Release Scope
 
-The submitted release (tag {{TAG}}) includes the following capabilities. Each one is traceable to its requirements in Section 4 and to its tests in Section 7.
+The submitted release (tag {{TAG}}) includes the capabilities below. Each one links to its requirements in Section 4 and its tests in Section 7.
 
 Table: Final release scope
 
@@ -93,7 +93,7 @@ Table: Final release scope
 | Real-time in-app notifications | FR-15 | Must |
 | Suburb-targeted alert broadcast and resident alerts feed | FR-16, FR-17 | Must |
 | Reassignment; manual and SLA-based escalation; resident confirm/reopen; auto-close | FR-12, FR-13, FR-14 | Should |
-| Community incident map (privacy-safe) | FR-07 | Should |
+| Community incident map (no personal details) | FR-07 | Should |
 | Alert history with delivery and read counts | FR-18 | Should |
 | Service-delivery analytics | FR-19 | Should |
 | Department and category configuration | FR-21 | Should |
@@ -108,7 +108,7 @@ Table: Final release scope
 
 ## Excluded and Deferred Capabilities
 
-Every specified functional requirement is included. Four capabilities were deferred at the Phase 3 baseline (SMS, offline drafts, scheduled alerts, bulk assignment) and were brought back into scope once the core was complete and verified (CR-33 to CR-36). The remaining exclusions are:
+Every functional requirement made it into the release. At the Phase 3 baseline I had deferred four capabilities (SMS, offline drafts, scheduled alerts and bulk assignment), but once the core was finished and tested I had time to add them back (CR-33 to CR-36). Only the following is still outside the release:
 
 Table: Excluded capabilities
 
@@ -122,7 +122,7 @@ Table: Excluded capabilities
 
 ## Known Limitations and Open Issues
 
-All capabilities listed in Section 3.2 are complete and verified. The following limitations affect included functionality:
+Everything in Section 3.2 is complete and tested. These are the limitations that still affect included features:
 
 Table: Known limitations
 
@@ -324,19 +324,19 @@ Table: Business rules
 
 # SYSTEM DESIGN SPECIFICATION
 
-The design described here is the final implemented design. Every diagram is generated from PlantUML source kept in the repository (`docs/diagrams/src`) and uses the identifiers of the code and the requirements.
+This section describes the design as it was finally built. All diagrams are generated from PlantUML files in the repository (`docs/diagrams/src`) and use the same names as the code and the requirements.
 
 ## Use Cases and Workflows
 
-The use-case diagram (Figure 2) shows the four human actors, plus the system scheduler that triggers SLA escalation and automatic closure. The Administrator inherits every Official capability.
+The use-case diagram (Figure 2) shows the four user roles, the public, and the scheduler that runs SLA escalation, automatic closure and scheduled alerts. The Administrator can do everything an Official can.
 
 ![Figure: Use-case diagram of the final release](docs/diagrams/usecase.png){width=3.0}
 
-Two end-to-end workflows were selected from the core functionality. Both diagrams for each workflow include the validation, authorisation, conflict and alternative paths, not only the successful path.
+I picked two end-to-end workflows from the core of the system. For each one the diagrams show the validation, permission, conflict and alternative paths as well as the normal path.
 
 ### Workflow W1: Submit an incident report (FR-03, FR-04, FR-05)
 
-A resident completes the three-step form, and client validation gives immediate feedback. Photos are compressed in the browser (≤ 1280 px, ≤ 700 KB) and sent with the request. The `submitReport` command checks the caller's role and the input, verifies each photo's real type from its first bytes, and runs transaction TX-1, which also writes the photos as binary documents. TX-1 checks that the category is active, searches for open reports of the same category within 100 m, allocates the next reference, and writes either a new Submitted report (with the public map projection and notifications to the department's officials) or a Duplicate report linked to the original.
+The resident fills in the three-step form, which checks the input as they go. Photos are compressed in the browser (to at most 1280 px and 700 KB) and sent with the request. If the resident is not signed in, the app first starts a guest session (FR-39), and if there is no connection the report is saved on the phone and sent later with the same `clientId` (FR-27). On the server, `submitReport` checks the caller and the input, checks each photo's real file type from its first bytes, and then runs transaction TX-1. TX-1 makes sure the category is still active, looks for open reports of the same category within 100 m, takes the next reference number and saves either a new report (with its public map entry and notifications to the department's officials) or a duplicate linked to the original.
 
 ![Figure: Activity diagram, W1 submit incident report](docs/diagrams/activity-w1.png){width=3.9}
 
@@ -344,7 +344,7 @@ A resident completes the three-step form, and client validation gives immediate 
 
 ### Workflow W2: Triage, assign, complete and confirm (FR-09 to FR-14)
 
-An official triages or rejects a report, then assigns it to an eligible field worker in transaction TX-2. The field worker accepts, starts and completes the task, and transaction TX-3 resolves the report. Finally the resident confirms the fix or reopens the report. The alternative and failure paths shown are: rejection; a report that already has an active task; an ineligible worker; skipped task steps; missing completion proof; a task that was reassigned while the worker was on site; and reopening.
+An official reviews or rejects a report and then assigns it to a field worker in transaction TX-2. The field worker accepts, starts and completes the task, and transaction TX-3 marks the report as resolved. Finally the resident confirms the fix or reopens the report. The diagrams also show what happens when a report is rejected, when it already has an active task, when the worker is not eligible, when task steps are skipped, when the proof photo is missing, when the task was reassigned while the worker was on site, and when the resident reopens it.
 
 ![Figure: Activity diagram, W2 triage, assign, complete and confirm](docs/diagrams/activity-w2.png)
 
@@ -352,7 +352,7 @@ An official triages or rejects a report, then assigns it to an eligible field wo
 
 ### Entity lifecycles
 
-The **Report** has a meaningful lifecycle with eight states (Figure 7), implemented in `ReportStateMachine` in the shared package. Both the server (to enforce transitions) and the user interface (to offer only valid actions) use it. The **Task** lifecycle (Figure 8) is implemented in `TaskStateMachine`.
+The **Report** goes through eight states (Figure 7). These are implemented once in `ReportStateMachine` in the shared package, which the server uses to enforce the transitions and the interface uses to show only the actions that are allowed. The **Task** lifecycle (Figure 8) is implemented in `TaskStateMachine`.
 
 ![Figure: State diagram of the Report entity](docs/diagrams/state-report.png){width=6.0}
 
@@ -360,10 +360,10 @@ The **Report** has a meaningful lifecycle with eight states (Figure 7), implemen
 
 ## System Architecture and Technology Stack
 
-CivicLink follows a command–query separation on a serverless backend (Figure 9).
-- **Reads** are made directly from Firestore through real-time listeners, protected by Security Rules.
-- **State changes** go through callable Cloud Functions. These authenticate the caller, check the role, validate the input with the shared schemas, and run the business logic in Firestore transactions.
-- **Domain logic** (schemas, state machines and policies) lives in a shared TypeScript package used by both the browser and the server.
+The architecture (Figure 9) separates reading data from changing it:
+- **Reads** come straight from Firestore through real-time listeners, so screens update by themselves. Security Rules decide what each user may read.
+- **Changes** always go through a server command. The command checks who the caller is and what role they have, validates the input with the shared schemas and runs the business logic in a Firestore transaction.
+- **Domain logic** (schemas, state machines and policies) is written once in a shared TypeScript package used by both the browser and the server.
 
 ![Figure: Logical architecture](docs/diagrams/architecture.png)
 
@@ -390,35 +390,35 @@ Table: Component responsibilities and technology stack
 
 ## Key Architecture and Design Decisions
 
-Four decisions shaped the system most; three smaller supporting decisions are summarised in the table that follows. Each is recorded as an architecture decision record in `docs/adr/`.
+Four decisions shaped the system more than any others, so I describe them in full. Three smaller ones are summarised in the table after them. Each decision also has an architecture decision record in `docs/adr/`.
 
-**D1: All state changes go through server-side commands (ADR-0001).**
-- *Context:* the core rules span several documents: allocating a reference, the 100 m duplicate search, one active task per report, and resolving a report when its task completes.
-- *Options:* (a) clients write to Firestore directly, guarded only by Security Rules; (b) callable Cloud Functions running transactions, with rules allowing only reads; (c) a custom Node/Express API with PostgreSQL.
+**D1: Every change goes through a server-side command (ADR-0001).**
+- *Context:* the most important rules involve several documents at once: taking the next reference number, the 100 m duplicate search, allowing only one active task per report, and resolving the report when its task is completed.
+- *Options:* (a) let the app write to Firestore directly and protect it with Security Rules only; (b) send every change through a callable function that runs a transaction, and let the rules allow reads only; (c) write a separate Node/Express API with PostgreSQL.
 - *Decision:* (b).
-- *Rationale:* Security Rules cannot express multi-document transactional rules. (b) keeps a single enforcement point and still gets real-time reads from Firestore listeners. (c) would mean rebuilding authentication, real-time updates and storage, and abandoning three phases of design.
-- *Consequences:* clean separation and testable services, and concurrency is handled by Firestore transactions. On the other hand, Firestore has no foreign-key constraints, so integrity depends on transactions and rules (Section 5.6), and deployed functions require Firebase's paid Blaze plan.
+- *Rationale:* Security Rules cannot check rules that span several documents in one transaction, so option (a) could not enforce BR-03, BR-04 or BR-06. Option (b) gives me one place where every rule is enforced, while the app still gets real-time reads from Firestore. Option (c) would have meant rebuilding authentication, real-time updates and storage, and throwing away three phases of design.
+- *Consequences:* the services are easy to test and concurrency is handled by Firestore transactions (two officials assigning the same report at once: exactly one succeeds). The downside is that Firestore has no foreign keys, so integrity depends on the transactions and the rules (Section 5.6), and deploying Cloud Functions needs Firebase's paid plan, which led to D2.
 
-**D2: Free-tier deployment: Firebase Spark, a Node API on Vercel, and photos stored in Firestore (ADR-0006).**
-- *Context:* the system had to be deployable without cost. Cloud Functions and Cloud Storage both require Firebase's paid Blaze plan.
-- *Options:* (a) Blaze with a budget alert; (b) port to Supabase; (c) keep the free Spark plan (Auth, Firestore), serve the command API from a free Node host, and store photos in Firestore.
-- *Decision:* (c). Vercel serverless functions run the API next to the static web app; photos are compressed to ≤ 700 KB and stored as binary documents.
-- *Rationale:* the commands were already transport-independent, so a second adapter reuses every service unchanged and speaks the same callable protocol (the client only switches its URL). Vercel's free functions do not sleep, which matters in a live demonstration. A Supabase port would have meant rewriting the backend and about 90 tests.
-- *Consequences:* two adapters must stay equivalent, so CI runs the complete E2E suite through both. Photo size is bounded by Firestore's 1 MiB document limit, and each photo view is one document read. The hourly SLA job runs from GitHub Actions, because Vercel's free cron is daily. The local emulator configuration remains for development, tests and an offline demonstration.
+**D2: Free-tier deployment: Firebase Spark, a Node API on Vercel, and photos in Firestore (ADR-0006).**
+- *Context:* I wanted a live deployment that costs nothing, but Cloud Functions and Cloud Storage both need Firebase's paid Blaze plan.
+- *Options:* (a) Blaze with a budget alert; (b) move to Supabase; (c) stay on the free Spark plan (Authentication and Firestore), run the command API on a free Node host, and store photos in Firestore.
+- *Decision:* (c). The API runs as Vercel serverless functions next to the web app, and photos are compressed in the browser to at most 700 KB and stored as binary documents.
+- *Rationale:* my commands did not depend on how they were called, so a second small adapter could reuse every service unchanged and speak the same callable protocol; the app only changes the URL it calls. Vercel's free functions do not go to sleep, which matters during a live demo. Moving to Supabase would have meant rewriting the back end and about 90 tests.
+- *Consequences:* the two adapters must behave the same, so CI runs the whole end-to-end suite through both. Photos are limited by Firestore's 1 MiB document size. Vercel's free cron only runs daily, so the hourly SLA job is triggered by GitHub Actions instead. The emulator setup is still used for development, tests and an offline demo.
 
 **D3: Offline reports through an on-device outbox and idempotent commands (ADR-0007).**
-- *Context:* residents with weak signal must be able to report when they have no connection (FR-27). Reports are created by a server command (D1), so Firestore's own offline write queue cannot be used.
-- *Options:* (a) the Background Sync API in the service worker; (b) an IndexedDB outbox in the app, sent when the browser reports it is online again; (c) disable submission offline (the Phase 3 baseline).
-- *Decision:* (b), with a `clientId` chosen on the device and sent with the report. The server derives the report's document id from the user and this id, so a resend after a lost response returns the stored report instead of creating a second one.
-- *Rationale:* Background Sync is not available in Firefox or Safari (NFR-09). The outbox works in every browser, keeps compressed photos, and belongs to one account. Idempotency makes "at least once" sending safe.
-- *Consequences:* a saved report gets its reference number only when it is sent. Entries the server refuses stay on the phone with the reason, so nothing is lost silently.
+- *Context:* residents with poor signal must be able to report without a connection (FR-27). Because reports are created by a server command (D1), Firestore's own offline write queue does not help.
+- *Options:* (a) the Background Sync API in the service worker; (b) an outbox in IndexedDB that the app sends when the browser is back online; (c) keep reporting disabled offline, as in the Phase 3 baseline.
+- *Decision:* (b), with a `clientId` created on the phone and sent with the report. The server builds the report's document id from the user and this `clientId`, so if the same report arrives twice (for example because the response was lost), it returns the report it already has instead of creating a second one. This makes the command idempotent.
+- *Rationale:* Background Sync does not work in Firefox or Safari (NFR-09). The outbox works in every browser, keeps the compressed photos, and belongs to one account. Because the command is idempotent, it is safe for the app to keep retrying until it gets an answer.
+- *Consequences:* a saved report only gets its reference number once it is sent. If the server refuses a saved report, it stays on the phone with the reason, so nothing disappears silently.
 
-**D4: Guest reporting through anonymous sign-in, not unauthenticated writes (ADR-0009).**
-- *Context:* residents should be able to report without signing up (FR-39), but every write must still be authorised on the server (D1, NFR-01) and abuse must be limited.
-- *Options:* (a) an unauthenticated "submit" endpoint; (b) Firebase anonymous sign-in plus a server-created guest Resident profile; (c) keep registration mandatory.
+**D4: Guests through anonymous sign-in, not open endpoints (ADR-0009).**
+- *Context:* people should be able to report without creating an account (FR-39), but every change must still be authorised on the server (D1, NFR-01), and I had to limit abuse.
+- *Options:* (a) an unauthenticated "submit" endpoint; (b) Firebase anonymous sign-in plus a guest Resident profile created by the server; (c) keep registration compulsory.
 - *Decision:* (b).
-- *Rationale:* the guest is a real Firebase user (Firebase, 2026a), so every existing rule, command check and Security Rule applies unchanged, the guest can follow and confirm their report, and the account can later be upgraded in place by linking an email/password or Google sign-in to the same user id, so nothing has to be copied. (a) would need a parallel, weaker authorisation path.
-- *Consequences:* guest sessions are cheap to create, so BR-26 adds a lower report limit and a per-address session limit. A guest who clears the browser loses access unless they created an account; the interface says so before sign-out.
+- *Rationale:* a guest is a real Firebase user (Firebase, 2026a), so every existing command check and Security Rule applies without changes, and the guest can follow and confirm their own report. Later the guest can create an account by linking an email/password or Google sign-in to the same user, so nothing has to be copied. Option (a) would have needed a second, weaker authorisation path.
+- *Consequences:* guest sessions cost nothing to create, so BR-26 limits guests to 3 reports an hour and 10 new guest sessions per network address per hour. A guest who clears their browser loses access unless they made an account, so the app warns them before they sign out.
 
 Table: Supporting decisions
 
@@ -426,16 +426,16 @@ Table: Supporting decisions
 |---|---|---|
 | React single-page application with Vite, not Next.js | All data comes from the Firebase SDK in the browser, so server rendering adds complexity without benefit; a static build deploys to any CDN | ADR-0002 |
 | Leaflet with OpenStreetMap, not Google Maps | No API key or billing; the suburb that drives alert targeting is chosen from a list, so reverse geocoding is not needed (officials rely on the pin and landmark) | ADR-0004 |
-| Public figures and the public feed served from the CDN cache, not public Firestore reads | No Security Rule opens data to anonymous users and only aggregates or the privacy-safe projection leave the server; database reads stay bounded however many people visit (figures ≤ 5 min old, feed ≤ 1 min) | ADR-0008 |
+| Public figures and the public feed served from the CDN cache, not public Firestore reads | No Security Rule opens data to anonymous users and only aggregates or the anonymised map projection leave the server; database reads stay bounded however many people visit (figures ≤ 5 min old, feed ≤ 1 min) | ADR-0008 |
 
 ## Application Class Design
 
-Figure 10 shows the implemented classes in two parts. The complete single diagram is `docs/diagrams/class.png`. The classes fall into three groups:
+Figure 10 shows the implemented classes, split into two parts so it is readable (the full diagram is `docs/diagrams/class.png`). The classes fall into three groups:
 - **Domain entities** (`packages/shared/src/models.ts`), stored as Firestore documents.
 - **Domain logic** (`packages/shared/src`): `ReportStateMachine` and `TaskStateMachine` define the allowed transitions; `DuplicatePolicy` (100 m, 72 h), `SlaPolicy` and `ResolutionPolicy` (7 days) are pure, fully unit-tested rules.
 - **Application services** (`functions/src/services`), described below.
 
-How the services fit together:
+This is how the services fit together:
 - **Entry point:** every callable is wrapped by `command()`, which authenticates the caller, loads their profile (refusing deactivated accounts), checks the role, validates the input and maps errors.
 - **Report and task services:** `ReportService` implements submission (TX-1, idempotent with a client id), triage, rejection, escalation, assignment (TX-2) and bulk assignment, reassignment, confirmation with rating, reopening and "Me too". `TaskService` implements the field-worker steps and completion (TX-3).
 - **Single path for status changes:** both services use `ReportLifecycle.applyTransition`, so every status change is validated by the state machine, recorded in the history, reflected in the public projection and notified.
@@ -447,12 +447,12 @@ How the services fit together:
 
 ## User Interface and Interaction Design
 
-There are four user roles, each with its own area:
+Each role has its own part of the interface:
 - **Residents** use a mobile layout with a bottom navigation bar (Home, Map, Report, My reports, Alerts).
 - **Field workers** use the same mobile layout, coloured green and reduced to their task list.
 - **Officials and administrators** use a desktop layout with a sidebar.
 
-Every screen handles loading, empty, error and permission-denied states. The screenshots below were captured from the submitted system with the seeded data (`tests/evidence/capture.spec.ts`). The photos in them are illustrative sample images. Phone screens are grouped three to a figure by user journey, labelled (a)–(c); desktop screens are shown one per figure.
+Every screen has a loading, empty, error and access-denied state. The screenshots were taken from the submitted system with the seeded data (`tests/evidence/capture.spec.ts`), and the photos in them are sample images. Phone screens are grouped three to a figure by user journey and labelled (a) to (c); desktop screens have one figure each.
 
 Table: User interface evidence
 
@@ -506,7 +506,7 @@ Table: User interface evidence
 
 ## Data Design
 
-CivicLink stores its persistent data in **Cloud Firestore**, a document database with real-time listeners and ACID transactions. Photos are stored in Firestore as well, as binary documents in the `photos` collection (decision D2), so the system needs no separate file store. Figure 26 shows the implemented document model. Collections are shown as entities; references between documents (Firestore has no foreign keys) are shown as relationships with their cardinalities.
+All persistent data lives in **Cloud Firestore**, a document database with real-time listeners and transactions. I also store photos in Firestore, as binary documents in the `photos` collection (decision D2), so there is no separate file store. Figure 26 shows the document model: each collection is drawn as an entity, and because Firestore has no foreign keys, the references between documents are drawn as relationships with their cardinalities.
 
 ![Figure: Firestore document model](docs/diagrams/data-model.png)
 
@@ -555,7 +555,7 @@ Table: Data dictionary (principal collections)
 | **settings/app** | | fixed id | reportsPerHour (BR-21) |
 | **systemLogs/{id}** | | auto id | level, source, message, actorId, createdAt |
 
-**Integrity mechanisms.** Firestore enforces no schema, so integrity is enforced in five ways:
+**Integrity mechanisms.** Firestore does not enforce a schema, so I keep the data consistent in five ways:
 1. **Server-only writes.** Clients cannot write reports, tasks, history, alerts or configuration at all; they may only stamp their own last-login time and mark their own notifications read.
 2. **Shared schema validation.** Every command validates its input with the same Zod schemas the forms use.
 3. **Transactions.** TX-1 (submission: reference counter, duplicate search, report, history, projection, notifications), TX-2 (assignment: one-active-task check, eligible worker, task, report, history) and TX-3 (completion: task and report resolved together) each commit atomically. Firestore retries a transaction on contention, so of two concurrent assignments only one can succeed (test IT-ASG-07).
@@ -569,7 +569,7 @@ Table: Data dictionary (principal collections)
 
 ## Security, Privacy and Access Control
 
-**Authentication.** Users sign in with email and password through Firebase Authentication. Passwords are never stored by CivicLink. On registration or role change, the server sets signed custom claims (`role`, `dept`, `suburb`, `active`), which the Security Rules use. Every command also reloads the caller's profile and refuses deactivated accounts. Deactivation additionally disables the Auth account and revokes its sessions. The client refreshes its token when an administrator changes the user's role.
+**Authentication.** Users sign in with an email and password or with Google, through Firebase Authentication, and guests sign in anonymously (FR-39). CivicLink never stores passwords itself. When an account is created or its role changes, the server sets signed custom claims (`role`, `dept`, `suburb`, `active`, and `guest` for guests) that the Security Rules use. Every command also reloads the caller's profile and refuses deactivated accounts, and deactivating someone also disables their sign-in and revokes their sessions. The app refreshes its token when an administrator changes the user's role.
 
 Table: Role / permission matrix (✓ allowed; scope in brackets)
 
@@ -591,7 +591,7 @@ Table: Role / permission matrix (✓ allowed; scope in brackets)
 | Analytics | — | ✓ | — | ✓ |
 | Manage users, departments, categories; system log; SMS outbox | — | — | — | ✓ |
 
-The public home and transparency pages need no account. A **guest** (FR-39) has the Resident permissions above except SMS opt-in and profile editing, with the lower limits of BR-26.
+The public home and transparency pages need no account. A **guest** (FR-39) can do what a Resident can, except opt in to SMS or edit a profile, and has the lower limits in BR-26.
 
 Table: Security controls
 
@@ -628,12 +628,12 @@ Table: Security controls
 
 ## Deployment and Runtime Design
 
-CivicLink has two runtime configurations built from the same code (Figure 27):
+The same code runs in two configurations (Figure 27):
 
 - **Deployed (free tier):** the static web app and the Node command API run on **Vercel** (serverless functions in the Cape Town region). Vercel's CDN serves the hashed assets with a one-year immutable cache and the public figures from its edge cache. Authentication and Firestore run on Firebase's free **Spark** plan, and push goes through Firebase Cloud Messaging. The API uses a service-account key held in Vercel's encrypted environment. A GitHub Actions schedule calls the protected maintenance endpoint hourly, and Vercel Cron calls it daily. The deployed URL is given in Appendix 11.2.
 - **Local:** the web app runs on Vite. Auth, Firestore and Cloud Functions run in the Firebase Emulator Suite on one machine, with the same command registry served by the Cloud Functions adapter. This configuration is used for development, all automated tests and an offline demonstration.
 
-In both configurations the browser loads map tiles from OpenStreetMap over HTTPS, and the service worker keeps up to 400 recently viewed tiles for offline use.
+In both, the browser loads map tiles from OpenStreetMap over HTTPS, and the service worker keeps up to 400 recently viewed tiles so maps still show offline.
 
 ![Figure: Deployment diagram](docs/diagrams/deployment.png)
 
@@ -641,7 +641,7 @@ In both configurations the browser loads map tiles from OpenStreetMap over HTTPS
 
 ## Codebase and Repository Structure
 
-The repository is an npm-workspaces monorepo. Each top-level folder corresponds to one component of the architecture in Figure 9.
+The repository is a monorepo using npm workspaces, and each top-level folder matches a component of the architecture in Figure 9.
 
 Table: Repository structure
 
@@ -680,17 +680,17 @@ Table: Capability implementation
 | Accounts | FR-01, FR-02, FR-29–FR-32 | LoginPage, RegisterPage, WelcomePage, ProfilePage, AuthProvider (Google popup, password reset); `registerResident`, `completeProfile`, `updateProfile`, `deleteMyAccount` → UserService; users, Auth claims, photos |
 | Insight and administration | FR-19–FR-23, FR-26 | AnalyticsPage → AnalyticsService → computeAnalytics; UsersPage → UserService; ConfigPage → ConfigService; LogsPage, logService; CommentService; toCsv |
 
-**Validation.** Forms validate on the client with the same Zod schemas the server uses, and show field-level messages that clear as the user corrects them. The `command()` wrapper validates every request again and returns `invalid-argument` with a `fields` map, which the client displays against the matching inputs.
+**Validation.** The forms use the same Zod schemas as the server, so the user sees field messages as they type and they disappear once fixed. The server validates every request again anyway, and returns `invalid-argument` with a `fields` map that the app shows next to the right inputs.
 
-**Business-rule enforcement.** Status changes go through a single function, `applyTransition`. It calls `ReportStateMachine.next(from, event, actor)`, which throws for invalid transitions or actors. It then updates the report, appends a history entry, updates the public projection and creates notifications, all within the caller's transaction. Rules that need a database read are re-checked inside the transaction, so a concurrent change causes a retry rather than a violation. Examples are BR-06 (`activeTaskId`), BR-07 (worker eligibility) and BR-03 (duplicate candidates).
+**Business rules.** Every status change goes through one function, `applyTransition`. It asks `ReportStateMachine.next(from, event, actor)` whether the change is allowed (it throws if not), then updates the report, adds a history entry, updates the public map entry and creates the notifications, all inside the caller's transaction. Rules that depend on data, such as one active task per report (BR-06), worker eligibility (BR-07) and the duplicate search (BR-03), are checked again inside the transaction, so if two people act at the same moment Firestore retries one of them instead of letting the rule break.
 
-**Duplicate detection (BR-03).** Each report stores a geohash. Submission queries the geohash ranges covering a 100 m radius (geofire-common) inside the transaction. The candidates are filtered by `DuplicatePolicy` (same category, open status, at most 72 hours old, exact haversine distance at most 100 m), and the closest match is chosen.
+**Duplicate detection (BR-03).** Each report stores a geohash of its location. When a new report comes in, the transaction queries the geohash ranges that cover a 100 m circle (with geofire-common), then `DuplicatePolicy` filters the results: same category, still open, at most 72 hours old and at most 100 m away by exact distance. The closest match becomes the original.
 
-**Error handling.** Expected failures are raised as typed `DomainError`s or state-machine errors and mapped to callable error codes (`invalid-argument`, `failed-precondition`, `permission-denied`, `not-found`, `already-exists`). Unexpected errors are logged and returned as a generic message. The client maps network and timeout errors to friendly messages, and every page has loading, empty, error and access-denied states.
+**Error handling.** Expected problems are thrown as typed `DomainError`s (or state-machine errors) and turned into callable error codes such as `invalid-argument`, `failed-precondition` and `permission-denied`. Anything unexpected is logged in the system log and the user only sees a general message. The app turns network and timeout errors into friendly messages, and if a screen cannot load (for example offline) it shows a retry screen instead of a blank page.
 
 ## APIs, Integrations and External Dependencies
 
-**Command API.** The command API is a set of HTTPS callable functions, invoked with the user's ID token. Reads are not exposed as functions; clients read Firestore directly under the Security Rules.
+**Command API.** The command API is a set of HTTPS callable functions that the app calls with the user's ID token. There are no API calls for reading; the app reads Firestore directly, under the Security Rules.
 
 Table: Callable command API
 
@@ -729,17 +729,17 @@ Besides the commands, the deployed API has three plain HTTP routes: `GET /api/pu
 - **SMS gateway (Twilio)** is behind an `SmsGateway` interface. With `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM` set, messages are sent through Twilio's REST API with an 8-second timeout; without them a simulated gateway records each message as Simulated. A failure marks that message Failed and is logged, and never stops the alert (IT-SMS-02).
 - **Vercel CDN** caches the hashed assets and the public figures (NFR-13).
 
-**Two adapters, one API.** `functions/src/commands.ts` defines all 36 commands once. `index.ts` exposes them as Cloud Functions (local emulator), and `http.ts` exposes them as a plain Node handler (Vercel). The Node adapter verifies the Firebase ID token (rejecting revoked sessions), limits the request size, and returns errors in the callable protocol. The client therefore uses `httpsCallableFromURL` with no other changes. In the local configuration, Firebase services come from the official Emulator Suite. No integration is mocked in the application code.
+**Two adapters, one API.** All 36 commands are defined once in `functions/src/commands.ts`. `index.ts` serves them as Cloud Functions (used with the local emulator) and `http.ts` serves them as a plain Node handler on Vercel. The Node version verifies the Firebase ID token (and rejects revoked sessions), limits the request size and returns errors in the same callable format, so the app only has to switch to `httpsCallableFromURL`. Locally, Firebase itself comes from the official Emulator Suite; nothing is mocked in the application code.
 
 ## AI / Machine-Learning Component
 
-Not applicable. CivicLink contains no AI or machine-learning component. Duplicate detection, SLA escalation, analytics and the public figures are deterministic, rule-based functions that are fully specified in Section 4.3 and unit-tested.
+Not applicable. CivicLink has no AI or machine-learning component. Duplicate detection, SLA escalation, the analytics and the public figures are all fixed rules, specified in Section 4.3 and unit-tested.
 
 # VERIFICATION AND TESTING
 
 ## Test Approach
 
-Verification combines four automated levels and a set of non-functional checks. All of them run on every push in GitHub Actions (`.github/workflows/ci.yml`). Each test's identifier appears in its name, so every row in this section can be found in the code (for example, `grep -r "IT-ASG-07"`).
+I tested the system at four automated levels plus a set of non-functional checks, and all of them run on every push in GitHub Actions (`.github/workflows/ci.yml`). Every test has its ID in its name, so any row in this section can be found in the code (for example `grep -r "IT-ASG-07"`).
 
 Table: Test levels
 
@@ -753,11 +753,11 @@ Table: Test levels
 | Deployed site | Playwright against the live URL | CDN caching and security headers (NFT-11, NFT-12) | {{TEST_COUNT:Deployed site}} |
 | Non-functional | Playwright timing, axe-core, gitleaks, ESLint, TypeScript | NFR-04 to NFR-09, NFR-12 to NFR-14 | — |
 
-Everything except visual review was tested automatically. **Manual testing** consisted of exploratory sessions in each role and a review of every screenshot in Section 5.5, including mobile layouts. Seeded data (`scripts/seed.ts`) gives every test run the same starting state.
+Apart from checking how screens look, everything was tested automatically. My **manual testing** was exploratory sessions in each role, checking every screenshot in Section 5.5 (including phone layouts), and a few live checks that cannot be automated, such as a push notification and an SMS arriving. The seed script (`scripts/seed.ts`) gives every test run the same starting data.
 
 ## Functional and Business-Rule Verification
 
-The table below lists the principal test cases. The complete list of {{TEST_TOTAL}} automated tests, with their results for the submitted commit, is in Appendix 11.3. All tests listed passed. "As expected" means the actual result matched the expected result exactly.
+The table below shows the main test cases. The full list of {{TEST_TOTAL}} automated tests, with their results for the submitted commit, is in Appendix 11.3. All of them passed; "As expected" means the actual result matched the expected result exactly.
 
 Table: Functional and business-rule test results
 
@@ -892,7 +892,7 @@ Table: Significant defects found and resolved
 | DEF-16 | Client test on a phone (offline) | The installed app could stay on the loading screen offline: the app's code files were saved only as they were used, so a first launch (or a screen never opened online) had nothing to run | The build writes every app file into the service worker, which saves them all at install; a screen that still cannot load shows "not available offline yet" with a retry |
 | DEF-17 | Client test on a phone | The notifications panel ran off the left edge of the screen, and long status labels ("Under review") made badges different sizes | On phones the panel spans the screen under the top bar (and opens upwards from the staff sidebar); the label is now "Review" and badges never wrap |
 
-There are no unresolved defects. The limitations of included functionality are listed in Section 3.4.
+There are no open defects. The limitations that affect included features are in Section 3.4.
 
 # SYSTEM SETUP AND OPERATION
 
@@ -953,9 +953,9 @@ Table: Evaluation against the success criteria
 | SC-04: Residents receive timely, targeted information | Achieved | NFT-05: report visible to the official in 0.07 s and the resolution visible to the resident in 1.90 s (target 5 s); E2E-03 shows suburb targeting |
 | SC-05: Officials have operational visibility from live data | Achieved | UT-ANL-01 and IT-ANL-01 reproduce the expected metrics; Figure 21 |
 
-The final system meets its purpose. The core lifecycle was built and verified first, with a deliberately smaller scope than the partly simulated Phase 3 prototype. Once it was complete, the four capabilities deferred at the baseline (SMS, offline drafts, scheduled alerts, bulk assignment) and three additions (a public transparency page, service ratings, and caching and browser hardening) were brought in through change requests, each with its own requirements, rules and tests. Every requirement is implemented on a real backend and verified automatically, and the deployed system was checked with the same tests.
+I think the final system does what it set out to do. I built and tested the core lifecycle first, with a smaller scope than the partly simulated Phase 3 prototype. Once that was solid, I added the four capabilities I had deferred at the baseline (SMS, offline drafts, scheduled alerts and bulk assignment) and a few additions (a public home page with guest reporting, a transparency page, service ratings, and caching and browser hardening), each through a change request with its own requirements, rules and tests. Every requirement runs on a real back end, is tested automatically, and the same tests were also run against the deployed system.
 
-The main remaining steps for a production rollout are: a paid SMS gateway, with sending moved to a queue for large broadcasts; a Cloud Scheduler plan so scheduled alerts never depend on site traffic; and a pilot with one department to validate the SLA targets against real workloads.
+If the municipality wanted to use it for real, the next steps would be a paid SMS gateway with a proper sending queue for large broadcasts, a paid scheduler so scheduled alerts never depend on site traffic, and a pilot with one department to check the SLA targets against real workloads.
 
 # REFERENCES
 
