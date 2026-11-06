@@ -11,7 +11,7 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
    - C: Field worker **sipho@** (phone width)
    - D: Admin **admin@**
 3. Keep VS Code open on the repo, with [the traceability matrix](../trackers/traceability-matrix.md) in a tab so you can open any requirement's code quickly.
-4. Have a JPG photo ready on the desktop (e.g. `tests/evidence/fixtures/before.jpg`).
+4. Have a JPG photo of a burst pipe or pothole ready on the desktop.
 5. Allow location in window A, or plan to drag the pin.
 
 ## Slides (about 6 minutes), see `CivicLink_Presentation.pptx`

@@ -81,7 +81,7 @@ scripts/seed.ts      Deterministic demo data
 tests/rules/         Security Rules tests
 tests/e2e/           Playwright tests
 tests/support/       Emulator test harness
-docs/                SRS, ADRs, trackers, diagrams, evidence, report, presentation
+docs/                SRS, ADRs, phase 1–3 documents, trackers, diagrams, evidence, report, presentation
 ```
 
 ## Documentation map
@@ -91,6 +91,7 @@ docs/                SRS, ADRs, trackers, diagrams, evidence, report, presentati
 | [docs/baseline/srs.md](docs/baseline/srs.md) | **Controlling baseline**: success criteria, scope, FR/NFR/BR, acceptance criteria, state machine |
 | [docs/baseline/change-log.md](docs/baseline/change-log.md) | Every change from Phases 1–3 and during build (CR-xx) |
 | [docs/adr/](docs/adr/README.md) | Architecture decision records |
+| [docs/phases/](docs/phases) | Phase 1–3 submissions; changes since then are recorded in the change log |
 | [docs/trackers/traceability-matrix.md](docs/trackers/traceability-matrix.md) | Requirement → rule → screen → code → data → test |
 | [docs/trackers/test-catalog.md](docs/trackers/test-catalog.md) | Test IDs used in code and in the report |
 | [docs/trackers/defect-log.md](docs/trackers/defect-log.md) | Defect summary |
