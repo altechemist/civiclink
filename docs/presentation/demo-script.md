@@ -55,7 +55,7 @@ For every included requirement and rule: how to show it, and a failure case to s
 | FR-11 / BR-08 / BR-09 | Worker flow | Mark as resolved without notes or photo → field errors |
 | FR-12 | Reassign to Anele | The old worker's task shows "no longer yours"; completing it is refused |
 | FR-13 / BR-10 | Escalate with reason; or Admin → System log → **Run scheduled rules now** | Escalate with empty reason → error |
-| FR-14 / BR-11 | Resident reopen with reason → back to Under review | Explain the 7-day window (IT-RES-03) and auto-close |
+| FR-14 / BR-11 | Resident reopen with reason → back to Review (Under review) | Explain the 7-day window (IT-RES-03) and auto-close |
 | FR-15 | Bell badge updates live in another window | — |
 | FR-16 / BR-13 | Broadcast | No suburb chosen → "Choose at least one suburb"; title over 100 characters |
 | FR-17 / BR-14 | Galeshewe resident sees the alert | Roodepan resident (pieter@) does **not** |

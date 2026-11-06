@@ -59,7 +59,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 
 export function StatusBadge({ status }: { status: ReportStatus }) {
   return (
-    <span className={cx('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset', STATUS_TONE[status])}>
+    <span className={cx('inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset', STATUS_TONE[status])}>
       {STATUS_LABEL[status]}
     </span>
   );
@@ -67,7 +67,7 @@ export function StatusBadge({ status }: { status: ReportStatus }) {
 
 export function SeverityBadge({ severity }: { severity: Severity }) {
   return (
-    <span className={cx('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset', SEVERITY_TONE[severity])}>
+    <span className={cx('inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset', SEVERITY_TONE[severity])}>
       {severity.charAt(0) + severity.slice(1).toLowerCase()}
     </span>
   );
@@ -81,7 +81,7 @@ export function Pill({ children, tone = 'slate' }: { children: ReactNode; tone?:
     green: 'bg-emerald-100 text-emerald-800',
     blue: 'bg-sky-100 text-sky-800',
   };
-  return <span className={cx('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold', tones[tone])}>{children}</span>;
+  return <span className={cx('inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold', tones[tone])}>{children}</span>;
 }
 
 interface FieldProps {

@@ -63,7 +63,7 @@ async function triage(official: Page, ref: string) {
   await official.getByTestId('queue-row').filter({ hasText: ref }).click();
   await official.getByRole('button', { name: 'Review & accept' }).click();
   await official.getByRole('button', { name: 'Accept for review' }).click();
-  await expect(official.getByTestId('official-status')).toContainText('Under review');
+  await expect(official.getByTestId('official-status')).toContainText('Review');
 }
 
 test('E2E-14 an official assigns several reports to one field worker at once (FR-35)', async ({ browser }) => {

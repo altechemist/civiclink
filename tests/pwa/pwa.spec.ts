@@ -22,5 +22,15 @@ test('NFT-10 the production build is installable and opens offline (FR-34)', asy
   // A deep link also opens from the cached shell.
   await page.goto('/resident/reports');
   await expect(page.locator('#root')).not.toBeEmpty();
+  // DEF-16: every built file was saved at install, so screens never opened online (lazy-loaded code)
+  // still open offline instead of hanging on the loading screen.
+  const precached = await page.evaluate(async () => {
+    const keys = await Promise.all((await caches.keys()).map(async (k) => (await (await caches.open(k)).keys()).map((r) => new URL(r.url).pathname)));
+    return keys.flat().filter((p) => p.startsWith('/assets/')).length;
+  });
+  expect(precached).toBeGreaterThan(10);
+  await page.goto('/transparency');
+  await expect(page.getByRole('heading', { name: 'How Sol Plaatje is responding' })).toBeVisible();
+  await expect(page.getByTestId('screen-error')).toHaveCount(0);
   await context.setOffline(false);
 });

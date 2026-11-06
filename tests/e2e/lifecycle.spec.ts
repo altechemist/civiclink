@@ -31,7 +31,7 @@ test('E2E-01 full lifecycle: resident → official → field worker → resident
   await official.getByTestId('queue-row').filter({ hasText: ref }).click();
   await official.getByRole('button', { name: 'Review & accept' }).click();
   await official.getByRole('button', { name: 'Accept for review' }).click();
-  await expect(official.getByTestId('official-status')).toContainText('Under review');
+  await expect(official.getByTestId('official-status')).toContainText('Review');
   await official.getByRole('button', { name: 'Assign field worker' }).click();
   await official.getByLabel('Field worker').selectOption({ label: 'Sipho Dlamini' });
   await official.getByRole('button', { name: 'Assign', exact: true }).click();
@@ -158,9 +158,9 @@ test('E2E-11 "Me too" from the community map raises the affected count (FR-33, B
   const resident = await as(browser, ACCOUNTS.thandi);
   await resident.goto('/map');
   await resident.locator(`.incident-${reportId}`).dispatchEvent('click');
-  await resident.getByTestId('me-too').click();
-  await expect(resident.getByTestId('me-too-result')).toContainText("you'll be notified");
-  await expect(resident.getByTestId('me-too')).toContainText('(2)');
-  await resident.getByTestId('me-too').click();
-  await expect(resident.getByTestId('me-too-result')).toContainText('already confirmed');
+  await resident.locator('.leaflet-popup').getByTestId('me-too').click();
+  await expect(resident.locator('.leaflet-popup').getByTestId('me-too-result')).toContainText("you'll be notified");
+  await expect(resident.locator('.leaflet-popup').getByTestId('me-too')).toContainText('(2)');
+  await resident.locator('.leaflet-popup').getByTestId('me-too').click();
+  await expect(resident.locator('.leaflet-popup').getByTestId('me-too-result')).toContainText('already confirmed');
 });

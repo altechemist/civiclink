@@ -138,7 +138,7 @@ Table: Known limitations
 
 # SYSTEM REQUIREMENTS SPECIFICATION
 
-The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-44 in `docs/baseline/change-log.md`.
+The requirements below are the consolidated baseline that controls the project. Changes from the Phase 1–3 documents (for example the added Administrator actor, the eight-state report lifecycle and the rewritten non-functional requirements) are recorded as change requests CR-01 to CR-45 in `docs/baseline/change-log.md`.
 
 ## Functional Requirements
 
@@ -877,6 +877,7 @@ Table: Significant defects found and resolved
 | DEF-01 | IT-CFG-02 | Creating a department whose name produced an existing identifier silently overwrote that department | Creation now refuses existing identifiers; updates require an existing record |
 | DEF-02 | E2E-01 | Submissions with an empty optional field were rejected, because the callable protocol sends `undefined` as `null` | The command wrapper treats top-level nulls as absent; regression test IT-RPT-10 |
 | DEF-03 | NFT-08 | Three text styles were below the WCAG AA contrast ratio | Darker text colours |
+| DEF-04 | CI on a clean checkout | An over-broad `lib/` ignore rule had kept two source folders out of the repository | Ignore rule narrowed to the build output; CI now builds from a clean clone on every push |
 | DEF-05 | E2E-10 | The profile form opened with an empty name, because it read the profile before it had loaded | The form is rendered only after the profile loads |
 | DEF-06 | IT-RPT-08 in CI | Under concurrency, extra reads inside the submission transaction (rate-limit count, profile, settings, officials) caused lock timeouts | Those reads moved before the transaction; it now contends only on the reference counter |
 | DEF-07 | E2E-01 run against production | Submission failed in production because the rate-limit query needed a composite index, which the emulator never requires | Index added and deployed; the E2E suite can now run against the deployed URL |
@@ -888,7 +889,8 @@ Table: Significant defects found and resolved
 | DEF-13 | E2E-16 | Starting a guest session from the public home redirected to the resident home instead of the report form | A dedicated `/report` entry route starts the guest session, then opens the form |
 | DEF-14 | Client review of the live map | After the CSP was enforced, map tiles stopped loading for returning visitors: the service worker fetches tiles, and worker fetches fall under `connect-src`, which did not list the tile servers (first visits, without the worker, were fine) | Tile servers added to `connect-src`; NFT-12 now checks that tiles load with the worker in control |
 | DEF-15 | Firefox console on the live site | Firefox still reported the validation library's `eval` probe, and returning visitors could keep a service worker installed under an older security policy | The setting moved into the shared package so it applies before any validation; the service worker is now checked for updates on every visit |
-| DEF-04 | CI on a clean checkout | An over-broad `lib/` ignore rule had kept two source folders out of the repository | Ignore rule narrowed to the build output; CI now builds from a clean clone on every push |
+| DEF-16 | Client test on a phone (offline) | The installed app could stay on the loading screen offline: the app's code files were saved only as they were used, so a first launch (or a screen never opened online) had nothing to run | The build writes every app file into the service worker, which saves them all at install; a screen that still cannot load shows "not available offline yet" with a retry |
+| DEF-17 | Client test on a phone | The notifications panel ran off the left edge of the screen, and long status labels ("Under review") made badges different sizes | On phones the panel spans the screen under the top bar (and opens upwards from the staff sidebar); the label is now "Review" and badges never wrap |
 
 There are no unresolved defects. The limitations of included functionality are listed in Section 3.4.
 

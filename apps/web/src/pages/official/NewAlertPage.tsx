@@ -51,7 +51,9 @@ export function NewAlertPage() {
         state: {
           sent: res.scheduled
             ? `Alert scheduled for ${new Date(publishAt).toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' })}`
-            : `Alert sent to ${res.recipientCount} resident${res.recipientCount === 1 ? '' : 's'}`,
+            : `Alert sent to ${res.recipientCount} resident${res.recipientCount === 1 ? '' : 's'}${
+                type === 'EMERGENCY' ? `, ${res.smsCount} by SMS` : ' (SMS is sent for Emergency alerts only)'
+              }`,
         },
       });
     } catch (err) {

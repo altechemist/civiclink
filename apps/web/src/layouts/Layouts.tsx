@@ -204,7 +204,7 @@ export function StaffLayout() {
             </p>
           </NavLink>
           <div className="flex items-center">
-            <NotificationBell tone="light" />
+            <NotificationBell tone="light" opens="up" />
             <button onClick={() => signOut()} aria-label="Sign out" className="rounded-full p-2 text-slate-600 hover:bg-slate-100">
               <LogOut className="size-5" aria-hidden />
             </button>

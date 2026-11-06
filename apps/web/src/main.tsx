@@ -9,12 +9,13 @@ window.addEventListener('beforeinstallprompt', (e) => {
   (window as { __installPrompt?: Event }).__installPrompt = e;
 });
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  // updateViaCache 'none' + update(): a changed sw.js (and its security policy) is picked up on every visit (DEF-15).
+  // updateViaCache 'none': the browser's own update check on each visit bypasses the HTTP cache, so a new
+  // build or security policy (new VERSION in sw.js) is installed straight away (DEF-15, DEF-16).
   window.addEventListener('load', () =>
-    void navigator.serviceWorker
-      .register('/sw.js', { updateViaCache: 'none' })
-      .then((r) => r.update())
-      .catch(() => {}),
+    void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch((err: unknown) => {
+      // Without a worker the app still works online, but offline mode and push do not: say why.
+      console.warn('Service worker registration failed; offline mode and push are unavailable.', err);
+    }),
   );
 }
 

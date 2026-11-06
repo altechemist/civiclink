@@ -1,4 +1,4 @@
-import type { CategoryDoc, HistoryDoc, NotificationDoc, ReportStatus } from '@civiclink/shared';
+import type { CategoryDoc, HistoryDoc, NotificationDoc, ReportStatus, TimestampLike } from '@civiclink/shared';
 import { collection, doc, limit, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
 import {
   Bell,
@@ -13,13 +13,13 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../auth/AuthProvider';
 import { db } from '../lib/firebase';
 import { formatDateTime, LIFECYCLE, STATUS_LABEL, timeAgo } from '../lib/format';
 import { usePhotoUrls, useLiveQuery, type WithId } from '../lib/hooks';
-import { cx } from './ui';
+import { cx, StatusBadge } from './ui';
 
 const ICONS: Record<string, LucideIcon> = {
   droplets: Droplets,
@@ -109,7 +109,11 @@ export function PhotoGrid({ ids, label }: { ids: string[] | undefined; label: st
 }
 
 /** Live notification bell (FR-15). */
-export function NotificationBell({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
+/**
+ * `opens`: 'down' for bells in a top bar, 'up' for the bell at the bottom of the staff sidebar. On phones
+ * the panel is fixed to the screen width under the top bar, so it never runs off-screen.
+ */
+export function NotificationBell({ tone = 'dark', opens = 'down' }: { tone?: 'dark' | 'light'; opens?: 'down' | 'up' }) {
   const { uid } = useSession();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -150,7 +154,13 @@ export function NotificationBell({ tone = 'dark' }: { tone?: 'dark' | 'light' })
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-[1100] mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
+        <div
+          data-testid="notification-panel"
+          className={cx(
+            'fixed inset-x-3 top-14 z-[1100] overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-200 sm:absolute sm:inset-x-auto sm:w-[22rem]',
+            opens === 'down' ? 'sm:right-0 sm:top-full sm:mt-2' : 'sm:bottom-full sm:left-0 sm:top-auto sm:mb-2',
+          )}
+        >
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
             <p className="text-sm font-semibold text-slate-900">Notifications</p>
             {unread > 0 && (
@@ -159,7 +169,7 @@ export function NotificationBell({ tone = 'dark' }: { tone?: 'dark' | 'light' })
               </button>
             )}
           </div>
-          <ul className="max-h-96 overflow-y-auto">
+          <ul className="max-h-[min(24rem,70vh)] overflow-y-auto">
             {data.length === 0 && <li className="px-4 py-6 text-center text-sm text-slate-500">You're all caught up.</li>}
             {data.map((n) => (
               <li key={n.id}>
@@ -182,5 +192,57 @@ export function ReportLink({ to, children }: { to: string; children: React.React
     <Link to={to} className="block rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 transition hover:ring-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
       {children}
     </Link>
+  );
+}
+
+export interface IncidentItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  status: ReportStatus;
+  suburb: string;
+  affectedCount: number;
+  createdAt: TimestampLike | number;
+  /** Optional action shown on the right (e.g. "Me too"). */
+  action?: ReactNode;
+}
+
+const LIST_PAGE = 10;
+
+/**
+ * FR-07 / FR-38: the open issues on a map, also as a list under it (easier to scan on a phone).
+ * Newest first; shows ten at a time. Same privacy-safe fields as the map popups (BR-17).
+ */
+export function IncidentList({ items, emptyText = 'No open issues.' }: { items: IncidentItem[]; emptyText?: string }) {
+  const [shown, setShown] = useState(LIST_PAGE);
+  const ms = (t: TimestampLike | number) => (typeof t === 'number' ? t : t.toMillis());
+  const sorted = [...items].sort((a, b) => ms(b.createdAt) - ms(a.createdAt));
+  if (sorted.length === 0) return <p className="text-sm text-slate-600">{emptyText}</p>;
+  return (
+    <div>
+      <ul className="divide-y divide-slate-100 rounded-xl bg-white ring-1 ring-slate-200" data-testid="incident-list">
+        {sorted.slice(0, shown).map((i) => (
+          <li key={i.id} className="flex items-center gap-3 px-3 py-2.5" data-testid="incident-item">
+            <span className="size-3 shrink-0 rounded-full ring-2 ring-white" style={{ background: categoryColour(i.categoryId) }} aria-hidden />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="truncate text-sm font-semibold text-slate-900">{i.categoryName}</p>
+                <StatusBadge status={i.status} />
+              </div>
+              <p className="truncate text-xs text-slate-600">
+                {i.suburb} · {timeAgo(i.createdAt)}
+                {i.affectedCount > 1 ? ` · ${i.affectedCount} reports` : ''}
+              </p>
+            </div>
+            {i.action}
+          </li>
+        ))}
+      </ul>
+      {sorted.length > shown && (
+        <button onClick={() => setShown((n) => n + LIST_PAGE)} className="mt-2 text-sm font-semibold text-brand-700 hover:underline">
+          Show more ({sorted.length - shown} more)
+        </button>
+      )}
+    </div>
   );
 }

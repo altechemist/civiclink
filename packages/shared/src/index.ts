@@ -1,3 +1,4 @@
+import './zodConfig';
 export * from './constants';
 export * from './schemas';
 export * from './stateMachines';

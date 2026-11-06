@@ -7,14 +7,21 @@ import { Button, Field, Input, Notice } from '../../components/ui';
 import { useEmulators } from '../../lib/firebase';
 import { AuthCard } from './AuthCard';
 
-/** Seeded demo accounts (scripts/seed.ts), shown only when running against the emulator. */
+/** Seeded demo accounts (scripts/seed.ts) for one-tap sign-in during demonstrations. */
 const DEMO_ACCOUNTS = [
-  { label: 'Resident', email: 'thandi@civiclink.demo' },
+  { label: 'Resident (Galeshewe)', email: 'thandi@civiclink.demo' },
+  { label: 'Resident (Roodepan)', email: 'pieter@civiclink.demo' },
   { label: 'Official (Water)', email: 'naledi@civiclink.demo' },
-  { label: 'Field worker', email: 'sipho@civiclink.demo' },
+  { label: 'Official (Roads)', email: 'johan@civiclink.demo' },
+  { label: 'Field worker (Water)', email: 'sipho@civiclink.demo' },
   { label: 'Administrator', email: 'admin@civiclink.demo' },
 ];
 export const DEMO_PASSWORD = 'CivicLink#2026';
+/**
+ * Shown with the local emulator, or on a deployment that sets VITE_DEMO_PASSWORD (demonstration only:
+ * the value is then public in the app code, so remove it after the demo and the buttons disappear).
+ */
+const DEMO_LOGIN_PASSWORD: string | null = useEmulators ? DEMO_PASSWORD : ((import.meta.env.VITE_DEMO_PASSWORD as string | undefined) ?? null);
 
 function message(err: unknown) {
   const code = err instanceof FirebaseError ? err.code : '';
@@ -120,9 +127,9 @@ export function LoginPage() {
           </Link>
         </p>
       </form>
-      {useEmulators && (
-        <div className="mt-6 border-t border-slate-100 pt-4">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Demo accounts (local emulator)</p>
+      {DEMO_LOGIN_PASSWORD && (
+        <div className="mt-6 border-t border-slate-100 pt-4" data-testid="demo-accounts">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Demo accounts: tap one, then Sign in</p>
           <div className="grid grid-cols-2 gap-2">
             {DEMO_ACCOUNTS.map((a) => (
               <button
@@ -130,7 +137,7 @@ export function LoginPage() {
                 type="button"
                 onClick={() => {
                   setEmail(a.email);
-                  setPassword(DEMO_PASSWORD);
+                  setPassword(DEMO_LOGIN_PASSWORD);
                 }}
                 className="rounded-lg bg-slate-50 px-3 py-2 text-left text-xs ring-1 ring-slate-200 hover:bg-brand-50"
               >

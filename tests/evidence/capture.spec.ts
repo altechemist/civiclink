@@ -208,8 +208,8 @@ test('capture map "Me too" and offline screens', async ({ browser }) => {
   await r.goto('/map');
   await r.waitForTimeout(2500);
   await r.locator(`.incident-${reportId}`).dispatchEvent('click');
-  await r.getByTestId('me-too').click();
-  await expect(r.getByTestId('me-too-result')).toBeVisible();
+  await r.locator('.leaflet-popup').getByTestId('me-too').click();
+  await expect(r.locator('.leaflet-popup').getByTestId('me-too-result')).toBeVisible();
   await shot(r, '18-map-me-too');
 
   // FR-27: a report made without a connection waits on the phone.

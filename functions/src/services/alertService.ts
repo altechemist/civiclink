@@ -53,12 +53,12 @@ export class AlertService {
         ...content, expiresAt: ts(input.expiresAt), publishAt: ts(input.publishAt), status: 'SCHEDULED', createdAt: ts(now), publishedAt: null,
       };
       await ref.set(scheduled);
-      return { alertId: ref.id, recipientCount: 0, scheduled: true };
+      return { alertId: ref.id, recipientCount: 0, smsCount: 0, scheduled: true };
     }
 
     const alertId = col.alerts().doc().id;
-    const { recipientCount } = await this.publish(alertId, content, now);
-    return { alertId, recipientCount, scheduled: false };
+    const { recipientCount, smsCount } = await this.publish(alertId, content, now);
+    return { alertId, recipientCount, smsCount, scheduled: false };
   }
 
   /** Creates the alert with the given id plus delivery records and push messages. `create` makes a rerun a no-op. */

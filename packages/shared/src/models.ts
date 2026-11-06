@@ -255,7 +255,7 @@ export interface CallableResults {
   confirmResolution: { status: ReportStatus };
   reopenReport: { status: ReportStatus };
   addComment: { commentId: string };
-  broadcastAlert: { alertId: string; recipientCount: number; scheduled: boolean };
+  broadcastAlert: { alertId: string; recipientCount: number; smsCount: number; scheduled: boolean };
   cancelScheduledAlert: { ok: true };
   startGuestSession: { ok: true; created: boolean };
   upgradeGuest: { ok: true };

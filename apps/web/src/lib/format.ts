@@ -2,7 +2,7 @@ import type { ReportStatus, Severity, TaskStatus, TimestampLike } from '@civicli
 
 export const STATUS_LABEL: Record<ReportStatus, string> = {
   SUBMITTED: 'Submitted',
-  UNDER_REVIEW: 'Under review',
+  UNDER_REVIEW: 'Review', // short so status badges keep one size on phones
   IN_PROGRESS: 'In progress',
   ESCALATED: 'Escalated',
   RESOLVED: 'Resolved',

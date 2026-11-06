@@ -3,7 +3,7 @@ import { collection, query, where } from 'firebase/firestore';
 import { ThumbsUp } from 'lucide-react';
 import { useState } from 'react';
 import { useSession } from '../../auth/AuthProvider';
-import { categoryColour, useCategories } from '../../components/domain';
+import { categoryColour, IncidentList, useCategories } from '../../components/domain';
 import { IncidentMap } from '../../components/maps';
 import { Button, cx, ErrorState, LoadingState, PageHeader, StatusBadge } from '../../components/ui';
 import { call, type ApiError } from '../../lib/api';
@@ -95,6 +95,20 @@ export default function CommunityMapPage() {
         />
       )}
       <p className="mt-2 text-xs text-slate-500">Locations are approximate (about 100 m) to protect residents' privacy.</p>
+      {!error && !loading && (
+        <section className="mt-4 space-y-2">
+          <h2 className="font-semibold text-slate-900">
+            {filter ? `${categories.data.find((c) => c.id === filter)?.name ?? 'Selected'} issues` : 'All open issues'} ({shown.length})
+          </h2>
+          <IncidentList
+            items={shown.map((r) => ({
+              id: r.id, categoryId: r.categoryId, categoryName: r.categoryName, status: r.status, suburb: r.suburb,
+              affectedCount: r.affectedCount, createdAt: r.createdAt,
+              action: claims.role === 'RESIDENT' ? <div className="max-w-[9rem] shrink-0 text-right"><MeToo reportId={r.id} count={r.affectedCount} /></div> : undefined,
+            }))}
+          />
+        </section>
+      )}
     </div>
   );
 }

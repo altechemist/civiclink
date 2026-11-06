@@ -2,7 +2,7 @@ import { ALL_SUBURBS, SUBURBS, type PublicFeed, type PublicStats } from '@civicl
 import { BarChart3, LogIn, MapPinned, Megaphone, PlusCircle, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { categoryColour } from '../../components/domain';
+import { categoryColour, IncidentList } from '../../components/domain';
 import { IncidentMap } from '../../components/maps';
 import { ErrorState, LoadingState, Select, Stat, StatusBadge } from '../../components/ui';
 import { getPublic } from '../../lib/api';
@@ -129,6 +129,7 @@ export default function PublicHomePage() {
                 }))}
               />
               <p className="text-xs text-slate-500">Locations are approximate (about 100 m) to protect residents' privacy.</p>
+              <IncidentList items={issues} emptyText={area ? `No open issues in ${area}.` : 'No open issues.'} />
             </section>
           </>
         )}

@@ -2,13 +2,17 @@
  * Navigations: network-first, falling back to the cached shell. Hashed build assets: cache-first.
  * Map tiles (NFR-13): stale-while-revalidate in a separate, size-capped cache, so maps of areas already
  * viewed still show offline. The API and Firebase are never cached here (Firestore keeps its own offline cache). */
-const VERSION = 'civiclink-v3'; // bump on every change to this file or to the site's security policy (DEF-15)
+// Filled in by the build (apps/web/vite.config.ts, precacheServiceWorker): a hash of the build output and
+// the security policy, so any new build or CSP change installs a fresh worker; and every built file, so the
+// whole app opens offline right after the first visit (DEF-16).
+const VERSION = 'civiclink-__BUILD_HASH__';
+const PRECACHE = self.__PRECACHE__ || [];
 const TILES = 'civiclink-tiles-v1';
 const MAX_TILES = 400; // about 10 MB of 256 px PNG tiles
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(VERSION).then((c) => c.addAll([...SHELL, ...PRECACHE])).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -65,14 +69,14 @@ self.addEventListener('fetch', (event) => {
           caches.open(VERSION).then((c) => c.put('/index.html', copy));
           return res;
         })
-        .catch(() => caches.match('/index.html')),
+        .catch(() => caches.match('/index.html', { ignoreVary: true })),
     );
     return;
   }
 
   if (url.pathname.startsWith('/assets/') || SHELL.includes(url.pathname)) {
     event.respondWith(
-      caches.match(req).then(
+      caches.match(req, { ignoreVary: true }).then(
         (hit) =>
           hit ||
           fetch(req).then((res) => {

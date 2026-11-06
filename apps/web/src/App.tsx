@@ -1,9 +1,11 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { AuthProvider, HOME, useAuth } from './auth/AuthProvider';
 import { RequireRole } from './auth/RequireRole';
 import { OfflineBanner } from './components/pwa';
 import { LoadingState, Notice } from './components/ui';
+import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
 import { ResidentLayout, RoleShell, StaffLayout, WorkerLayout } from './layouts/Layouts';
 import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
@@ -60,6 +62,12 @@ function ReportEntry() {
   return <LoadingState full label="Getting the report form ready" />;
 }
 
+/** A fresh error boundary per route, so moving to another screen recovers from a failed one. */
+function RouteBoundary({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  return <ScreenErrorBoundary key={pathname}>{children}</ScreenErrorBoundary>;
+}
+
 function Home() {
   const { session, loading, pendingProfile } = useAuth();
   if (loading) return <LoadingState full />;
@@ -73,6 +81,7 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <OfflineBanner />
+        <RouteBoundary>
         <Suspense fallback={<LoadingState full />}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -134,6 +143,7 @@ export function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
+        </RouteBoundary>
       </BrowserRouter>
     </AuthProvider>
   );
