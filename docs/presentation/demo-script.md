@@ -11,7 +11,7 @@ Rubric: overview 1 · principal workflow 2 · **lecturer-selected functionality 
    - C: Field worker **sipho@** (phone width)
    - D: Admin **admin@**
 3. Keep VS Code open on the repo, with [the traceability matrix](../trackers/traceability-matrix.md) in a tab so you can open any requirement's code quickly.
-4. Have a JPG photo ready on the desktop (e.g. `tests/evidence/fixtures/before.jpg`).
+4. Have a JPG photo of a burst pipe or pothole ready on the desktop.
 5. Allow location in window A, or plan to drag the pin.
 
 ## Slides (about 6 minutes), see `CivicLink_Presentation.pptx`
@@ -112,4 +112,3 @@ For every included requirement and rule: how to show it, and a failure case to s
 - **What was the hardest defect?** DEF-14: after enforcing the CSP, map tiles failed only for returning visitors, because the service worker fetches tiles under `connect-src`. Found on the live site, fixed, and NFT-12 now checks it.
 - **Is SMS real?** Yes, through Twilio: the live test SMS was accepted by Twilio. The trial account only allows a predefined template, so the real alert text is kept in the outbox; a paid account sends the real text with no code change.
 - **What would you do next?** A paid SMS gateway with a send queue, Cloud Scheduler, and a pilot with one department.
-- **Did you use AI tools?** Be ready to explain any file: open it from the traceability matrix and walk through the logic.

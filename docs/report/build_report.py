@@ -196,6 +196,14 @@ def repeat_header(row):
     tr_pr.append(el)
 
 
+def set_properties(cp, title):
+    """Document properties show the author, not the generator or template author."""
+    from datetime import datetime, timezone
+    cp.title, cp.author, cp.last_modified_by = title, 'Nthoroane KP', 'Nthoroane KP'
+    cp.comments = ''
+    cp.modified = datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def main():
     doc = Document(TEMPLATE)
     paras = doc.paragraphs
@@ -406,6 +414,7 @@ def main():
     doc.settings.element.append(upd)
     # Visible heading colour consistency is inherited from the template styles.
     _ = RGBColor
+    set_properties(doc.core_properties, 'CivicLink Final Project Report')
     doc.save(OUT)
     print(f'Wrote {OUT.relative_to(ROOT)}: {fig} figures, {tab} tables; tag {subs["{{TAG}}"]}, commit {subs["{{COMMIT}}"][:7]}')
 

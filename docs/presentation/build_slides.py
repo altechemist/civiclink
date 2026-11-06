@@ -211,5 +211,14 @@ bullets(s, [
 ], width=12, size=17)
 notes(s, 'Finish with the success criteria and what I would do next. Then move to the live demo.')
 
+def set_properties(cp, title):
+    """Document properties show the author, not the generator or template author."""
+    from datetime import datetime, timezone
+    cp.title, cp.author, cp.last_modified_by = title, 'Nthoroane KP', 'Nthoroane KP'
+    cp.comments = ''
+    cp.modified = datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+set_properties(prs.core_properties, 'CivicLink Final Presentation')
 prs.save(OUT)
 print(f'Wrote {OUT.relative_to(ROOT)} ({len(prs.slides)} slides)')
