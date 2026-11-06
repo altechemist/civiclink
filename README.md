@@ -1,40 +1,51 @@
 # CivicLink
 
-Municipal incident reporting and community alerts for Sol Plaatje Local Municipality (Kimberley). NPRJ740 final project, Advanced Diploma in ICT, Sol Plaatje University, 2026.
+Municipal incident reporting and community alerts for Sol Plaatje Local Municipality (Kimberley).
+NPRJ740 final project, Advanced Diploma in ICT, Sol Plaatje University, 2026.
 
-Residents report located, photo-evidenced incidents and follow them to resolution. Officials triage, assign and broadcast suburb-targeted alerts. Field workers complete tasks with proof. Every status change is recorded in an audit trail.
+Residents report located, photo-evidenced problems (burst pipes, outages, potholes, dumping) and follow them until they are fixed. Officials triage, assign and send suburb alerts. Field workers close tasks with proof. Anyone can see open issues and alerts without an account.
 
-**Live system:** https://civiclink-five.vercel.app (Vercel + Firebase Spark, Johannesburg database). Open it signed out to see the public home page, or report a problem without an account. The demo password for the live accounts is supplied separately.
+## Start here
 
-## What it does (39 functional requirements, all included)
-
-| Area | Capabilities |
+| I want to… | Go to |
 |---|---|
-| Public (no account) | Public home with active alerts, open-issue map and figures (FR-38); report as a guest and keep the report later with an account (FR-39); transparency page with time-to-fix, SLA compliance and satisfaction (FR-36) |
-| Residents | Register, sign in with password or Google, reset password (FR-01, FR-29, FR-30); 3-step located report with photos, reference number and duplicate detection (FR-03 to FR-05); track reports live (FR-06); confirm with a 1–5 rating or reopen (FR-14, FR-37); community map with "Me too" (FR-07, FR-33); suburb alerts, web push and SMS for emergencies (FR-17, FR-24, FR-25); installable app that saves reports offline and sends them on reconnect (FR-27, FR-34); profile and POPIA account deletion (FR-31, FR-32) |
-| Officials | Department queue with filters, search and CSV export (FR-08, FR-26); triage, reject, assign singly or in bulk, reassign, escalate (FR-09 to FR-13, FR-35); alerts now or scheduled, with delivery and read counts (FR-16, FR-18, FR-28); analytics (FR-19); internal notes (FR-22) |
-| Field workers | Accept, start and complete tasks with notes and proof photos (FR-11) |
-| Administrators | Staff accounts and roles, departments, categories, SLA targets, report limits, system log, SMS outbox and test SMS (FR-20, FR-21, FR-23) |
-| Rules and quality | SLA escalation and auto-close on a schedule (FR-13, FR-14); transactions TX-1 to TX-3; Security Rules for every role; CDN caching and an enforced Content Security Policy (NFR-13, NFR-14) |
+| **Use the live system** | **https://civiclink-five.vercel.app**. Open it signed out to see the public home page, or press **Report an issue** to report as a guest. |
+| **Read the final report** | [docs/report/CivicLink_Final_Project_Report.pdf](docs/report/CivicLink_Final_Project_Report.pdf) (opens in the browser) or the [.docx](docs/report/CivicLink_Final_Project_Report.docx) |
+| **See the slides** | [docs/presentation/CivicLink_Presentation.pdf](docs/presentation/CivicLink_Presentation.pdf), or the [.pptx](docs/presentation/CivicLink_Presentation.pptx) with speaker notes |
+| **See the diagrams** | [docs/diagrams/](docs/diagrams), listed [below](#diagrams) |
+| **Run it on my computer** | Follow [Run locally](#run-locally): two commands, no cloud account |
+| **Check the tests** | [Run the tests](#run-the-tests); latest results: [docs/evidence/test-results.md](docs/evidence/test-results.md) (**185 of 185 passed**) |
+| **Trace a requirement to its code and test** | [docs/trackers/traceability-matrix.md](docs/trackers/traceability-matrix.md) |
 
-The requirements, rules and acceptance criteria are in [docs/baseline/srs.md](docs/baseline/srs.md); the final report is [docs/report/CivicLink_Final_Project_Report.docx](docs/report/CivicLink_Final_Project_Report.docx).
+The assessed version is the tag **`v1.0.0`** (see Releases).
 
-## Quick start (local, about 5 minutes)
+## Use the live system
 
-**Prerequisites:** Node.js 22, Java 21 or later (for the Firebase emulators), Git. No Firebase account or API keys are needed: the system runs entirely on the Firebase Emulator Suite (ADR-0003).
+1. Open **https://civiclink-five.vercel.app**.
+2. Without signing in you can view alerts, the open-issue map and the transparency figures, and report a problem as a guest.
+3. To use a staff role, open **Sign in** and pick a demo account. During the assessment period the login page has one-tap demo buttons; otherwise the password is supplied with the submission.
+
+The live system runs on free tiers: the web app and API on Vercel (Cape Town region), data on Firebase (Johannesburg region). The first request after a quiet period can take a few seconds while the API starts.
+
+## Run locally
+
+**You need:** Node.js 22, Java 21 or later (for the Firebase emulators) and Git. You do **not** need a Firebase account or any API keys: everything runs on the Firebase Emulator Suite.
 
 ```bash
 git clone https://github.com/altechemist/civiclink.git
 cd civiclink
-npx -y npm@11.6.2 ci      # npm 11 is required: npm 10 has a known workspace resolver bug
-npm run dev               # builds functions, starts emulators, seeds demo data, starts the web app
+git checkout v1.0.0           # the assessed version
+npx -y npm@11.6.2 ci          # use npm 11; npm 10 has a workspace bug
+npm run dev                   # builds the API, starts the emulators, loads demo data, starts the app
 ```
 
-Open **http://127.0.0.1:5173**. The emulator UI (data browser) is at http://127.0.0.1:4000.
+Then open **http://127.0.0.1:5173**. The emulator data browser is at http://127.0.0.1:4000.
 
-### Demo accounts
+Every restart of `npm run dev` resets the database to the same demo data. No `.env` file is needed locally.
 
-All accounts use the password **`CivicLink#2026`**. The login page has one-click buttons for the main four.
+### Demo accounts (local)
+
+All local accounts use the password **`CivicLink#2026`**. The login page has one-click buttons for them.
 
 | Role | Email | Notes |
 |---|---|---|
@@ -44,68 +55,89 @@ All accounts use the password **`CivicLink#2026`**. The login page has one-click
 | Official | thabo@civiclink.demo / johan@civiclink.demo | Electricity / Roads |
 | Field worker | sipho@civiclink.demo | Water & Sanitation |
 | Field worker | bongani@civiclink.demo / mpho@civiclink.demo | Electricity / Roads |
-| Administrator | admin@civiclink.demo | Can also use all official screens |
+| Administrator | admin@civiclink.demo | Can also use every official screen |
 
-Restarting `npm run dev` resets the database to the same deterministic seed.
+Scheduled rules (SLA escalation, auto-close, scheduled alerts) do not run by themselves in the emulator. To run them, sign in as the administrator and use **System log → Run scheduled rules now**.
 
-### Configuration
+## Run the tests
 
-The web app defaults to the local emulator, so no `.env` file is needed. The deployed system runs on free tiers (Vercel + Firebase Spark); see **[docs/deploy.md](docs/deploy.md)** and the variable list in [.env.example](.env.example): Firebase web config, web push key, service account, cron secret and, optionally, Twilio for SMS. Never commit real keys or service-account files.
-
-Locally the emulator does not run schedules by itself: as the administrator, use **System log → Run scheduled rules now** (SLA escalation, auto-close, scheduled alerts).
-
-## Tests
-
-| Command | What it runs |
+| Command | What it checks |
 |---|---|
-| `npm run test:unit` | Domain unit tests (state machines, duplicate/SLA policies, validation, analytics): `UT-*` |
-| `npm run coverage` | Same, with coverage (CI fails below 80% lines) |
-| `npm run test:emulator` | Security Rules matrix `RT-*` and Cloud Functions integration `IT-*` against the emulators |
-| `npm run test:e2e` | Playwright end-to-end `E2E-*` / `NFT-*` (run `npx playwright install chromium` once) |
-| `npm run test:e2e:http` | The same E2E suite through the Node HTTP API used on Vercel |
-| `npm run test:pwa` | Installable app and offline shell on the production build (`NFT-10`) |
-| `E2E_BASE_URL=https://… npx playwright test -g NFT-1[12]` | CDN caching and security headers on the deployed site |
-| `npm run lint` / `npm run typecheck` | ESLint and TypeScript strict mode |
+| `npm run test:unit` | Domain rules: state machines, duplicate and SLA policies, validation, analytics (`UT-*`) |
+| `npm run test:emulator` | Security Rules for every role (`RT-*`) and the command API against the emulators (`IT-*`) |
+| `npm run test:e2e` | Full browser workflows and performance/accessibility checks (`E2E-*`, `NFT-*`). Run `npx playwright install chromium` once first. |
+| `npm run test:e2e:http` | The same browser tests through the Node API used on Vercel |
+| `npm run test:pwa` | Installable app and offline mode on the production build (`NFT-10`) |
+| `E2E_BASE_URL=https://civiclink-five.vercel.app npx playwright test -g "NFT-1[12]"` | CDN caching and security headers on the live site |
+| `npm run coverage` | Unit tests with coverage (CI fails below 80% of lines) |
+| `npm run lint` / `npm run typecheck` | ESLint and strict TypeScript |
 
-Latest full run: **185 of 185 passed** ([docs/evidence/test-results.md](docs/evidence/test-results.md)). Test IDs match [the test catalogue](docs/trackers/test-catalog.md) and the final report. CI runs all of the above plus a gitleaks secret scan on every push.
+CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs all of these, plus a secret scan, on every push. Test IDs match the [test catalogue](docs/trackers/test-catalog.md) and the report.
+
+## Documents
+
+| Document | What it contains |
+|---|---|
+| [Final report (PDF)](docs/report/CivicLink_Final_Project_Report.pdf) | The complete project report: context, requirements, design, implementation, testing, evaluation |
+| [Slides (PDF)](docs/presentation/CivicLink_Presentation.pdf) | 12 slides on the design and implementation decisions |
+| [Demo script](docs/presentation/demo-script.md) | Demonstration order and a drill sheet for every requirement |
+| [SRS](docs/baseline/srs.md) | Final requirements: success criteria, scope, FR/NFR/BR, acceptance criteria, state machines |
+| [Change log](docs/baseline/change-log.md) | Every change since Phases 1–3 (CR-01 to CR-45) |
+| [Phase 1–3 documents](docs/phases) | The earlier phase submissions |
+| [Architecture decisions](docs/adr/README.md) | ADR-0001 to ADR-0009 |
+| [Traceability matrix](docs/trackers/traceability-matrix.md) | Requirement → rule → screen → code → data → test |
+| [Test catalogue](docs/trackers/test-catalog.md) | Every automated test by ID |
+| [Defect log](docs/trackers/defect-log.md) | DEF-01 to DEF-17, with cause and fix |
+| [Test results](docs/evidence/test-results.md) | Latest full run, every test |
+| [Screenshots](docs/evidence) | UI evidence used in the report |
+| [Deployment guide](docs/deploy.md) | How the live system is set up (Firebase, Vercel, schedule, push, Twilio) |
+| [Changelog](CHANGELOG.md) | What is in release 1.0.0 |
+
+## Diagrams
+
+All diagrams are in [docs/diagrams/](docs/diagrams) as PNG images and appear in the report.
+
+| Diagram | File |
+|---|---|
+| System context | [context.png](docs/diagrams/context.png) |
+| Use cases | [usecase.png](docs/diagrams/usecase.png) |
+| Workflow 1, submit a report: activity / sequence | [activity-w1.png](docs/diagrams/activity-w1.png) / [sequence-w1.png](docs/diagrams/sequence-w1.png) |
+| Workflow 2, resolve a report: activity / sequence | [activity-w2.png](docs/diagrams/activity-w2.png) / [sequence-w2.png](docs/diagrams/sequence-w2.png) |
+| Report and task state machines | [state-report.png](docs/diagrams/state-report.png) / [state-task.png](docs/diagrams/state-task.png) |
+| Architecture | [architecture.png](docs/diagrams/architecture.png) / [overview.png](docs/diagrams/overview.png) |
+| Classes | [class.png](docs/diagrams/class.png), split into [class-domain.png](docs/diagrams/class-domain.png) and [class-services.png](docs/diagrams/class-services.png) |
+| Data model | [data-model.png](docs/diagrams/data-model.png) |
+| Deployment | [deployment.png](docs/diagrams/deployment.png) / [deploy-simple.png](docs/diagrams/deploy-simple.png) |
+
+## What it does
+
+All 39 functional requirements are in the release.
+
+| Who | What they can do |
+|---|---|
+| Public (no account) | See active alerts, the open-issue map and live figures (FR-38); report as a guest and keep the report later with an account (FR-39); transparency page with time to fix, SLA compliance and satisfaction (FR-36) |
+| Residents | Register, sign in with password or Google, reset password (FR-01, FR-29, FR-30); 3-step located report with photos, reference number and duplicate detection (FR-03 to FR-05); follow reports live (FR-06); confirm with a 1–5 rating or reopen (FR-14, FR-37); community map with "Me too" (FR-07, FR-33); suburb alerts, web push and SMS for emergencies (FR-17, FR-24, FR-25); install the app, report offline and send on reconnect (FR-27, FR-34); edit profile and delete the account (POPIA) (FR-31, FR-32) |
+| Officials | Department queue with filters, search and CSV export (FR-08, FR-26); triage, reject, assign one or many, reassign, escalate (FR-09 to FR-13, FR-35); alerts now or scheduled, with delivery and read counts (FR-16, FR-18, FR-28); analytics (FR-19); internal notes (FR-22) |
+| Field workers | Accept, start and complete tasks with notes and proof photos (FR-11) |
+| Administrators | Staff accounts and roles, departments, categories, SLA targets, report limits, system log, SMS outbox and test SMS (FR-20, FR-21, FR-23) |
 
 ## Repository layout
 
 ```
-apps/web/            React + Vite + TypeScript SPA (resident, official, field worker, admin)
-functions/           Command API: commands.ts registry, services (TX-1..TX-3), adapters index.ts (Cloud Functions) and http.ts (Node/Vercel)
-api/                 Vercel serverless entry points (use functions/lib/http.js)
-packages/shared/     Domain logic shared by web and functions: schemas, state machines, policies
-firestore.rules      Firestore Security Rules (role/permission matrix)
-scripts/seed.ts      Deterministic demo data
-tests/rules/         Security Rules tests
-tests/e2e/           Playwright tests
-tests/support/       Emulator test harness
-docs/                SRS, ADRs, phase 1–3 documents, trackers, diagrams, evidence, report, presentation
+apps/web/            React + Vite + TypeScript web app (all roles, service worker in public/sw.js)
+functions/           Command API: commands.ts (all commands), services/, adapters index.ts (Cloud Functions) and http.ts (Vercel)
+api/                 Vercel serverless entry points
+packages/shared/     Rules shared by the app and the API: schemas, state machines, policies, analytics
+firestore.rules      Security Rules (who can read what; all writes go through the API)
+scripts/             Demo data (seed.ts), local Node API server, Vercel setup
+tests/               Security Rules tests, Playwright end-to-end and PWA tests, emulator harness
+docs/                Report, slides, diagrams, requirements, decisions, trackers, evidence, phase documents
 ```
-
-## Documentation map
-
-| Document | Purpose |
-|---|---|
-| [docs/baseline/srs.md](docs/baseline/srs.md) | **Controlling baseline**: success criteria, scope, FR/NFR/BR, acceptance criteria, state machine |
-| [docs/baseline/change-log.md](docs/baseline/change-log.md) | Every change from Phases 1–3 and during build (CR-xx) |
-| [docs/adr/](docs/adr/README.md) | Architecture decision records |
-| [docs/phases/](docs/phases) | Phase 1–3 submissions; changes since then are recorded in the change log |
-| [docs/trackers/traceability-matrix.md](docs/trackers/traceability-matrix.md) | Requirement → rule → screen → code → data → test |
-| [docs/trackers/test-catalog.md](docs/trackers/test-catalog.md) | Test IDs used in code and in the report |
-| [docs/trackers/defect-log.md](docs/trackers/defect-log.md) | Defect summary |
-| [docs/deploy.md](docs/deploy.md) | Free-tier deployment runbook (Vercel, Firebase, GitHub schedule, push, Twilio) |
-| [docs/diagrams/](docs/diagrams) | UML and architecture diagrams used in the report |
-| [docs/evidence/](docs/evidence) | Screenshots and the complete automated test results |
-| [docs/report/](docs/report) | Final project report |
-| [docs/presentation/](docs/presentation) | Slides and the demonstration script |
 
 ## Stack
 
-React 19 · Vite · TypeScript · Tailwind CSS · React Router · Leaflet + OpenStreetMap · Recharts · Firebase Authentication (password, Google, anonymous guests) · Cloud Firestore (data and photos) · Firebase Cloud Messaging (web push) · Twilio (SMS, optional) · Node.js 22 command API on Vercel (CDN, serverless) or Cloud Functions · service worker + IndexedDB (offline) · Zod · Vitest · Playwright · axe-core · GitHub Actions.
+React 19 · Vite · TypeScript · Tailwind CSS · Leaflet + OpenStreetMap · Recharts · Firebase Authentication (password, Google, anonymous guests) · Cloud Firestore · Firebase Cloud Messaging · Twilio SMS · Node.js 22 API on Vercel · service worker + IndexedDB · Zod · Vitest · Playwright · axe-core · GitHub Actions.
 
-## Workflow
+## Configuration
 
-- `main` is always green. Work goes on `feat/<issue>-<slug>` branches and merges through a PR that says `Closes #n` and lists the FR/BR IDs.
-- The assessed version is the tag `v1.0.0`.
+Locally nothing needs configuring. For a deployment, copy [.env.example](.env.example) and follow [docs/deploy.md](docs/deploy.md). Never commit real keys or service-account files.
