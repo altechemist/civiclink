@@ -65,10 +65,9 @@ Locally the emulator does not run schedules by itself: as the administrator, use
 | `npm run test:e2e:http` | The same E2E suite through the Node HTTP API used on Vercel |
 | `npm run test:pwa` | Installable app and offline shell on the production build (`NFT-10`) |
 | `E2E_BASE_URL=https://… npx playwright test -g NFT-1[12]` | CDN caching and security headers on the deployed site |
-| `python3 scripts/test-results.py` | Runs every suite and writes [docs/evidence/test-results.md](docs/evidence/test-results.md) (latest: 185 of 185 passed) |
 | `npm run lint` / `npm run typecheck` | ESLint and TypeScript strict mode |
 
-Test IDs match [the test catalogue](docs/trackers/test-catalog.md) and the final report. CI runs all of the above plus a gitleaks secret scan on every push.
+Latest full run: **185 of 185 passed** ([docs/evidence/test-results.md](docs/evidence/test-results.md)). Test IDs match [the test catalogue](docs/trackers/test-catalog.md) and the final report. CI runs all of the above plus a gitleaks secret scan on every push.
 
 ## Repository layout
 
@@ -82,7 +81,7 @@ scripts/seed.ts      Deterministic demo data
 tests/rules/         Security Rules tests
 tests/e2e/           Playwright tests
 tests/support/       Emulator test harness
-docs/                Baseline SRS, ADRs, plan, trackers, diagrams, evidence, report
+docs/                SRS, ADRs, trackers, diagrams, evidence, report, presentation
 ```
 
 ## Documentation map
@@ -92,15 +91,14 @@ docs/                Baseline SRS, ADRs, plan, trackers, diagrams, evidence, rep
 | [docs/baseline/srs.md](docs/baseline/srs.md) | **Controlling baseline**: success criteria, scope, FR/NFR/BR, acceptance criteria, state machine |
 | [docs/baseline/change-log.md](docs/baseline/change-log.md) | Every change from Phases 1–3 and during build (CR-xx) |
 | [docs/adr/](docs/adr/README.md) | Architecture decision records |
-| [docs/plan/implementation-plan.md](docs/plan/implementation-plan.md) | Architecture, permission matrix, schedule, report and presentation plan |
 | [docs/trackers/traceability-matrix.md](docs/trackers/traceability-matrix.md) | Requirement → rule → screen → code → data → test |
 | [docs/trackers/test-catalog.md](docs/trackers/test-catalog.md) | Test IDs used in code and in the report |
 | [docs/trackers/defect-log.md](docs/trackers/defect-log.md) | Defect summary |
 | [docs/deploy.md](docs/deploy.md) | Free-tier deployment runbook (Vercel, Firebase, GitHub schedule, push, Twilio) |
+| [docs/diagrams/](docs/diagrams) | UML and architecture diagrams used in the report |
 | [docs/evidence/](docs/evidence) | Screenshots and the complete automated test results |
+| [docs/report/](docs/report) | Final project report |
 | [docs/presentation/](docs/presentation) | Slides and the demonstration script |
-| [docs/review/phase-1-3-review.md](docs/review/phase-1-3-review.md) | Gap review of Phases 1–3 against the rubric |
-| [docs/phases/](docs/phases) | Phase 1–3 submissions (academic record) |
 
 ## Stack
 
