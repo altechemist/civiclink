@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-20 12:09 UTC",
-  "commit": "d5f01fe",
+  "date": "2026-11-06 07:07 UTC",
+  "commit": "e53abd1",
   "total": 185,
   "passed": 185,
   "tests": [
@@ -530,7 +530,7 @@
       "result": "Pass"
     },
     {
-      "title": "IT-SMS-05 with Twilio credentials, messages go to Twilio\u2019s REST API in the documented form; errors are recorded",
+      "title": "IT-SMS-05 with Twilio credentials, messages go to Twilio\u2019s REST API in the documented form (trial: a predefined template); errors are recorded",
       "suite": "Integration",
       "result": "Pass"
     },

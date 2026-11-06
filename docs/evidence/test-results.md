@@ -1,4 +1,4 @@
-Run 2026-10-20 12:09 UTC on commit `d5f01fe`: **185 of 185 passed**.
+Run 2026-11-06 07:07 UTC on commit `e53abd1`: **185 of 185 passed**.
 
 Table: Complete automated test results
 
@@ -109,7 +109,7 @@ Table: Complete automated test results
 | IT-SMS-02 | a gateway failure is recorded per message and logged, and does not fail the alert | Integration | Pass |
 | IT-SMS-03 | removing the number ends the opt-in; deleting the account deletes the SMS records | Integration | Pass |
 | IT-SMS-04 | an administrator can send a test SMS (simulated without credentials); others cannot | Integration | Pass |
-| IT-SMS-05 | with Twilio credentials, messages go to Twilio’s REST API in the documented form; errors are recorded | Integration | Pass |
+| IT-SMS-05 | with Twilio credentials, messages go to Twilio’s REST API in the documented form (trial: a predefined template); errors are recorded | Integration | Pass |
 | IT-GST-01 | an anonymous session becomes a guest Resident; starting again changes nothing | Integration | Pass |
 | IT-GST-02 | a guest can report and follow it, within a lower hourly limit; account-only actions are refused | Integration | Pass |
 | IT-GST-03 | a guest creates an account in the same session and keeps their reports | Integration | Pass |

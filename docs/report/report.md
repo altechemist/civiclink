@@ -910,7 +910,7 @@ npm run dev
 
 `npm run dev` builds the Cloud Functions, starts the Auth, Firestore and Functions emulators, initialises the database with the deterministic seed (departments, categories, 15 accounts, 150 reports with valid histories, and alerts), and starts the web application. Open **http://127.0.0.1:5173**. The emulator data browser is at http://127.0.0.1:4000. Restarting the command resets the database to the same seed. npm 11 is used because npm 10 has a known workspace-resolution defect.
 
-**Demo accounts.** Locally, all accounts use the password `CivicLink#2026`, and the login page offers one-click shortcuts for the main four. The deployed system at **{{APP_URL}}** has the same accounts with a private password, supplied to the lecturer separately.
+**Demo accounts.** Locally, all accounts use the password `CivicLink#2026`, and the login page offers one-click shortcuts for the main four. The deployed system at **{{APP_URL}}** has the same accounts with a private password, supplied to the lecturer separately. For the demonstration period its login page also offers one-tap demo accounts (enabled by the `VITE_DEMO_PASSWORD` setting, which puts that password in the public app code); the setting is removed after assessment, which also removes the buttons.
 
 Table: Demo accounts
 

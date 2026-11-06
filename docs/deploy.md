@@ -81,6 +81,10 @@ The workflow `.github/workflows/cron.yml` then calls `/api/cron/maintenance` eve
    Trial accounts may only send Twilio's predefined templates, not custom text. Also set `TWILIO_TRIAL_TEMPLATE=sms_event_notifications` (not secret). CivicLink then sends that template, and the real alert text stays in the SMS outbox. Remove the variable after upgrading the account to send the real text.
 6. Verify: sign in as the administrator → System log → SMS outbox → **Send test SMS** to your verified number. The row shows SENT (Twilio) and the phone receives it; FAILED shows Twilio's reason.
 
+## 4b. One-tap demo accounts (demonstration only)
+
+`VITE_DEMO_PASSWORD` (not secret, build-time) shows buttons for the main demo accounts on the login page and fills in their email and password. The value becomes public in the app code, so anyone can then sign in as the demo administrator: set it only for the demonstration and remove it afterwards (`npx vercel@62.4.0 env rm VITE_DEMO_PASSWORD production --yes`, then `npm run deploy:web`).
+
 ## 5. Demo data
 
 ```bash
