@@ -112,4 +112,3 @@ For every included requirement and rule: how to show it, and a failure case to s
 - **What was the hardest defect?** DEF-14: after enforcing the CSP, map tiles failed only for returning visitors, because the service worker fetches tiles under `connect-src`. Found on the live site, fixed, and NFT-12 now checks it.
 - **Is SMS real?** Yes, through Twilio: the live test SMS was accepted by Twilio. The trial account only allows a predefined template, so the real alert text is kept in the outbox; a paid account sends the real text with no code change.
 - **What would you do next?** A paid SMS gateway with a send queue, Cloud Scheduler, and a pilot with one department.
-- **Did you use AI tools?** Be ready to explain any file: open it from the traceability matrix and walk through the logic.
